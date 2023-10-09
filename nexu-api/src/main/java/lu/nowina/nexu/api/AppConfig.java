@@ -168,7 +168,7 @@ public class AppConfig {
     private boolean makeSingleCardDefault;
     
     private boolean filterOnlyCertWithDigitalSignatureUsageBit;
-
+    
     private long cacheTimeToLiveMs;
 
     public AppConfig() {
@@ -368,7 +368,7 @@ public class AppConfig {
     public long getCacheTimeToLiveMs() {
         return this.cacheTimeToLiveMs;
     }
-
+    
     private void setCacheTimeToLiveMs(long ttl) {
         this.cacheTimeToLiveMs = ttl;
     }
@@ -498,7 +498,7 @@ public class AppConfig {
         this.setTicketUrl(props.getProperty(TICKET_URL, "https://github.com/nowina-solutions/nexu/issues/new"));
         this.setEnableIncidentReport(Boolean.parseBoolean(props.getProperty(ENABLE_INCIDENT_REPORT, "false")));
         this.setShowSplashScreen(Boolean.parseBoolean(props.getProperty(SHOW_SPLASH_SCREEN, "false")));
-        this.setDisplayBackButton(Boolean.parseBoolean(props.getProperty(DISPLAY_BACK_BUTTON, "false")));      
+        this.setDisplayBackButton(Boolean.parseBoolean(props.getProperty(DISPLAY_BACK_BUTTON, "false")));
         this.setMakeSingleCardDefault(Boolean.parseBoolean(props.getProperty(MAKE_SINGLE_CARD_DEFAULT, "false")));
         this.setFilterOnlyCertWithDigitalSignatureUsageBit(Boolean.parseBoolean(props.getProperty(FILTER_ONLY_CERT_WITH_DIGITAL_SIGNATURE_USAGE_BIT, "false")));
         this.setCacheTimeToLiveMs(Long.parseLong(props.getProperty(CACHE_TIME_TO_LIVE_MS, "5000")));

@@ -15,9 +15,13 @@ package lu.nowina.nexu.api;
 
 import java.util.List;
 
-import eu.europa.esig.dss.enumerations.DigestAlgorithm;
-import eu.europa.esig.dss.enumerations.EncryptionAlgorithm;
-import eu.europa.esig.dss.model.x509.CertificateToken;
+// MOD 4535992 TODO to re-enable for dss 5.9
+//import eu.europa.esig.dss.enumerations.DigestAlgorithm;
+//import eu.europa.esig.dss.enumerations.EncryptionAlgorithm;
+//import eu.europa.esig.dss.model.x509.CertificateToken;
+import eu.europa.esig.dss.DigestAlgorithm;
+import eu.europa.esig.dss.EncryptionAlgorithm;
+import eu.europa.esig.dss.x509.CertificateToken;
 
 public class GetCertificateResponse {
 

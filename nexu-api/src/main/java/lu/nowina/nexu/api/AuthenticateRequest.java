@@ -13,7 +13,9 @@
  */
 package lu.nowina.nexu.api;
 
-import eu.europa.esig.dss.model.ToBeSigned;
+// MOD 4535992 TODO to re-enable for dss 5.9
+//import eu.europa.esig.dss.model.ToBeSigned;
+import eu.europa.esig.dss.ToBeSigned;
 
 /**
  * Request used to perform the authentication.

@@ -68,5 +68,4 @@ public class MessageController extends AbstractUIOperationController<Void> imple
 			message.setText(defaultErrorText);
 		}
 	}
-
 }

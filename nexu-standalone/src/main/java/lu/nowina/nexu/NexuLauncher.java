@@ -155,7 +155,6 @@ public class NexuLauncher {
             loadPropertiesFromClasspath(props);
         }
 		return props;
-
 	}
 	
     private boolean loadPropertiesFromJarFolder(Properties props) {

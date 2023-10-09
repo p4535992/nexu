@@ -15,9 +15,12 @@ package lu.nowina.nexu.api;
 
 import java.util.List;
 
-import eu.europa.esig.dss.enumerations.DigestAlgorithm;
+// MOD 4535992 TODO to re-enable for dss 5.9
+//import eu.europa.esig.dss.enumerations.DigestAlgorithm;
+import eu.europa.esig.dss.DigestAlgorithm;
 import eu.europa.esig.dss.token.DSSPrivateKeyEntry;
 import eu.europa.esig.dss.token.PasswordInputCallback;
+import eu.europa.esig.dss.SignatureAlgorithm;
 import eu.europa.esig.dss.token.SignatureTokenConnection;
 import lu.nowina.nexu.api.flow.Operation;
 import lu.nowina.nexu.api.flow.FutureOperationInvocation;

@@ -13,26 +13,33 @@ import javax.security.auth.login.LoginException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import eu.europa.esig.dss.model.DSSException;
-import eu.europa.esig.dss.enumerations.DigestAlgorithm;
-import eu.europa.esig.dss.enumerations.MaskGenerationFunction;
-import eu.europa.esig.dss.model.SignatureValue;
-import eu.europa.esig.dss.model.ToBeSigned;
+// MOD 4535992  TODO to re-enable for dss 5.9
+//import eu.europa.esig.dss.model.DSSException;
+//import eu.europa.esig.dss.enumerations.DigestAlgorithm;
+//import eu.europa.esig.dss.enumerations.MaskGenerationFunction;
+//import eu.europa.esig.dss.model.SignatureValue;
+//import eu.europa.esig.dss.model.ToBeSigned;
+import eu.europa.esig.dss.DSSException;
+import eu.europa.esig.dss.DigestAlgorithm;
+import eu.europa.esig.dss.MaskGenerationFunction;
+import eu.europa.esig.dss.SignatureValue;
+import eu.europa.esig.dss.ToBeSigned;
 import eu.europa.esig.dss.token.DSSPrivateKeyEntry;
 import eu.europa.esig.dss.token.PasswordInputCallback;
 import eu.europa.esig.dss.token.Pkcs11SignatureToken;
-import eu.europa.esig.dss.token.SunPKCS11Initializer;
+// MOD 4535992  TODO to re-enable for dss 5.9
+//import eu.europa.esig.dss.token.SunPKCS11Initializer;
 import lu.nowina.nexu.CancelledOperationException;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.Map;
 import lu.nowina.nexu.CancelledOperationException;
 import sun.security.pkcs11.SunPKCS11;
-import sun.security.pkcs11.wrapper.CK_C_INITIALIZE_ARGS;
-import sun.security.pkcs11.wrapper.PKCS11;
-import sun.security.pkcs11.wrapper.PKCS11Constants;
-import static sun.security.pkcs11.wrapper.PKCS11Constants.CKF_OS_LOCKING_OK;
-import sun.security.pkcs11.wrapper.PKCS11Exception;
+//import sun.security.pkcs11.wrapper.CK_C_INITIALIZE_ARGS;
+//import sun.security.pkcs11.wrapper.PKCS11;
+//import sun.security.pkcs11.wrapper.PKCS11Constants;
+//import static sun.security.pkcs11.wrapper.PKCS11Constants.CKF_OS_LOCKING_OK;
+//import sun.security.pkcs11.wrapper.PKCS11Exception;
 
 /**
  * This adapter class allows to manage {@link CancelledOperationException}.
@@ -146,9 +153,10 @@ public class Pkcs11SignatureTokenAdapter extends Pkcs11SignatureToken {
             if (provider == null) {
             	this.provider = new sun.security.pkcs11.SunPKCS11(configString);
             }
-            if (provider == null) {
-            	this.provider = SunPKCS11Initializer.getProvider(configString);
-            }
+            // MOD 4535992  TODO to re-enable for dss 5.9
+//            if (provider == null) {
+//            	this.provider = SunPKCS11Initializer.getProvider(configString);
+//            }
             // END MOD 4535992
 			if (provider == null) {
 				throw new DSSException("Unable to create PKCS11 provider");

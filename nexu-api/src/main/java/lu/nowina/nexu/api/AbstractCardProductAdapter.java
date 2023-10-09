@@ -17,7 +17,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.ResourceBundle;
 
-import eu.europa.esig.dss.enumerations.DigestAlgorithm;
+// MOD 4535992 TODO to re-enable for dss 5.9
+//import eu.europa.esig.dss.enumerations.DigestAlgorithm;
+import eu.europa.esig.dss.DigestAlgorithm;
 import eu.europa.esig.dss.token.DSSPrivateKeyEntry;
 import eu.europa.esig.dss.token.PasswordInputCallback;
 import eu.europa.esig.dss.token.SignatureTokenConnection;

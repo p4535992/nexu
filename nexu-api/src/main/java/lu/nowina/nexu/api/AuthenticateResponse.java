@@ -13,8 +13,11 @@
  */
 package lu.nowina.nexu.api;
 
-import eu.europa.esig.dss.model.SignatureValue;
-import eu.europa.esig.dss.model.x509.CertificateToken;
+// MOD 4535992 TODO to re-enable for dss 5.9
+//import eu.europa.esig.dss.model.SignatureValue;
+//import eu.europa.esig.dss.model.x509.CertificateToken;
+import eu.europa.esig.dss.SignatureValue;
+import eu.europa.esig.dss.x509.CertificateToken;
 
 /**
  * Holds the data representing the result of the authentication:

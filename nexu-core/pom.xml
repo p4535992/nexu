@@ -30,12 +30,12 @@
 
 		<!-- MOD 4535992 -->
 		
-		<!--
+		
 		<dependency>
 		    <groupId>io.github.jnasmartcardio</groupId>
 		    <artifactId>jnasmartcardio</artifactId>  
 		</dependency>
-		-->
+	
 		<!--
 		<dependency>
 		    <groupId>com.github.martinpaljak</groupId>
