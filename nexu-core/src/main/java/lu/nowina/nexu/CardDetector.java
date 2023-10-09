@@ -272,9 +272,9 @@ public class CardDetector {
 	public static class Handle extends IntegerType {
 		private static final long serialVersionUID = 1L;
 		
-		// MOD 4535992
-		public static final int SIZE = Platform.isWindows() ? Pointer.SIZE : Dword.SIZE;
-		//public static final int SIZE = Platform.isWindows() ? Native.POINTER_SIZE : Dword.SIZE;
+		// MOD 4535992 TODO to re-enable  with dss 5.9
+		//public static final int SIZE = Platform.isWindows() ? Pointer.SIZE : Dword.SIZE;
+		public static final int SIZE = Platform.isWindows() ? Native.POINTER_SIZE : Dword.SIZE;
 		// END MOD 4535992
 		
 		public Handle(long value) {
