@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<database>
+	<smartcard> <!-- Oberthur ID-One Token SLIM v2.0 (OT AWP - IAS-ECC v1.01, Model: Cosmo v7.0.1-n) -->
+		<atr>3BDD18008131FE4580F9A000000077010800079000FE</atr>
+		<connectionInfos>
+			<connectionInfo>
+				<env>
+					<jreVendor>ORACLE</jreVendor>
+					<osName>Windows 10</osName>
+					<osArch>amd64</osArch>
+					<osVersion>10.0</osVersion>
+					<arch>AMD64</arch>
+					<os>WINDOWS</os>
+				</env>
+				<selectedApi>PKCS11</selectedApi>
+				<apiParam>C:\Program Files\Oberthur Technologies\AWP\DLLs\OCSCryptoki.dll</apiParam>
+			</connectionInfo>
+			<connectionInfo>
+				<env>
+					<jreVendor>ORACLE</jreVendor>
+					<osName>Windows 7</osName>
+					<osArch>x86</osArch>
+					<osVersion>6.1</osVersion>
+					<arch>X86</arch>
+					<os>WINDOWS</os>
+				</env>
+				<selectedApi>PKCS11</selectedApi>
+				<apiParam>C:\Program Files\oberthur Technologies\AWP\DLLs\OCSCryptoki.dll</apiParam> <!-- incidentally the path is the same as with 64-bit -->
+			</connectionInfo>                  
+		</connectionInfos>
+	</smartcard>
+	<smartcard>
+		<atr>3BFF9600008131804380318065B0850300EF120FFE82900066</atr>
+		<connectionInfos>
+			<connectionInfo>
+				<env>
+					<jreVendor>ORACLE</jreVendor>
+					<osName>Windows 10</osName>
+					<osArch>amd64</osArch>
+					<osVersion>10.0</osVersion>
+					<arch>AMD64</arch>
+					<os>WINDOWS</os>
+				</env>
+				<selectedApi>PKCS11</selectedApi>
+				<apiParam>C:\Windows\System32\eTPKCS11.dll</apiParam>
+			</connectionInfo>
+			<connectionInfo>
+				<env>
+					<jreVendor>ORACLE</jreVendor>
+					<osName>Windows 7</osName>
+					<osArch>x86</osArch>
+					<osVersion>6.1</osVersion>
+					<arch>X86</arch>
+					<os>WINDOWS</os>
+				</env>
+				<selectedApi>PKCS11</selectedApi>
+				<apiParam>C:\Windows\System32\eTPKCS11.dll</apiParam>
+			</connectionInfo>                  
+		</connectionInfos>
+	</smartcard>
+	<smartcard>
+		<atr>3BD518008131FE7D8073C82110F4</atr>
+		<connectionInfos>
+			<connectionInfo>
+				<env>
+					<jreVendor>ORACLE</jreVendor>
+					<osName>Windows 7</osName>
+					<osArch>x86</osArch>
+					<osVersion>6.1</osVersion>
+					<arch>X86</arch>
+					<os>WINDOWS</os>
+				</env>
+				<selectedApi>PKCS11</selectedApi>
+				<apiParam>C:\Windows\System32\eTPKCS11.dll</apiParam>
+			</connectionInfo>
+		</connectionInfos>
+	</smartcard> 
+	<smartcard> <!-- bit4id TokenME EVO v2.0 AWP IAS-ECC v2 Manufacturer: IDEMIA - version info not fetched by older AWP but signing works -->
+		<atr>3BDD96008131FE4580F9A00000007701080007900070</atr>
+		<connectionInfos>
+			<connectionInfo>
+				<env>
+					<jreVendor>ORACLE</jreVendor>
+					<osName>Windows 10</osName>
+					<osArch>amd64</osArch>
+					<osVersion>10.0</osVersion>
+					<arch>AMD64</arch>
+					<os>WINDOWS</os>
+				</env>
+				<selectedApi>PKCS11</selectedApi>
+				<apiParam>C:\Program Files\Oberthur Technologies\AWP\DLLs\OCSCryptoki.dll</apiParam>
+			</connectionInfo>
+			<connectionInfo>
+				<env>
+					<jreVendor>ORACLE</jreVendor>
+					<osName>Windows 10</osName>
+					<osArch>x86</osArch>
+					<osVersion>10.0</osVersion>
+					<arch>X86</arch>
+					<os>WINDOWS</os>
+				</env>
+				<selectedApi>PKCS11</selectedApi>
+				<apiParam>C:\Program Files\oberthur Technologies\AWP\DLLs\OCSCryptoki.dll</apiParam>
+			</connectionInfo>			
+			<connectionInfo>
+				<env>
+					<jreVendor>ORACLE</jreVendor>
+					<osName>Windows 7</osName>
+					<osArch>x86</osArch>
+					<osVersion>6.1</osVersion>
+					<arch>X86</arch>
+					<os>WINDOWS</os>
+				</env>
+				<selectedApi>PKCS11</selectedApi>
+				<apiParam>C:\Program Files\oberthur Technologies\AWP\DLLs\OCSCryptoki.dll</apiParam>
+			</connectionInfo>
+		</connectionInfos>
+	</smartcard>         
+</database>

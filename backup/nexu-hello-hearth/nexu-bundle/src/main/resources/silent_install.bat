@@ -1,0 +1,1 @@
+nexu-setup-win64.exe /sp- /silent /norestart /suppressmsgboxes
