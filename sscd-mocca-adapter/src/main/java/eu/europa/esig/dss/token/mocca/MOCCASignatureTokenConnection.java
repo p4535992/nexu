@@ -31,15 +31,24 @@ import at.gv.egiz.smcc.SignatureCard;
 import at.gv.egiz.smcc.SignatureCard.KeyboxName;
 import at.gv.egiz.smcc.SignatureCardFactory;
 import at.gv.egiz.smcc.util.SmartCardIO;
-import eu.europa.esig.dss.enumerations.DigestAlgorithm;
-import eu.europa.esig.dss.enumerations.EncryptionAlgorithm;
-import eu.europa.esig.dss.enumerations.MaskGenerationFunction;
-import eu.europa.esig.dss.enumerations.SignatureAlgorithm;
-import eu.europa.esig.dss.model.DSSException;
-import eu.europa.esig.dss.model.Digest;
-import eu.europa.esig.dss.model.SignatureValue;
-import eu.europa.esig.dss.model.ToBeSigned;
-import eu.europa.esig.dss.spi.DSSASN1Utils;
+//import eu.europa.esig.dss.enumerations.DigestAlgorithm;
+//import eu.europa.esig.dss.enumerations.EncryptionAlgorithm;
+//import eu.europa.esig.dss.enumerations.MaskGenerationFunction;
+//import eu.europa.esig.dss.enumerations.SignatureAlgorithm;
+//import eu.europa.esig.dss.model.DSSException;
+//import eu.europa.esig.dss.model.Digest;
+//import eu.europa.esig.dss.model.SignatureValue;
+//import eu.europa.esig.dss.model.ToBeSigned;
+//import eu.europa.esig.dss.spi.DSSASN1Utils;
+import eu.europa.esig.dss.DigestAlgorithm;
+import eu.europa.esig.dss.EncryptionAlgorithm;
+import eu.europa.esig.dss.MaskGenerationFunction;
+import eu.europa.esig.dss.SignatureAlgorithm;
+import eu.europa.esig.dss.DSSException;
+import eu.europa.esig.dss.Digest;
+import eu.europa.esig.dss.SignatureValue;
+import eu.europa.esig.dss.ToBeSigned;
+import eu.europa.esig.dss.DSSASN1Utils;
 import eu.europa.esig.dss.token.DSSPrivateKeyEntry;
 import eu.europa.esig.dss.token.PasswordInputCallback;
 import eu.europa.esig.dss.token.SignatureTokenConnection;
@@ -194,7 +203,9 @@ public class MOCCASignatureTokenConnection implements SignatureTokenConnection {
 		LOG.info("MOCCA>>>Signature algorithm: {}", signatureAlgorithm.getJCEId());
 		try {
 			final KeyboxName keyboxName = moccaKey.getKeyboxName();
-			byte[] signedData = signatureCard.createSignature(inputStream, keyboxName, callback, signatureAlgorithm.getUri());
+			// MOD 4535992 TODO to re-enable for dss 5.9
+//			byte[] signedData = signatureCard.createSignature(inputStream, keyboxName, callback, signatureAlgorithm.getUri());
+			byte[] signedData = signatureCard.createSignature(inputStream, keyboxName, callback, signatureAlgorithm.getJCEId());
 			if (EncryptionAlgorithm.ECDSA.equals(encryptionAlgo)) {
 				signedData = encode(signedData);
 			}
@@ -215,27 +226,28 @@ public class MOCCASignatureTokenConnection implements SignatureTokenConnection {
 		throw new UnsupportedOperationException();
 	}
 
-	@Override
-	public SignatureValue sign(ToBeSigned toBeSigned, SignatureAlgorithm signatureAlgorithm, DSSPrivateKeyEntry keyEntry) throws DSSException {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public SignatureValue signDigest(Digest digest, DSSPrivateKeyEntry keyEntry) throws DSSException {
-		throw new UnsupportedOperationException();
-	}
-	
-	@Override
-	public SignatureValue signDigest(Digest digest, MaskGenerationFunction mgf, DSSPrivateKeyEntry keyEntry)
-			throws DSSException {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public SignatureValue signDigest(Digest digest, SignatureAlgorithm signatureAlgorithm, DSSPrivateKeyEntry keyEntry)
-			throws DSSException {
-		throw new UnsupportedOperationException();
-	}
+	// MOD 4535992 TODO to re-enable for dss 5.9
+//	@Override
+//	public SignatureValue sign(ToBeSigned toBeSigned, SignatureAlgorithm signatureAlgorithm, DSSPrivateKeyEntry keyEntry) throws DSSException {
+//		throw new UnsupportedOperationException();
+//	}
+//
+//	@Override
+//	public SignatureValue signDigest(Digest digest, DSSPrivateKeyEntry keyEntry) throws DSSException {
+//		throw new UnsupportedOperationException();
+//	}
+//	
+//	@Override
+//	public SignatureValue signDigest(Digest digest, MaskGenerationFunction mgf, DSSPrivateKeyEntry keyEntry)
+//			throws DSSException {
+//		throw new UnsupportedOperationException();
+//	}
+//
+//	@Override
+//	public SignatureValue signDigest(Digest digest, SignatureAlgorithm signatureAlgorithm, DSSPrivateKeyEntry keyEntry)
+//			throws DSSException {
+//		throw new UnsupportedOperationException();
+//	}
 
 	/**
 	 * The ECDSA_SIG structure consists of two BIGNUMs for the r and s value of a ECDSA signature (see X9.62 or FIPS

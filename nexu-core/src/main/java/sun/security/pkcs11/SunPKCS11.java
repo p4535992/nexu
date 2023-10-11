@@ -51,10 +51,12 @@ public final class SunPKCS11 extends Provider {
 	public SunPKCS11(String cfg) {
 		super(
 			"sun.security.pkcs11.SunPKCS11",
-			"11",
+			11,
 			"A wrapper for SunPKCS11 providing compatibility with Java 8"
 		);
-		Provider provider = Security.getProvider("SunPKCS11").configure(cfg);
+		
+		//Provider provider = Security.getProvider("SunPKCS11").configure(cfg);
+		Provider provider = Security.getProvider("SunPKCS11");
 		provider.forEach(this::put);
 		provider.getServices().forEach(s -> {
 			try {

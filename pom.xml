@@ -27,7 +27,7 @@
 	</developers>
 
 	<modules>
-		<!-- TODO <module>sscd-mocca-adapter</module>-->
+		<module>sscd-mocca-adapter</module>
 		<module>nexu-core</module>
 		<module>nexu-rest-plugin</module>
 		<module>nexu-api</module>
@@ -44,9 +44,9 @@
 	</modules>
 
 	<properties>
-		<java.version>11</java.version>
-		<maven.compiler.source>11</maven.compiler.source>
-		<maven.compiler.target>11</maven.compiler.target>
+		<java.version>1.8</java.version>
+		<maven.compiler.source>1.8</maven.compiler.source>
+		<maven.compiler.target>1.8</maven.compiler.target>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<encoding>UTF-8</encoding>
 		<skip.package>false</skip.package>
@@ -480,6 +480,7 @@ END MOD 4535992 -->
 			</dependency>
 			-->
 						
+			<!--
 			<dependency>
 			    <groupId>org.openjfx</groupId>
 			    <artifactId>javafx-controls</artifactId>
@@ -490,6 +491,7 @@ END MOD 4535992 -->
 			    <artifactId>javafx-fxml</artifactId>
 			    <version>${javafx.version}</version>
 			</dependency>
+			-->
 			
 			<dependency>
 			    <groupId>org.xipki.iaik</groupId>
@@ -500,10 +502,6 @@ END MOD 4535992 -->
 				<groupId>eu.europa.ec.joinup.sd-dss</groupId>
 				<artifactId>sscd-mocca-adapter</artifactId>
 				<version>${dss.version}</version>
-				<!--
-				<scope>system</scope>
-	   			<systemPath>${project.basedir}/lib-override/sscd-mocca-adapter-5.10.1.jar</systemPath>
-	   			-->
 			</dependency>		
 			<dependency>
 				<groupId>eu.europa.ec.joinup.sd-dss</groupId>

@@ -27,10 +27,15 @@
 package eu.europa.esig.dss.token.mocca;
 
 import at.gv.egiz.smcc.SignatureCard.KeyboxName;
-import eu.europa.esig.dss.enumerations.EncryptionAlgorithm;
-import eu.europa.esig.dss.model.DSSException;
-import eu.europa.esig.dss.model.x509.CertificateToken;
-import eu.europa.esig.dss.spi.DSSUtils;
+//MOD 4535992 TODO to re-enable for dss 5.9
+//import eu.europa.esig.dss.enumerations.EncryptionAlgorithm;
+//import eu.europa.esig.dss.model.DSSException;
+//import eu.europa.esig.dss.model.x509.CertificateToken;
+//import eu.europa.esig.dss.spi.DSSUtils;
+import eu.europa.esig.dss.EncryptionAlgorithm;
+import eu.europa.esig.dss.DSSException;
+import eu.europa.esig.dss.x509.CertificateToken;
+import eu.europa.esig.dss.DSSUtils;
 import eu.europa.esig.dss.token.DSSPrivateKeyEntry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -68,7 +73,9 @@ public class MOCCAPrivateKeyEntry implements DSSPrivateKeyEntry {
 		Objects.requireNonNull(keyboxName, "KeyboxName shall be provided!");
 
 		this.signingCert = DSSUtils.loadCertificate(signingCertBinaries);
-		LOG.info(">>>Signing certificate subject name/serial number:  {} / {}", signingCert.getSubject().getRFC2253(), signingCert.getSerialNumber());
+		// MOD 4535992 TODO to re-enable for dss 5.9
+		//LOG.info(">>>Signing certificate subject name/serial number:  {} / {}", signingCert.getSubject().getRFC2253(), signingCert.getSerialNumber());
+		LOG.info(">>>Signing certificate subject name/serial number:  {} / {}", signingCert.getSubjectX500Principal().getName(), signingCert.getSerialNumber());
 		this.keyboxName = keyboxName;
 		this.atr = atr;
 		String encryptionAlgo = signingCert.getPublicKey().getAlgorithm(); // Can be: DH, DSA, RSA & EC

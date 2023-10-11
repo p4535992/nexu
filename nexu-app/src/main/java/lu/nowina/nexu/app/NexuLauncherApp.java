@@ -25,14 +25,14 @@ public class NexuLauncherApp {
 		
 		List<String> list = new ArrayList<String>(args!=null ? Arrays.asList(args) : new ArrayList<String>());
 		
-		list.add("--add-modules");
-		list.add("jdk.crypto.cryptoki,javafx.controls,javafx.fxml,javafx.swing,java.xml.bind,java.smartcardio");
-		
-		list.add("--add-exports");
-		list.add("jdk.crypto.cryptoki/sun.security.pkcs11.wrapper=ALL-UNNAMED");		
-								
-		list.add("--add-opens");
-		list.add("jdk.crypto.cryptoki/sun.security.pkcs11=ALL-UNNAMED");
+//		list.add("--add-modules");
+//		list.add("jdk.crypto.cryptoki,javafx.controls,javafx.fxml,javafx.swing,java.xml.bind,java.smartcardio");
+//		
+//		list.add("--add-exports");
+//		list.add("jdk.crypto.cryptoki/sun.security.pkcs11.wrapper=ALL-UNNAMED");		
+//								
+//		list.add("--add-opens");
+//		list.add("jdk.crypto.cryptoki/sun.security.pkcs11=ALL-UNNAMED");
 		
 		list.add("javafx.preloader");
 		list.add("lu.nowina.nexu.NexUPreLoader");
