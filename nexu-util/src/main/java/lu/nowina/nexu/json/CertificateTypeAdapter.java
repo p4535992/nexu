@@ -24,11 +24,9 @@ import com.google.gson.JsonParseException;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
-// MOD 4535992  TODO to re-enable for dss 5.9
-//import eu.europa.esig.dss.spi.DSSUtils;
-//import eu.europa.esig.dss.model.x509.CertificateToken;
-import eu.europa.esig.dss.DSSUtils;
-import eu.europa.esig.dss.x509.CertificateToken;
+
+import eu.europa.esig.dss.spi.DSSUtils;
+import eu.europa.esig.dss.model.x509.CertificateToken;
 
 public class CertificateTypeAdapter implements JsonSerializer<CertificateToken>, JsonDeserializer<CertificateToken> {
 

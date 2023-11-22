@@ -14,4 +14,7 @@ rem Consultez la Licence pour les autorisations et les restrictions linguistique
 rem start has a problem with first quoted parameter and this is a workaround
 rem because we have absolute paths here (because there no easy way to specify _start in_ directory for a service)
 rem we have to wrap them in double-quotes for the very possible case that they have spaces in them
-start .\java\bin\javaw -verbose -Djavafx.preloader=lu.nowina.nexu.NexUPreLoader -Dglass.accessible.force=false -jar nexu.jar
+rem start "" "__{app}"\java\bin\javaw.exe -Djavafx.preloader=lu.nowina.nexu.NexUPreLoader -Dglass.accessible.force=false -jar "__{app}"\nexu.jar
+rem start .\java\bin\javaw -Djavafx.preloader=lu.nowina.nexu.NexUPreLoader -Dglass.accessible.force=false -jar nexu.jar
+rem start .\java\bin\javaw -verbose --module-path .\javafx-sdk-11\lib --add-modules=javafx.controls,javafx.fxml,javafx.swing,java.xml,java.xml.crypto,java.smartcardio -Djavafx.preloader=lu.nowina.nexu.NexUPreLoader -Dglass.accessible.force=false -jar nexu.jar
+start .\java11\bin\javaw -verbose --module-path .\javafx-sdk-11\lib --add-modules=javafx.controls,javafx.fxml,javafx.swing,java.xml,java.xml.crypto,java.smartcardio -Djavafx.preloader=lu.nowina.nexu.NexUPreLoader -Dglass.accessible.force=false -jar nexu.jar

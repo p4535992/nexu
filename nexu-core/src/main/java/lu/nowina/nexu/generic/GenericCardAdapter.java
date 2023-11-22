@@ -16,9 +16,7 @@ package lu.nowina.nexu.generic;
 import java.io.File;
 import java.util.List;
 
-// MOD 4535992  TODO to re-enable for dss 5.9
-//import eu.europa.esig.dss.enumerations.DigestAlgorithm;
-import eu.europa.esig.dss.DigestAlgorithm;
+import eu.europa.esig.dss.enumerations.DigestAlgorithm;
 import eu.europa.esig.dss.token.DSSPrivateKeyEntry;
 import eu.europa.esig.dss.token.MSCAPISignatureToken;
 import eu.europa.esig.dss.token.PasswordInputCallback;
@@ -68,7 +66,7 @@ public class GenericCardAdapter extends AbstractCardProductAdapter {
 
     @Override
     protected SignatureTokenConnection connect(final NexuAPI api, final DetectedCard card, final PasswordInputCallback callback) {
-        // MOD final ConnectionInfo cInfo = this.info.getConnectionInfo(api.getEnvironmentInfo());
+	// az Unisystems change - to debug
         int i = 0;
         for (ConnectionInfo ci : this.info.getInfos()) {
            String msg = "ConnectionInfo [" + i + "] : " + ci.getEnv().getOsArch() + " " + ci.getEnv().getOsName() + " " + ci.getEnv().getOsVersion();
@@ -87,7 +85,7 @@ public class GenericCardAdapter extends AbstractCardProductAdapter {
               cInfo = this.info.getInfos().get(0);
            }
         }
-        
+
         final ScAPI scApi = cInfo.getSelectedApi();
         switch (scApi) {
             case MSCAPI:

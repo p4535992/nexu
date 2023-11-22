@@ -168,7 +168,7 @@ public class AppConfig {
     private boolean makeSingleCardDefault;
     
     private boolean filterOnlyCertWithDigitalSignatureUsageBit;
-    
+
     private long cacheTimeToLiveMs;
 
     public AppConfig() {
@@ -368,7 +368,7 @@ public class AppConfig {
     public long getCacheTimeToLiveMs() {
         return this.cacheTimeToLiveMs;
     }
-    
+
     private void setCacheTimeToLiveMs(long ttl) {
         this.cacheTimeToLiveMs = ttl;
     }

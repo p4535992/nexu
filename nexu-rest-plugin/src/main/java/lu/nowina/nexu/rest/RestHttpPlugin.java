@@ -24,11 +24,9 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-// MOD 4535992  TODO to re-enable for dss 5.9
-//import eu.europa.esig.dss.enumerations.DigestAlgorithm;
-//import eu.europa.esig.dss.model.ToBeSigned;
-import eu.europa.esig.dss.DigestAlgorithm;
-import eu.europa.esig.dss.ToBeSigned;
+
+import eu.europa.esig.dss.enumerations.DigestAlgorithm;
+import eu.europa.esig.dss.model.ToBeSigned;
 import lu.nowina.nexu.api.AuthenticateRequest;
 import lu.nowina.nexu.api.CertificateFilter;
 import lu.nowina.nexu.api.Execution;

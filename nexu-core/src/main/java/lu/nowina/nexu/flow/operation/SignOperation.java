@@ -13,13 +13,9 @@
  */
 package lu.nowina.nexu.flow.operation;
 
-// MOD 4535992  TODO to re-enable for dss 5.9
-//import eu.europa.esig.dss.enumerations.DigestAlgorithm;
-//import eu.europa.esig.dss.model.SignatureValue;
-//import eu.europa.esig.dss.model.ToBeSigned;
-import eu.europa.esig.dss.DigestAlgorithm;
-import eu.europa.esig.dss.SignatureValue;
-import eu.europa.esig.dss.ToBeSigned;
+import eu.europa.esig.dss.enumerations.DigestAlgorithm;
+import eu.europa.esig.dss.model.SignatureValue;
+import eu.europa.esig.dss.model.ToBeSigned;
 import eu.europa.esig.dss.token.DSSPrivateKeyEntry;
 import eu.europa.esig.dss.token.SignatureTokenConnection;
 import lu.nowina.nexu.CancelledOperationException;

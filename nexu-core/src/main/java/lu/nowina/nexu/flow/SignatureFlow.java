@@ -21,9 +21,7 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-// MOD 4535992  TODO to re-enable for dss 5.9
-//import eu.europa.esig.dss.model.SignatureValue;
-import eu.europa.esig.dss.SignatureValue;
+import eu.europa.esig.dss.model.SignatureValue;
 import eu.europa.esig.dss.token.DSSPrivateKeyEntry;
 import eu.europa.esig.dss.token.SignatureTokenConnection;
 import lu.nowina.nexu.InternalAPI;

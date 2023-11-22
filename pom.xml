@@ -44,13 +44,13 @@
 	</modules>
 
 	<properties>
-		<java.version>1.8</java.version>
-		<maven.compiler.source>1.8</maven.compiler.source>
-		<maven.compiler.target>1.8</maven.compiler.target>
+		<java.version>11</java.version>
+		<maven.compiler.source>11</maven.compiler.source>
+		<maven.compiler.target>11</maven.compiler.target>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<encoding>UTF-8</encoding>
 		<skip.package>false</skip.package>
-		<dss.version>5.3</dss.version><!-- 5.3, 5.9 -->
+		<dss.version>5.11</dss.version><!-- 5.3, 5.9 -->
 		<maven.release.plugin.version>2.5.3</maven.release.plugin.version>
 		<slf4j.version>1.7.12</slf4j.version>
 		<jna.version>5.13.0</jna.version><!-- 4.2.2, 5.13.0 -->
@@ -480,7 +480,7 @@ END MOD 4535992 -->
 			</dependency>
 			-->
 						
-			<!--
+			
 			<dependency>
 			    <groupId>org.openjfx</groupId>
 			    <artifactId>javafx-controls</artifactId>
@@ -491,7 +491,7 @@ END MOD 4535992 -->
 			    <artifactId>javafx-fxml</artifactId>
 			    <version>${javafx.version}</version>
 			</dependency>
-			-->
+			
 			
 			<dependency>
 			    <groupId>org.xipki.iaik</groupId>

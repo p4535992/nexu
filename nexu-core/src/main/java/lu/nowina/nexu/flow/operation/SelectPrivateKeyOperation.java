@@ -18,11 +18,8 @@ import java.util.List;
 
 import eu.europa.esig.dss.token.DSSPrivateKeyEntry;
 import eu.europa.esig.dss.token.SignatureTokenConnection;
-// MOD 4535992  TODO to re-enable for dss 5.9
-//import eu.europa.esig.dss.enumerations.KeyUsageBit;
-//import eu.europa.esig.dss.model.x509.CertificateToken;
-import eu.europa.esig.dss.tsl.KeyUsageBit;
-import eu.europa.esig.dss.x509.CertificateToken;
+import eu.europa.esig.dss.enumerations.KeyUsageBit;
+import eu.europa.esig.dss.model.x509.CertificateToken;
 import java.util.HashSet;
 import lu.nowina.nexu.CancelledOperationException;
 import lu.nowina.nexu.api.CertificateFilter;
@@ -171,9 +168,7 @@ public class SelectPrivateKeyOperation extends AbstractCompositeOperation<DSSPri
                 logger.info("Checking cert " + (i++) + " with keyUsageBits: " + (cert != null && cert.getKeyUsageBits() != null ? cert.getKeyUsageBits().toString() : "null"));
                 if (cert != null &&
                     cert.getKeyUsageBits() != null &&
-                    cert.getKeyUsageBits().contains(KeyUsageBit.digitalSignature)) {
-                    // MOD 4535992  TODO to re-enable for dss 5.9 
-                    // cert.getKeyUsageBits().contains(KeyUsageBit.DIGITAL_SIGNATURE)) {
+                    cert.getKeyUsageBits().contains(KeyUsageBit.DIGITAL_SIGNATURE)) {
                     logger.info("Proper key found - selecting this key.");
                     ret = key;
                     break;

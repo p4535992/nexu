@@ -10,9 +10,17 @@ http://nowina.lu/solutions/java-less-browser-signing-nexu/
 
 # NOTE
 
-If nexu do not "see" the connected smartcard try to delete the folder `C:\Users\<YOUR USER>\AppData\Local\Nowina\NexU-Nowina`
+## My Smartcard is not been read why ???
 
-Example of the file `luxtrust-database.xml` :
+If nexu do not "see" the connected smartcard try to delete the folder 
+
+`C:\Users\<YOUR USER WIDNOWS>\AppData\Local\Nowina\NexU-Nowina`
+
+The new store xml should be write in the path:
+
+`C:\Users\<YOUR USER WINDOWS>\AppData\Local\Nowina\NexU`
+
+The xml file for store information, has many options here a example of the file `luxtrust-database.xml` :
 
 ```
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>

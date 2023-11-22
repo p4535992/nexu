@@ -22,21 +22,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
 
-// MOD 4535992  TODO to re-enable for dss 5.9
-//import eu.europa.esig.dss.model.DSSException;
-//import eu.europa.esig.dss.model.Digest;
-//import eu.europa.esig.dss.enumerations.DigestAlgorithm;
-//import eu.europa.esig.dss.enumerations.MaskGenerationFunction;
-//import eu.europa.esig.dss.enumerations.SignatureAlgorithm;
-//import eu.europa.esig.dss.model.SignatureValue;
-//import eu.europa.esig.dss.model.ToBeSigned;
-import eu.europa.esig.dss.DSSException;
-import eu.europa.esig.dss.Digest;
-import eu.europa.esig.dss.DigestAlgorithm;
-import eu.europa.esig.dss.MaskGenerationFunction;
-import eu.europa.esig.dss.SignatureAlgorithm;
-import eu.europa.esig.dss.SignatureValue;
-import eu.europa.esig.dss.ToBeSigned;
+import eu.europa.esig.dss.model.DSSException;
+import eu.europa.esig.dss.model.Digest;
+import eu.europa.esig.dss.enumerations.DigestAlgorithm;
+import eu.europa.esig.dss.enumerations.MaskGenerationFunction;
+import eu.europa.esig.dss.enumerations.SignatureAlgorithm;
+import eu.europa.esig.dss.model.SignatureValue;
+import eu.europa.esig.dss.model.ToBeSigned;
 import eu.europa.esig.dss.token.DSSPrivateKeyEntry;
 import eu.europa.esig.dss.token.JKSSignatureToken;
 import eu.europa.esig.dss.token.PasswordInputCallback;
@@ -263,7 +255,7 @@ public class KeystoreProductAdapter implements ProductAdapter {
 			initSignatureTokenConnection();
 			return proxied.sign(toBeSigned, digestAlgorithm, mgf, keyEntry);
 		}
-		/* MOD 4535992  TODO to re-enable for dss 5.9
+
 		@Override
 		public SignatureValue sign(ToBeSigned toBeSigned, SignatureAlgorithm signatureAlgorithm,
 				DSSPrivateKeyEntry keyEntry) throws DSSException {
@@ -286,6 +278,5 @@ public class KeystoreProductAdapter implements ProductAdapter {
 				DSSPrivateKeyEntry keyEntry) throws DSSException {
 			return proxied.signDigest(digest, signatureAlgorithm, keyEntry);
 		}
-		*/
 	}
 }

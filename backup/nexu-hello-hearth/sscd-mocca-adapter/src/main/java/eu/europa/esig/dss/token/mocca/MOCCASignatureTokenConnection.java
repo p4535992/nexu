@@ -203,9 +203,7 @@ public class MOCCASignatureTokenConnection implements SignatureTokenConnection {
 		LOG.info("MOCCA>>>Signature algorithm: {}", signatureAlgorithm.getJCEId());
 		try {
 			final KeyboxName keyboxName = moccaKey.getKeyboxName();
-			// MOD 4535992 TODO to re-enable for dss 5.9
-//			byte[] signedData = signatureCard.createSignature(inputStream, keyboxName, callback, signatureAlgorithm.getUri());
-			byte[] signedData = signatureCard.createSignature(inputStream, keyboxName, callback, signatureAlgorithm.getJCEId());
+			byte[] signedData = signatureCard.createSignature(inputStream, keyboxName, callback, signatureAlgorithm.getUri());
 			if (EncryptionAlgorithm.ECDSA.equals(encryptionAlgo)) {
 				signedData = encode(signedData);
 			}
@@ -226,28 +224,27 @@ public class MOCCASignatureTokenConnection implements SignatureTokenConnection {
 		throw new UnsupportedOperationException();
 	}
 
-	// MOD 4535992 TODO to re-enable for dss 5.9
-//	@Override
-//	public SignatureValue sign(ToBeSigned toBeSigned, SignatureAlgorithm signatureAlgorithm, DSSPrivateKeyEntry keyEntry) throws DSSException {
-//		throw new UnsupportedOperationException();
-//	}
-//
-//	@Override
-//	public SignatureValue signDigest(Digest digest, DSSPrivateKeyEntry keyEntry) throws DSSException {
-//		throw new UnsupportedOperationException();
-//	}
-//	
-//	@Override
-//	public SignatureValue signDigest(Digest digest, MaskGenerationFunction mgf, DSSPrivateKeyEntry keyEntry)
-//			throws DSSException {
-//		throw new UnsupportedOperationException();
-//	}
-//
-//	@Override
-//	public SignatureValue signDigest(Digest digest, SignatureAlgorithm signatureAlgorithm, DSSPrivateKeyEntry keyEntry)
-//			throws DSSException {
-//		throw new UnsupportedOperationException();
-//	}
+	@Override
+	public SignatureValue sign(ToBeSigned toBeSigned, SignatureAlgorithm signatureAlgorithm, DSSPrivateKeyEntry keyEntry) throws DSSException {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public SignatureValue signDigest(Digest digest, DSSPrivateKeyEntry keyEntry) throws DSSException {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
+	public SignatureValue signDigest(Digest digest, MaskGenerationFunction mgf, DSSPrivateKeyEntry keyEntry)
+			throws DSSException {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public SignatureValue signDigest(Digest digest, SignatureAlgorithm signatureAlgorithm, DSSPrivateKeyEntry keyEntry)
+			throws DSSException {
+		throw new UnsupportedOperationException();
+	}
 
 	/**
 	 * The ECDSA_SIG structure consists of two BIGNUMs for the r and s value of a ECDSA signature (see X9.62 or FIPS

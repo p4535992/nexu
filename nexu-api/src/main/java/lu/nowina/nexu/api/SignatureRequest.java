@@ -13,11 +13,8 @@
  */
 package lu.nowina.nexu.api;
 
-// MOD 4535992 TODO to re-enable for dss 5.9
-//import eu.europa.esig.dss.enumerations.DigestAlgorithm;
-//import eu.europa.esig.dss.model.ToBeSigned;
-import eu.europa.esig.dss.DigestAlgorithm;
-import eu.europa.esig.dss.ToBeSigned;
+import eu.europa.esig.dss.enumerations.DigestAlgorithm;
+import eu.europa.esig.dss.model.ToBeSigned;
 //Unisystems change: added closeToken flag for multiple document signing (like in GetCertificateRequest)
 public class SignatureRequest extends NexuRequest {
 

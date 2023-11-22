@@ -29,20 +29,13 @@ import at.gv.egiz.smcc.CardNotSupportedException;
 import at.gv.egiz.smcc.SignatureCard;
 import at.gv.egiz.smcc.SignatureCardFactory;
 import at.gv.egiz.smcc.TimeoutException;
-// MOD 4535992  TODO to re-enable for dss 5.9
-//import eu.europa.esig.dss.model.DSSException;
-//import eu.europa.esig.dss.model.Digest;
-//import eu.europa.esig.dss.enumerations.DigestAlgorithm;
-//import eu.europa.esig.dss.enumerations.MaskGenerationFunction;
-//import eu.europa.esig.dss.enumerations.SignatureAlgorithm;
-//import eu.europa.esig.dss.model.SignatureValue;
-//import eu.europa.esig.dss.model.ToBeSigned;
-import eu.europa.esig.dss.DSSException;
-import eu.europa.esig.dss.DigestAlgorithm;
-import eu.europa.esig.dss.MaskGenerationFunction;
-import eu.europa.esig.dss.SignatureAlgorithm;
-import eu.europa.esig.dss.SignatureValue;
-import eu.europa.esig.dss.ToBeSigned;
+import eu.europa.esig.dss.model.DSSException;
+import eu.europa.esig.dss.model.Digest;
+import eu.europa.esig.dss.enumerations.DigestAlgorithm;
+import eu.europa.esig.dss.enumerations.MaskGenerationFunction;
+import eu.europa.esig.dss.enumerations.SignatureAlgorithm;
+import eu.europa.esig.dss.model.SignatureValue;
+import eu.europa.esig.dss.model.ToBeSigned;
 import eu.europa.esig.dss.token.DSSPrivateKeyEntry;
 import eu.europa.esig.dss.token.SignatureTokenConnection;
 import eu.europa.esig.dss.token.mocca.MOCCASignatureTokenConnection;
@@ -162,90 +155,90 @@ public class MOCCASignatureTokenConnectionAdapter implements SignatureTokenConne
 		}
 	}
 
-//	@Override
-//	public SignatureValue sign(ToBeSigned toBeSigned, SignatureAlgorithm signatureAlgorithm,
-//			DSSPrivateKeyEntry keyEntry) throws DSSException {
-//		try {
-//			setSignatureCard();
-//			return adapted.sign(toBeSigned, signatureAlgorithm, keyEntry);
-//		} catch(final Exception e) {
-//			Throwable t = e;
-//			while(t != null) {
-//				if((t instanceof CancelledException) ||
-//						(t instanceof TimeoutException)) {
-//					throw new CancelledOperationException(e);
-//				} else if(t instanceof CancelledOperationException) {
-//					throw (CancelledOperationException) t;
-//				}
-//				t = t.getCause();
-//			}
-//			// Rethrow exception as is.
-//			throw e;
-//		}
-//	}
-//
-//	@Override
-//	public SignatureValue signDigest(Digest digest, DSSPrivateKeyEntry keyEntry) throws DSSException {
-//		try {
-//			setSignatureCard();
-//			return adapted.signDigest(digest, keyEntry);
-//		} catch(final Exception e) {
-//			Throwable t = e;
-//			while(t != null) {
-//				if((t instanceof CancelledException) ||
-//						(t instanceof TimeoutException)) {
-//					throw new CancelledOperationException(e);
-//				} else if(t instanceof CancelledOperationException) {
-//					throw (CancelledOperationException) t;
-//				}
-//				t = t.getCause();
-//			}
-//			// Rethrow exception as is.
-//			throw e;
-//		}
-//	}
-//
-//	@Override
-//	public SignatureValue signDigest(Digest digest, MaskGenerationFunction mgf, DSSPrivateKeyEntry keyEntry)
-//			throws DSSException {
-//		try {
-//			setSignatureCard();
-//			return adapted.signDigest(digest, mgf, keyEntry);
-//		} catch(final Exception e) {
-//			Throwable t = e;
-//			while(t != null) {
-//				if((t instanceof CancelledException) ||
-//						(t instanceof TimeoutException)) {
-//					throw new CancelledOperationException(e);
-//				} else if(t instanceof CancelledOperationException) {
-//					throw (CancelledOperationException) t;
-//				}
-//				t = t.getCause();
-//			}
-//			// Rethrow exception as is.
-//			throw e;
-//		}
-//	}
-//
-//	@Override
-//	public SignatureValue signDigest(Digest digest, SignatureAlgorithm signatureAlgorithm, DSSPrivateKeyEntry keyEntry)
-//			throws DSSException {
-//		try {
-//			setSignatureCard();
-//			return adapted.signDigest(digest, signatureAlgorithm, keyEntry);
-//		} catch(final Exception e) {
-//			Throwable t = e;
-//			while(t != null) {
-//				if((t instanceof CancelledException) ||
-//						(t instanceof TimeoutException)) {
-//					throw new CancelledOperationException(e);
-//				} else if(t instanceof CancelledOperationException) {
-//					throw (CancelledOperationException) t;
-//				}
-//				t = t.getCause();
-//			}
-//			// Rethrow exception as is.
-//			throw e;
-//		}
-//	}
+	@Override
+	public SignatureValue sign(ToBeSigned toBeSigned, SignatureAlgorithm signatureAlgorithm,
+			DSSPrivateKeyEntry keyEntry) throws DSSException {
+		try {
+			setSignatureCard();
+			return adapted.sign(toBeSigned, signatureAlgorithm, keyEntry);
+		} catch(final Exception e) {
+			Throwable t = e;
+			while(t != null) {
+				if((t instanceof CancelledException) ||
+						(t instanceof TimeoutException)) {
+					throw new CancelledOperationException(e);
+				} else if(t instanceof CancelledOperationException) {
+					throw (CancelledOperationException) t;
+				}
+				t = t.getCause();
+			}
+			// Rethrow exception as is.
+			throw e;
+		}
+	}
+
+	@Override
+	public SignatureValue signDigest(Digest digest, DSSPrivateKeyEntry keyEntry) throws DSSException {
+		try {
+			setSignatureCard();
+			return adapted.signDigest(digest, keyEntry);
+		} catch(final Exception e) {
+			Throwable t = e;
+			while(t != null) {
+				if((t instanceof CancelledException) ||
+						(t instanceof TimeoutException)) {
+					throw new CancelledOperationException(e);
+				} else if(t instanceof CancelledOperationException) {
+					throw (CancelledOperationException) t;
+				}
+				t = t.getCause();
+			}
+			// Rethrow exception as is.
+			throw e;
+		}
+	}
+
+	@Override
+	public SignatureValue signDigest(Digest digest, MaskGenerationFunction mgf, DSSPrivateKeyEntry keyEntry)
+			throws DSSException {
+		try {
+			setSignatureCard();
+			return adapted.signDigest(digest, mgf, keyEntry);
+		} catch(final Exception e) {
+			Throwable t = e;
+			while(t != null) {
+				if((t instanceof CancelledException) ||
+						(t instanceof TimeoutException)) {
+					throw new CancelledOperationException(e);
+				} else if(t instanceof CancelledOperationException) {
+					throw (CancelledOperationException) t;
+				}
+				t = t.getCause();
+			}
+			// Rethrow exception as is.
+			throw e;
+		}
+	}
+
+	@Override
+	public SignatureValue signDigest(Digest digest, SignatureAlgorithm signatureAlgorithm, DSSPrivateKeyEntry keyEntry)
+			throws DSSException {
+		try {
+			setSignatureCard();
+			return adapted.signDigest(digest, signatureAlgorithm, keyEntry);
+		} catch(final Exception e) {
+			Throwable t = e;
+			while(t != null) {
+				if((t instanceof CancelledException) ||
+						(t instanceof TimeoutException)) {
+					throw new CancelledOperationException(e);
+				} else if(t instanceof CancelledOperationException) {
+					throw (CancelledOperationException) t;
+				}
+				t = t.getCause();
+			}
+			// Rethrow exception as is.
+			throw e;
+		}
+	}
 }
