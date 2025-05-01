@@ -109,6 +109,7 @@ public class MOCCASignatureTokenConnectionAdapter implements SignatureTokenConne
 	}
 	
 	public List<DSSPrivateKeyEntry> getKeys() throws DSSException {
+		/*
 		try {
 			setSignatureCard();
 			return adapted.getKeys();
@@ -126,6 +127,8 @@ public class MOCCASignatureTokenConnectionAdapter implements SignatureTokenConne
 			// Rethrow exception as is.
 			throw e;
 		}
+		*/
+		throw new UnsupportedOperationException("DSS no longer distributes MOCCA implementation, had to remove it here.");
 	}
 
 	@Deprecated
@@ -136,6 +139,7 @@ public class MOCCASignatureTokenConnectionAdapter implements SignatureTokenConne
 	@Override
 	public SignatureValue sign(ToBeSigned toBeSigned, DigestAlgorithm digestAlgorithm, MaskGenerationFunction mgf,
 			DSSPrivateKeyEntry keyEntry) throws DSSException {
+		/*
 		try {
 			setSignatureCard();
 			return adapted.sign(toBeSigned, digestAlgorithm, mgf,keyEntry);
@@ -153,6 +157,8 @@ public class MOCCASignatureTokenConnectionAdapter implements SignatureTokenConne
 			// Rethrow exception as is.
 			throw e;
 		}
+		*/
+		throw new UnsupportedOperationException("DSS no longer distributes MOCCA implementation, had to remove it here.");
 	}
 
 	@Override
