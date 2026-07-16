@@ -118,7 +118,7 @@ The Spring Boot server preserves the endpoints required by existing signing clie
 - `POST /rest/sign`
 - `POST /rest/logout`
 
-The compatibility plugin now lives inside `nexu-spring-boot-server`; it is no longer a separate Maven module. Legacy requests are not logged with complete payloads, hashes, challenges or signing material.
+The compatibility plugin is compiled directly into `nexu-app`; it is no longer a separate Maven artifact. Legacy requests are not logged with complete payloads, hashes, challenges or signing material.
 
 ## Smart-card drivers and middleware
 
@@ -148,9 +148,9 @@ Vendor-specific PKCS#11 libraries remain separate, licensed software and are nev
 
 ## JavaFX decision
 
-JavaFX remains the UI toolkit for NexU because the application needs a small trusted local certificate/PIN interface, system-tray lifecycle and native desktop packaging. JavaFX is restricted to `nexu-app`; core, drivers and the local server remain headless.
+JavaFX remains the UI toolkit because NexU needs a small trusted local certificate/PIN interface, system-tray lifecycle and native desktop packaging. The operator executable now uses JavaFX 21.0.11 on Java 17.
 
-The current JavaFX 11.0.2 dependency is transitional. After the remaining Java 11 modules are consolidated onto the Java 17+ toolchain, the modern reactor will move to the maintained JavaFX 21 line. Replacing JavaFX with Electron would add a browser runtime, while moving PIN/certificate selection to an ordinary web page would weaken the trusted local boundary.
+The protocol and signing engine remain usable headlessly; UI classes that still physically reside under the consolidated core source tree will move into `nexu-app` without creating another Maven module. Replacing JavaFX with Electron would add a browser runtime, while moving PIN or certificate selection to an ordinary web page would weaken the trusted local boundary.
 
 ## Removed and deprecated components
 
