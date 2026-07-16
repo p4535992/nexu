@@ -17,11 +17,13 @@
 
     <!--
       This reactor contains only modules that contribute to the modern local
-      agent. Historical HTTPS assembly and the unused public object model remain
-      in the repository temporarily, but are intentionally outside this build.
+      agent. The executable module keeps the historical name nexu-app.
+
+      Historical HTTPS assembly and the unused public object model remain in
+      the repository temporarily, but are intentionally outside this build.
 
       The next consolidation phase will reduce these transitional modules to:
-      core, card-drivers, local-server, desktop-app and distribution.
+      core, card-drivers, local-server, nexu-app and distribution.
     -->
     <modules>
         <module>nexu-api</module>
@@ -32,8 +34,7 @@
         <module>nexu-rest-plugin</module>
         <module>nexu-multi-user-support</module>
         <module>nexu-windows-keystore-plugin</module>
-        <module>nexu-app</module>
         <module>nexu-spring-boot-server</module>
-        <module>nexu-modern-app</module>
+        <module>nexu-app</module>
     </modules>
 </project>
