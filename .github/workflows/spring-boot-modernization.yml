@@ -1,4 +1,4 @@
-name: Spring Boot modernization
+name: Build NexU
 
 on:
   push:
@@ -7,15 +7,14 @@ on:
   pull_request:
     paths:
       - 'pom.xml'
-      - 'pom-modernization.xml'
+      - 'nexu-core/**'
+      - 'nexu-app/**'
       - 'nexu-api/**'
       - 'nexu-model/**'
-      - 'nexu-core/**'
+      - 'nexu-util/**'
       - 'nexu-standalone/**'
-      - 'nexu-rest-plugin/**'
-      - 'nexu-app/**'
       - 'nexu-spring-boot-server/**'
-      - 'nexu-modern-app/**'
+      - 'nexu-windows-keystore-plugin/**'
       - '.github/workflows/spring-boot-modernization.yml'
   workflow_dispatch:
 
@@ -23,7 +22,7 @@ permissions:
   contents: read
 
 jobs:
-  build-modern-application:
+  build-application:
     runs-on: ubuntu-latest
     timeout-minutes: 40
 
@@ -31,119 +30,86 @@ jobs:
       - name: Check out source
         uses: actions/checkout@v4
 
-      - name: Package source snapshot
-        shell: bash
-        run: |
-          git ls-files -z -- \
-            '*.java' '*.xml' '*.properties' '*.yml' '*.yaml' \
-            '*.md' '*.js' '*.fxml' '*.css' '*.iss' '*.bat' '*.sh' \
-            | tar --null --files-from=- -czf source-snapshot.tar.gz
-
-      - name: Upload source snapshot
-        uses: actions/upload-artifact@v4
-        with:
-          name: nexu-source-snapshot
-          path: source-snapshot.tar.gz
-          if-no-files-found: error
-          retention-days: 7
-
-      - name: Set up Java 11 and Java 17 toolchains
+      - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: |
-            11
-            17
-          mvn-toolchain-id: |
-            temurin_11
-            temurin_17
+          java-version: '17'
           cache: maven
 
-      - name: Show Java and Maven toolchains
-        shell: bash
+      - name: Show Java and Maven versions
         run: |
           java -version
           mvn --version
-          cat "$HOME/.m2/toolchains.xml"
 
-      - name: Install legacy parent POM
-        shell: bash
-        run: |
-          mvn --batch-mode --errors \
-            -N \
-            -f pom.xml \
-            -Dmaven.test.skip=true \
-            install > maven-parent-install.log 2>&1
-
-      - name: Build executable modern application
+      - name: Compile consolidated reactor
         shell: bash
         run: |
           set +e
-          mvn --batch-mode --errors \
-            -f pom-modernization.xml \
-            -pl nexu-modern-app \
-            -am \
-            -Dnexu.app.shade.phase=none \
-            -Dmaven.test.skip=true \
-            install > maven-build.log 2>&1
+          mvn --batch-mode --errors clean install \
+            -Dmaven.test.skip=true > maven-build.log 2>&1
           status=$?
           if [ "$status" -ne 0 ]; then
-            echo "Maven reactor build failed with exit code $status"
-            tail -n 160 maven-build.log
+            tail -n 220 maven-build.log
           fi
           exit "$status"
 
-      - name: Test Spring Boot adapter
+      - name: Test modern application protocol
         shell: bash
         run: |
           set +e
+          # nexu-core is already installed by the preceding step. Running only
+          # nexu-app tests avoids reactivating legacy DSS 5-era core tests while
+          # still executing the aggregated Spring Boot protocol test suite.
           mvn --batch-mode --errors \
-            -f pom-modernization.xml \
-            -pl nexu-spring-boot-server \
-            test > maven-test.log 2>&1
+            -pl nexu-app test > maven-test.log 2>&1
           status=$?
           if [ "$status" -ne 0 ]; then
-            echo "Spring Boot adapter tests failed with exit code $status"
-            tail -n 160 maven-test.log
+            tail -n 220 maven-test.log
           fi
           exit "$status"
 
-      - name: Verify executable JAR
+      - name: Verify two-module executable JAR
         shell: bash
         run: |
-          JAR=nexu-modern-app/target/nexu-modern.jar
+          JAR=nexu-app/target/nexu-app.jar
           test -f "$JAR"
-          unzip -p "$JAR" META-INF/MANIFEST.MF | tee nexu-modern-manifest.txt
-          grep -q 'Start-Class: lu.nowina.nexu.NexuLauncher' nexu-modern-manifest.txt
-          jar tf "$JAR" | grep -q 'BOOT-INF/lib/nexu-spring-boot-server-'
+          unzip -p "$JAR" META-INF/MANIFEST.MF | tee nexu-app-manifest.txt
+          grep -q 'Start-Class: lu.nowina.nexu.NexuLauncher' nexu-app-manifest.txt
+          jar tf "$JAR" | grep -q 'BOOT-INF/lib/nexu-core-'
           jar tf "$JAR" | grep -q 'BOOT-INF/classes/nexu-config.properties'
+          jar tf "$JAR" | grep -q 'BOOT-INF/lib/javafx-graphics-21.0.11-linux.jar'
+          jar tf "$JAR" | grep -q 'BOOT-INF/lib/javafx-controls-21.0.11-linux.jar'
+          ! jar tf "$JAR" | grep -q 'BOOT-INF/lib/nexu-api-'
+          ! jar tf "$JAR" | grep -q 'BOOT-INF/lib/nexu-model-'
+          ! jar tf "$JAR" | grep -q 'BOOT-INF/lib/nexu-util-'
+          ! jar tf "$JAR" | grep -q 'BOOT-INF/lib/nexu-standalone-'
+          ! jar tf "$JAR" | grep -q 'BOOT-INF/lib/nexu-spring-boot-server-'
+          ! jar tf "$JAR" | grep -q 'BOOT-INF/lib/nexu-windows-keystore-plugin-'
+          ! jar tf "$JAR" | grep -q 'BOOT-INF/lib/javafx-.*-11.0.2'
 
-      - name: Record application dependency graph
-        shell: bash
+      - name: Record dependency graph
         run: |
-          mvn --batch-mode \
-            -f pom-modernization.xml \
-            -pl nexu-modern-app \
-            dependency:tree > maven-dependency-tree.log 2>&1
+          mvn --batch-mode -pl nexu-app dependency:tree \
+            > maven-dependency-tree.log 2>&1
 
       - name: Upload executable application
         uses: actions/upload-artifact@v4
         with:
-          name: nexu-modern-application
-          path: nexu-modern-app/target/nexu-modern.jar
+          name: nexu-application
+          path: nexu-app/target/nexu-app.jar
           if-no-files-found: error
           retention-days: 7
 
-      - name: Upload Maven logs
+      - name: Upload build diagnostics
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: spring-boot-maven-logs
+          name: nexu-build-logs
           path: |
-            maven-parent-install.log
             maven-build.log
             maven-test.log
             maven-dependency-tree.log
-            nexu-modern-manifest.txt
+            nexu-app-manifest.txt
           if-no-files-found: warn
           retention-days: 7

@@ -3,8 +3,8 @@ set -euo pipefail
 
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 PROJECT_ROOT=$(cd -- "$SCRIPT_DIR/../../.." && pwd)
-JAR_PATH=${1:-"$PROJECT_ROOT/nexu-modern-app/target/nexu-modern.jar"}
-DESTINATION=${2:-"$PROJECT_ROOT/nexu-modern-app/target/jpackage"}
+JAR_PATH=${1:-"$PROJECT_ROOT/nexu-app/target/nexu-app.jar"}
+DESTINATION=${2:-"$PROJECT_ROOT/nexu-app/target/jpackage"}
 APP_VERSION=${3:-"1.24.0"}
 APP_NAME=NexU
 MODULES=$(tr -d '\r\n' < "$SCRIPT_DIR/modules.txt")
@@ -20,7 +20,7 @@ ARCHIVE="$DESTINATION/nexu-${APP_VERSION}-linux-$(uname -m)-portable.tar.gz"
 
 rm -rf "$DESTINATION"
 mkdir -p "$INPUT_DIR"
-cp "$JAR_PATH" "$INPUT_DIR/nexu-modern.jar"
+cp "$JAR_PATH" "$INPUT_DIR/nexu-app.jar"
 
 jpackage \
   --type app-image \
@@ -30,18 +30,38 @@ jpackage \
   --description "Local smart-card signing agent" \
   --dest "$DESTINATION" \
   --input "$INPUT_DIR" \
-  --main-jar nexu-modern.jar \
+  --main-jar nexu-app.jar \
   --add-modules "$MODULES" \
   --java-options '--add-exports=jdk.crypto.cryptoki/sun.security.pkcs11.wrapper=ALL-UNNAMED' \
   --java-options '--add-opens=jdk.crypto.cryptoki/sun.security.pkcs11=ALL-UNNAMED'
 
 cp "$PROJECT_ROOT/LICENSE" "$APP_IMAGE/LICENSE"
 cp "$PROJECT_ROOT/THIRD_PARTY_NOTICES.md" "$APP_IMAGE/THIRD_PARTY_NOTICES.md"
-cp "$PROJECT_ROOT/nexu-modern-app/src/main/resources/nexu-config.properties" \
+cp "$PROJECT_ROOT/nexu-app/src/main/resources/nexu-config.properties" \
   "$APP_IMAGE/nexu-config.properties"
 cp -R "$PROJECT_ROOT/licenses" "$APP_IMAGE/licenses"
 
-rm -rf "$INPUT_DIR"
 tar -C "$DESTINATION" -czf "$ARCHIVE" "$APP_NAME"
 
+# Build an operator-friendly Debian package from the already verified app image.
+# The package contains the application and its private Java runtime; PC/SC and
+# reader middleware remain operating-system dependencies.
+jpackage \
+  --type deb \
+  --name "$APP_NAME" \
+  --app-version "$APP_VERSION" \
+  --vendor "NexU Community" \
+  --description "Local smart-card signing agent" \
+  --dest "$DESTINATION" \
+  --app-image "$APP_IMAGE" \
+  --license-file "$PROJECT_ROOT/LICENSE" \
+  --linux-package-name nexu \
+  --linux-deb-maintainer "NexU Community" \
+  --linux-menu-group "Utility" \
+  --linux-app-category "Utility" \
+  --linux-shortcut
+
+rm -rf "$INPUT_DIR"
+
 printf 'Application image: %s\nPortable archive: %s\n' "$APP_IMAGE" "$ARCHIVE"
+find "$DESTINATION" -maxdepth 1 -type f -name '*.deb' -printf 'Debian installer: %p\n'
