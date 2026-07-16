@@ -83,6 +83,7 @@ jobs:
             -f pom-modernization.xml \
             -pl nexu-modern-app \
             -am \
+            -Dnexu.app.shade.phase=none \
             -Dmaven.test.skip=true \
             install > maven-build.log 2>&1
           status=$?
