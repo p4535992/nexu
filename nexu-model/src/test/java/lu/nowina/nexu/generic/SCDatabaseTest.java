@@ -18,7 +18,7 @@ import javax.xml.bind.JAXBContext;
 import org.junit.Assert;
 import org.junit.Test;
 
-import eu.europa.esig.dss.DigestAlgorithm;
+import eu.europa.esig.dss.enumerations.DigestAlgorithm;
 import lu.nowina.nexu.api.EnvironmentInfo;
 import lu.nowina.nexu.api.ScAPI;
 
