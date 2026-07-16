@@ -108,10 +108,10 @@ for properties_path in (
 ):
     lines = [
         line
-        for line in properties_path.read_text(encoding="utf-8").splitlines()
+        for line in properties_path.read_text(encoding="iso-8859-1").splitlines()
         if not line.startswith("api.mocca=")
     ]
-    properties_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    properties_path.write_text("\n".join(lines) + "\n", encoding="iso-8859-1")
 
 doc_path = Path("docs/spring-boot-modernization.md")
 doc = doc_path.read_text(encoding="utf-8")
