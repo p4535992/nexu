@@ -53,16 +53,12 @@ final class NexuHttpController {
 
     @GetMapping(path = "/nexu.js")
     ResponseEntity<String> nexuJavascript(final HttpServletRequest request) throws IOException {
-        String script = readClasspathText("/nexu.ftl.js");
-        script = script.replace("${scheme}", request.getScheme())
-                .replace("${nexu_hostname}", api.getAppConfig().getNexuHostname())
-                .replace("${nexu_port}", Integer.toString(request.getLocalPort()))
-                .replace("${close_token}", Boolean.toString(api.getAppConfig().getCloseToken()));
+        return javascriptResponse(renderJavascript("/nexu.ftl.js", request));
+    }
 
-        return ResponseEntity.ok()
-                .contentType(JAVASCRIPT)
-                .cacheControl(CacheControl.noStore())
-                .body(script);
+    @GetMapping(path = "/nexu-v2.js")
+    ResponseEntity<String> nexuV2Javascript(final HttpServletRequest request) throws IOException {
+        return javascriptResponse(renderJavascript("/nexu-v2.ftl.js", request));
     }
 
     @GetMapping(path = "/favicon.ico")
@@ -112,6 +108,25 @@ final class NexuHttpController {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(GsonHelper.toJson(execution));
+    }
+
+    private String renderJavascript(
+            final String resource,
+            final HttpServletRequest request) throws IOException {
+
+        String script = readClasspathText(resource);
+        script = script.replace("${scheme}", request.getScheme())
+                .replace("${nexu_hostname}", api.getAppConfig().getNexuHostname())
+                .replace("${nexu_port}", Integer.toString(request.getLocalPort()))
+                .replace("${close_token}", Boolean.toString(api.getAppConfig().getCloseToken()));
+        return script;
+    }
+
+    private static ResponseEntity<String> javascriptResponse(final String script) {
+        return ResponseEntity.ok()
+                .contentType(JAVASCRIPT)
+                .cacheControl(CacheControl.noStore())
+                .body(script);
     }
 
     private static String resolvePluginTarget(
