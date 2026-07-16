@@ -17,45 +17,57 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import eu.europa.esig.dss.DSSException;
-import eu.europa.esig.dss.DigestAlgorithm;
-import eu.europa.esig.dss.MaskGenerationFunction;
-import eu.europa.esig.dss.SignatureAlgorithm;
-import eu.europa.esig.dss.SignatureValue;
-import eu.europa.esig.dss.ToBeSigned;
+import eu.europa.esig.dss.enumerations.DigestAlgorithm;
+import eu.europa.esig.dss.enumerations.SignatureAlgorithm;
+import eu.europa.esig.dss.model.DSSException;
+import eu.europa.esig.dss.model.Digest;
+import eu.europa.esig.dss.model.SignatureValue;
+import eu.europa.esig.dss.model.ToBeSigned;
 import eu.europa.esig.dss.token.DSSPrivateKeyEntry;
 import eu.europa.esig.dss.token.SignatureTokenConnection;
 
 public class MockSignatureTokenConnection implements SignatureTokenConnection {
 
-	private List<DSSPrivateKeyEntry> keys;
+    private final List<DSSPrivateKeyEntry> keys;
 
-	public MockSignatureTokenConnection(DSSPrivateKeyEntry... keys) {
-		if (keys == null || keys.length == 0) {
-			this.keys = Collections.emptyList();
-		} else {
-			this.keys = Arrays.asList(keys);
-		}
-	}
+    public MockSignatureTokenConnection(DSSPrivateKeyEntry... keys) {
+        if (keys == null || keys.length == 0) {
+            this.keys = Collections.emptyList();
+        } else {
+            this.keys = Arrays.asList(keys);
+        }
+    }
 
-	@Override
-	public void close() {
-	}
+    @Override
+    public void close() {
+        // nothing to close
+    }
 
-	@Override
-	public List<DSSPrivateKeyEntry> getKeys() throws DSSException {
-		return keys;
-	}
+    @Override
+    public List<DSSPrivateKeyEntry> getKeys() throws DSSException {
+        return keys;
+    }
 
-	@Override
-	public SignatureValue sign(ToBeSigned toBeSigned, DigestAlgorithm digestAlgorithm, DSSPrivateKeyEntry keyEntry) throws DSSException {
-		return new SignatureValue(SignatureAlgorithm.RSA_SHA256, "value".getBytes());
-	}
+    @Override
+    public SignatureValue sign(ToBeSigned toBeSigned, DigestAlgorithm digestAlgorithm, DSSPrivateKeyEntry keyEntry)
+            throws DSSException {
+        return new SignatureValue(SignatureAlgorithm.RSA_SHA256, "value".getBytes());
+    }
 
-	@Override
-	public SignatureValue sign(ToBeSigned toBeSigned, DigestAlgorithm digestAlgorithm, MaskGenerationFunction mgf,
-			DSSPrivateKeyEntry keyEntry) throws DSSException {
-		return new SignatureValue(SignatureAlgorithm.RSA_SSA_PSS_SHA256_MGF1, "value".getBytes());
-	}
+    @Override
+    public SignatureValue sign(ToBeSigned toBeSigned, SignatureAlgorithm signatureAlgorithm,
+            DSSPrivateKeyEntry keyEntry) throws DSSException {
+        return new SignatureValue(signatureAlgorithm, "value".getBytes());
+    }
 
+    @Override
+    public SignatureValue signDigest(Digest digest, DSSPrivateKeyEntry keyEntry) throws DSSException {
+        return new SignatureValue(SignatureAlgorithm.RSA_SHA256, "value".getBytes());
+    }
+
+    @Override
+    public SignatureValue signDigest(Digest digest, SignatureAlgorithm signatureAlgorithm,
+            DSSPrivateKeyEntry keyEntry) throws DSSException {
+        return new SignatureValue(signatureAlgorithm, "value".getBytes());
+    }
 }
