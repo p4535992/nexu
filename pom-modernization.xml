@@ -15,6 +15,14 @@
     <packaging>pom</packaging>
     <name>NexU Spring Boot modernization reactor</name>
 
+    <!--
+      This reactor contains only modules that contribute to the modern local
+      agent. Historical HTTPS assembly and the unused public object model remain
+      in the repository temporarily, but are intentionally outside this build.
+
+      The next consolidation phase will reduce these transitional modules to:
+      core, card-drivers, local-server, desktop-app and distribution.
+    -->
     <modules>
         <module>nexu-api</module>
         <module>nexu-model</module>
@@ -22,10 +30,8 @@
         <module>nexu-core</module>
         <module>nexu-standalone</module>
         <module>nexu-rest-plugin</module>
-        <module>nexu-https-plugin</module>
         <module>nexu-multi-user-support</module>
         <module>nexu-windows-keystore-plugin</module>
-        <module>nexu-public-object-model</module>
         <module>nexu-app</module>
         <module>nexu-spring-boot-server</module>
         <module>nexu-modern-app</module>
