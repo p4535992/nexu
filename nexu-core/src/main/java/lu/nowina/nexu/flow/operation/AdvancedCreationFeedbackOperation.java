@@ -67,8 +67,7 @@ public class AdvancedCreationFeedbackOperation extends AbstractCompositeOperatio
             feedback.setSelectedCard((DetectedCard) this.map.get(TokenOperationResultKey.SELECTED_PRODUCT));
 
             if ((feedback.getSelectedCard() != null) && (feedback.getSelectedAPI() != null) &&
-                    ((feedback.getSelectedAPI() == ScAPI.MOCCA) || (feedback.getSelectedAPI() == ScAPI.MSCAPI) ||
-                            (feedback.getApiParameter() != null))) {
+                    ((feedback.getSelectedAPI() == ScAPI.MSCAPI) || (feedback.getApiParameter() != null))) {
                 final OperationResult<Feedback> result =
                         this.operationFactory.getOperation(UIOperation.class, "/fxml/store-result.fxml",
                                 new Object[]{feedback, this.api.getAppConfig().getServerUrl(), this.api.getAppConfig().getApplicationVersion(),

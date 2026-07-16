@@ -12,5 +12,5 @@ This branch introduces the NexU modernization incrementally, preserving the exis
 ## Non-goals of the first step
 
 - No immediate DSS major-version upgrade.
-- No rewrite of PIN, certificate selection, PKCS#11, MSCAPI, or MOCCA flows.
+- MOCCA is removed; PKCS#11 and MSCAPI remain the supported signing backends.
 - No change to the JavaScript API consumed by DSS demonstrations.

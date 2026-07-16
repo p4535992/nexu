@@ -20,13 +20,6 @@
 			<version>${project.version}</version>
 		</dependency>
 
-		<!-- unisystems change -->
-		<!-- MOD 4535992
-		<dependency>
-			<groupId>lu.nowina</groupId>
-			<artifactId>nexu_for_mocca</artifactId>
-		</dependency>  
-		-->
 
 		<!-- MOD 4535992 -->
 		
