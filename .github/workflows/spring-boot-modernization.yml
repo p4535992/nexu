@@ -15,7 +15,6 @@ on:
       - 'nexu-rest-plugin/**'
       - 'nexu-app/**'
       - 'nexu-spring-boot-server/**'
-      - 'nexu-modern-app/**'
       - '.github/workflows/spring-boot-modernization.yml'
   workflow_dispatch:
 
@@ -75,15 +74,14 @@ jobs:
             -Dmaven.test.skip=true \
             install > maven-parent-install.log 2>&1
 
-      - name: Build executable modern application
+      - name: Build executable application
         shell: bash
         run: |
           set +e
           mvn --batch-mode --errors \
             -f pom-modernization.xml \
-            -pl nexu-modern-app \
+            -pl nexu-app \
             -am \
-            -Dnexu.app.shade.phase=none \
             -Dmaven.test.skip=true \
             install > maven-build.log 2>&1
           status=$?
@@ -111,10 +109,10 @@ jobs:
       - name: Verify executable JAR
         shell: bash
         run: |
-          JAR=nexu-modern-app/target/nexu-modern.jar
+          JAR=nexu-app/target/nexu-app.jar
           test -f "$JAR"
-          unzip -p "$JAR" META-INF/MANIFEST.MF | tee nexu-modern-manifest.txt
-          grep -q 'Start-Class: lu.nowina.nexu.NexuLauncher' nexu-modern-manifest.txt
+          unzip -p "$JAR" META-INF/MANIFEST.MF | tee nexu-app-manifest.txt
+          grep -q 'Start-Class: lu.nowina.nexu.NexuLauncher' nexu-app-manifest.txt
           jar tf "$JAR" | grep -q 'BOOT-INF/lib/nexu-spring-boot-server-'
           jar tf "$JAR" | grep -q 'BOOT-INF/classes/nexu-config.properties'
 
@@ -123,14 +121,14 @@ jobs:
         run: |
           mvn --batch-mode \
             -f pom-modernization.xml \
-            -pl nexu-modern-app \
+            -pl nexu-app \
             dependency:tree > maven-dependency-tree.log 2>&1
 
       - name: Upload executable application
         uses: actions/upload-artifact@v4
         with:
-          name: nexu-modern-application
-          path: nexu-modern-app/target/nexu-modern.jar
+          name: nexu-application
+          path: nexu-app/target/nexu-app.jar
           if-no-files-found: error
           retention-days: 7
 
@@ -144,6 +142,6 @@ jobs:
             maven-build.log
             maven-test.log
             maven-dependency-tree.log
-            nexu-modern-manifest.txt
+            nexu-app-manifest.txt
           if-no-files-found: warn
           retention-days: 7
