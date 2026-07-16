@@ -1,0 +1,45 @@
+name: Align two-module README
+
+on:
+  push:
+    branches:
+      - spring-boot-modernization-2
+    paths:
+      - '.github/workflows/align-two-module-readme.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: spring-boot-modernization-2
+          fetch-depth: 1
+      - name: Update documentation
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('README.md')
+          text = path.read_text(encoding='utf-8')
+          old = "The compatibility plugin now lives inside `nexu-spring-boot-server`; it is no longer a separate Maven module. Legacy requests are not logged with complete payloads, hashes, challenges or signing material."
+          new = "The compatibility plugin is compiled directly into `nexu-app`; it is no longer a separate Maven artifact. Legacy requests are not logged with complete payloads, hashes, challenges or signing material."
+          if old not in text:
+              raise SystemExit('legacy compatibility paragraph not found')
+          text = text.replace(old, new, 1)
+          old = "JavaFX remains the UI toolkit for NexU because the application needs a small trusted local certificate/PIN interface, system-tray lifecycle and native desktop packaging. JavaFX is restricted to `nexu-app`; core, drivers and the local server remain headless.\n\nThe current JavaFX 11.0.2 dependency is transitional. After the remaining Java 11 modules are consolidated onto the Java 17+ toolchain, the modern reactor will move to the maintained JavaFX 21 line. Replacing JavaFX with Electron would add a browser runtime, while moving PIN/certificate selection to an ordinary web page would weaken the trusted local boundary."
+          new = "JavaFX remains the UI toolkit because NexU needs a small trusted local certificate/PIN interface, system-tray lifecycle and native desktop packaging. The operator executable now uses JavaFX 21.0.11 on Java 17.\n\nThe protocol and signing engine remain usable headlessly; UI classes that still physically reside under the consolidated core source tree will move into `nexu-app` without creating another Maven module. Replacing JavaFX with Electron would add a browser runtime, while moving PIN or certificate selection to an ordinary web page would weaken the trusted local boundary."
+          if old not in text:
+              raise SystemExit('JavaFX decision paragraph not found')
+          path.write_text(text.replace(old, new, 1), encoding='utf-8')
+          PY
+      - name: Commit and remove one-time workflow
+        run: |
+          rm .github/workflows/align-two-module-readme.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A README.md .github/workflows/align-two-module-readme.yml
+          git commit -m 'Align README with consolidated JavaFX 21 build'
+          git push origin HEAD:spring-boot-modernization-2
