@@ -1,11 +1,14 @@
 package lu.nowina.nexu.generic;
 
-import java.io.ByteArrayInputStream;
+import static sun.security.pkcs11.wrapper.PKCS11Constants.CKF_OS_LOCKING_OK;
+
 import java.io.File;
+import java.lang.reflect.Field;
 import java.security.AuthProvider;
 import java.security.Provider;
 import java.security.Security;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import javax.security.auth.login.LoginException;
@@ -13,9 +16,10 @@ import javax.security.auth.login.LoginException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import eu.europa.esig.dss.model.DSSException;
 import eu.europa.esig.dss.enumerations.DigestAlgorithm;
-import eu.europa.esig.dss.enumerations.MaskGenerationFunction;
+import eu.europa.esig.dss.enumerations.SignatureAlgorithm;
+import eu.europa.esig.dss.model.DSSException;
+import eu.europa.esig.dss.model.Digest;
 import eu.europa.esig.dss.model.SignatureValue;
 import eu.europa.esig.dss.model.ToBeSigned;
 import eu.europa.esig.dss.token.DSSPrivateKeyEntry;
@@ -23,192 +27,161 @@ import eu.europa.esig.dss.token.PasswordInputCallback;
 import eu.europa.esig.dss.token.Pkcs11SignatureToken;
 import eu.europa.esig.dss.token.SunPKCS11Initializer;
 import lu.nowina.nexu.CancelledOperationException;
-import java.io.IOException;
-import java.lang.reflect.Field;
-import java.util.Map;
-import lu.nowina.nexu.CancelledOperationException;
 import sun.security.pkcs11.SunPKCS11;
 import sun.security.pkcs11.wrapper.CK_C_INITIALIZE_ARGS;
 import sun.security.pkcs11.wrapper.PKCS11;
 import sun.security.pkcs11.wrapper.PKCS11Constants;
-import static sun.security.pkcs11.wrapper.PKCS11Constants.CKF_OS_LOCKING_OK;
-import sun.security.pkcs11.wrapper.PKCS11Exception;
 
 /**
- * This adapter class allows to manage {@link CancelledOperationException}.
+ * PKCS#11 token adapter that translates middleware cancellation errors into the
+ * NexU cancellation contract.
  *
  * @author Jean Lepropre (jean.lepropre@nowina.lu)
  */
+@SuppressWarnings("restriction")
 public class Pkcs11SignatureTokenAdapter extends Pkcs11SignatureToken {
 
-    private static final Logger logger = LoggerFactory.getLogger(Pkcs11SignatureTokenAdapter.class.getName());
+    private static final Logger LOG = LoggerFactory.getLogger(Pkcs11SignatureTokenAdapter.class);
 
     private Provider provider;
-
     private final int slotListIndex;
 
-    public Pkcs11SignatureTokenAdapter(final File pkcs11lib, final PasswordInputCallback callback, final int terminalIndex) {
-        super(pkcs11lib.getAbsolutePath(), callback, terminalIndex);
+    public Pkcs11SignatureTokenAdapter(final File pkcs11lib, final PasswordInputCallback callback,
+            final int terminalIndex) {
+        // A detected PC/SC terminal is mapped to the PKCS#11 slot-list index, as
+        // in the historical NexU implementation. A negative slot id disables the
+        // alternative slot-id selector in DSS.
+        super(pkcs11lib.getAbsolutePath(), callback, -1, terminalIndex, null);
         this.slotListIndex = terminalIndex;
-        logger.info("Lib " + pkcs11lib.getAbsolutePath());
+        LOG.info("Using PKCS#11 library {}", pkcs11lib.getAbsolutePath());
     }
 
     @Override
     public void close() {
-        if (this.provider != null) {
-            try {
-                if (this.provider instanceof AuthProvider) {
-                    ((AuthProvider) this.provider).logout();
-                }
-              
-                // MOD 4535992 https://github.com/nowina-solutions/nexu/pull/20/files
-                // MOD  Zhukov Andreas https://github.com/hello-earth-gh/nexu/commit/2e1925e8dfca1a5e696cc625dd0c4d721fb63ec7
-            	Class<?> sunPkcs11ProviderClass = (Class<?>) Class.forName("sun.security.pkcs11.SunPKCS11");
-            	
-            	if (this.provider instanceof SunPKCS11 || this.provider.getClass().equals(sunPkcs11ProviderClass)) {
-                    //
-                    // IN CASE WE WANT TO USE MORE THAN ONE TOKEN WITH PKCS#11,
-                    // WE NEED TO FINALIZE AND REINITIALIZE THE MODULE EVERY
-                    // TIME. THIS REQUIRES A SMALL HACK
-                    //
-                    CK_C_INITIALIZE_ARGS initArgs = new CK_C_INITIALIZE_ARGS();
-                    initArgs.flags = CKF_OS_LOCKING_OK;
-                    PKCS11 pkcs11 = PKCS11.getInstance(this.getPkcs11Path(), "C_GetFunctionList", initArgs, true);
-                    pkcs11.C_Finalize(PKCS11Constants.NULL_PTR);
+        if (provider == null) {
+            return;
+        }
 
-                    Field privateStaticField = PKCS11.class.getDeclaredField("moduleMap");
-                    privateStaticField.setAccessible(true);
-                    ((Map) privateStaticField.get(null)).remove(this.getPkcs11Path());
-                }
-                // END MOD 4535992
-                
-            } catch (final LoginException e) {
-                logger.error("LoginException on logout of '" + this.provider.getName() + "'", e);
-	        //} catch (IOException | PKCS11Exception | NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException | ClassNotFoundException e) {
-            } catch (Throwable e) {
-                logger.error("Exception finalizing '" + this.provider.getName() + "'", e);
-	        }
-            this.provider.clear();
+        try {
+            if (provider instanceof AuthProvider) {
+                ((AuthProvider) provider).logout();
+            }
+
+            // Some PKCS#11 middleware cannot be reopened in the same JVM unless
+            // the native module is finalized and removed from the JDK cache.
+            final Class<?> sunPkcs11ProviderClass = Class.forName("sun.security.pkcs11.SunPKCS11");
+            if (provider instanceof SunPKCS11 || provider.getClass().equals(sunPkcs11ProviderClass)) {
+                final CK_C_INITIALIZE_ARGS initArgs = new CK_C_INITIALIZE_ARGS();
+                initArgs.flags = CKF_OS_LOCKING_OK;
+                final PKCS11 pkcs11 = PKCS11.getInstance(getPkcs11Path(), "C_GetFunctionList", initArgs, true);
+                pkcs11.C_Finalize(PKCS11Constants.NULL_PTR);
+
+                final Field moduleMapField = PKCS11.class.getDeclaredField("moduleMap");
+                moduleMapField.setAccessible(true);
+                ((Map<?, ?>) moduleMapField.get(null)).remove(getPkcs11Path());
+            }
+        } catch (final LoginException e) {
+            LOG.error("Unable to log out from PKCS#11 provider '{}'", provider.getName(), e);
+        } catch (final Throwable e) {
+            // The cleanup uses JDK-internal APIs and is best effort. Failure must
+            // not keep the application from releasing the Java provider.
+            LOG.error("Unable to finalize PKCS#11 provider '{}'", provider.getName(), e);
+        } finally {
+            provider.clear();
             try {
-                Security.removeProvider(this.provider.getName());
+                Security.removeProvider(provider.getName());
             } catch (final SecurityException e) {
-                logger.error("Unable to remove provider '" + this.provider.getName() + "'", e);
+                LOG.error("Unable to remove PKCS#11 provider '{}'", provider.getName(), e);
             } finally {
-                this.provider = null;
+                provider = null;
             }
         }
     }
 
     @Override
-    @SuppressWarnings("restriction")
     protected Provider getProvider() {
-        if (this.provider == null) {
-            /*
-             * The smartCardNameIndex int is added at the end of the smartCard name in order to enable the successive
-             * loading of multiple pkcs11 libraries
-             */
-            String aPKCS11LibraryFileName = this.getPkcs11Path();
-            aPKCS11LibraryFileName = this.escapePath(aPKCS11LibraryFileName);
+        if (provider == null) {
+            String libraryPath = escapePath(getPkcs11Path());
+            final StringBuilder config = new StringBuilder();
+            config.append("name = SmartCard").append(UUID.randomUUID()).append('\n');
+            config.append("library = \"").append(libraryPath).append("\"").append('\n');
+            config.append("slotListIndex = ").append(slotListIndex);
 
-            final StringBuilder pkcs11Config = new StringBuilder();
-            pkcs11Config.append("name = SmartCard").append(UUID.randomUUID().toString()).append("\n");
-            pkcs11Config.append("library = \"").append(aPKCS11LibraryFileName).append("\"").append("\n");
-            pkcs11Config.append("slotListIndex = ").append(this.getSlotListIndex());
-
-            final String configString = pkcs11Config.toString();
-
-            logger.debug("PKCS11 Config : \n{}", configString);
-            // MOD 4535992
-            /*
-            try (ByteArrayInputStream confStream = new ByteArrayInputStream(configString.getBytes("ISO-8859-1"))) {
-                final sun.security.pkcs11.SunPKCS11 sunPKCS11 = new sun.security.pkcs11.SunPKCS11(confStream);
-                // we need to add the provider to be able to sign later
-                Security.addProvider(sunPKCS11);
-                this.provider = sunPKCS11;
-                return this.provider;
-            } catch (final Exception e) {
-                throw new DSSException("Unable to instantiate SunPKCS11", e);
-            }
-            */
-            /*
-            try (ByteArrayInputStream confStream = new ByteArrayInputStream(configString.getBytes("ISO-8859-1"))) {
-            	// resolve jdk17 problems
-                final sun.security.pkcs11.SunPKCS11 sunPKCS11 = new sun.security.pkcs11.SunPKCS11();
-                sunPKCS11.configure(configString);
-                // we need to add the provider to be able to sign later
-                Security.addProvider(sunPKCS11);
-                this.provider = sunPKCS11;
-                return this.provider;
-            } catch (final Exception e) {
-                logger.warn("Unable to instantiate SunPKCS11", e);
-            }
-            */
+            final String configString = config.toString();
+            LOG.debug("PKCS11 Config :\n{}", configString);
+            provider = SunPKCS11Initializer.getProvider(configString);
             if (provider == null) {
-            	//this.provider = new sun.security.pkcs11.SunPKCS11(configString);
-                this.provider = SunPKCS11Initializer.getProvider(configString);
+                throw new DSSException("Unable to create PKCS11 provider");
             }
-            // END MOD 4535992
-			if (provider == null) {
-				throw new DSSException("Unable to create PKCS11 provider");
-			}
-			// we need to add the provider to be able to sign later
-			Security.addProvider(provider);
-    		return provider;
-    		// END MOD 4535992
+            Security.addProvider(provider);
         }
-        return this.provider;
-    }
-
-    protected String escapePath(final String pathToEscape) {
-        if (pathToEscape != null) {
-            return pathToEscape.replace("\\", "\\\\");
-        } else {
-            return "";
-        }
-    }
-
-    protected int getSlotListIndex() {
-        return this.slotListIndex;
+        return provider;
     }
 
     @Override
     public List<DSSPrivateKeyEntry> getKeys() throws DSSException {
         try {
             return super.getKeys();
-        } catch (final Exception e) {
-            Throwable t = e;
-            while (t != null) {
-                if ("CKR_CANCEL".equals(t.getMessage()) || "CKR_FUNCTION_CANCELED".equals(t.getMessage())) {
-                    throw new CancelledOperationException(e);
-                } else if (t instanceof CancelledOperationException) {
-                    throw (CancelledOperationException) t;
-                }
-                t = t.getCause();
-            }
-            // Rethrow exception as is.
+        } catch (final RuntimeException e) {
+            rethrowIfCancelled(e);
             throw e;
         }
     }
 
     @Override
-    public SignatureValue sign(final ToBeSigned toBeSigned, final DigestAlgorithm digestAlgorithm, final MaskGenerationFunction mgf,
+    public SignatureValue sign(final ToBeSigned toBeSigned, final DigestAlgorithm digestAlgorithm,
             final DSSPrivateKeyEntry keyEntry) throws DSSException {
-
         try {
-            return super.sign(toBeSigned, digestAlgorithm, mgf, keyEntry);
-        } catch (final Exception e) {
-            Throwable t = e;
-            while (t != null) {
-                if ("CKR_CANCEL".equals(t.getMessage()) || "CKR_FUNCTION_CANCELED".equals(t.getMessage())) {
-                    throw new CancelledOperationException(e);
-                } else if (t instanceof CancelledOperationException) {
-                    throw (CancelledOperationException) t;
-                }
-                t = t.getCause();
-            }
-            // Rethrow exception as is.
+            return super.sign(toBeSigned, digestAlgorithm, keyEntry);
+        } catch (final RuntimeException e) {
+            rethrowIfCancelled(e);
             throw e;
         }
     }
 
+    @Override
+    public SignatureValue sign(final ToBeSigned toBeSigned, final SignatureAlgorithm signatureAlgorithm,
+            final DSSPrivateKeyEntry keyEntry) throws DSSException {
+        try {
+            return super.sign(toBeSigned, signatureAlgorithm, keyEntry);
+        } catch (final RuntimeException e) {
+            rethrowIfCancelled(e);
+            throw e;
+        }
+    }
+
+    @Override
+    public SignatureValue signDigest(final Digest digest, final DSSPrivateKeyEntry keyEntry) throws DSSException {
+        try {
+            return super.signDigest(digest, keyEntry);
+        } catch (final RuntimeException e) {
+            rethrowIfCancelled(e);
+            throw e;
+        }
+    }
+
+    @Override
+    public SignatureValue signDigest(final Digest digest, final SignatureAlgorithm signatureAlgorithm,
+            final DSSPrivateKeyEntry keyEntry) throws DSSException {
+        try {
+            return super.signDigest(digest, signatureAlgorithm, keyEntry);
+        } catch (final RuntimeException e) {
+            rethrowIfCancelled(e);
+            throw e;
+        }
+    }
+
+    private void rethrowIfCancelled(final Throwable error) {
+        Throwable current = error;
+        while (current != null) {
+            if (current instanceof CancelledOperationException) {
+                throw (CancelledOperationException) current;
+            }
+            if ("CKR_CANCEL".equals(current.getMessage())
+                    || "CKR_FUNCTION_CANCELED".equals(current.getMessage())) {
+                throw new CancelledOperationException(error);
+            }
+            current = current.getCause();
+        }
+    }
 }
