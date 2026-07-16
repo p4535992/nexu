@@ -7,6 +7,10 @@ on:
     paths:
       - '.github/workflows/spring-boot-modernization.yml'
 
+concurrency:
+  group: nexu-physical-source-cleanup
+  cancel-in-progress: true
+
 permissions:
   contents: write
 
@@ -30,256 +34,79 @@ jobs:
           cache: maven
 
       - name: Consolidate physical source tree
+        id: migrate
         shell: bash
         run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          import shutil
-          import xml.etree.ElementTree as ET
-
-          root = Path('.')
-
-          def merge_tree(source, target, excluded_prefixes=()):
-              source = Path(source)
-              target = Path(target)
-              if not source.exists():
-                  return
-              for item in sorted(source.rglob('*')):
-                  if not item.is_file():
-                      continue
-                  rel = item.relative_to(source)
-                  text = rel.as_posix()
-                  if any(text == prefix or text.startswith(prefix.rstrip('/') + '/') for prefix in excluded_prefixes):
-                      continue
-                  destination = target / rel
-                  destination.parent.mkdir(parents=True, exist_ok=True)
-                  if destination.exists():
-                      if destination.read_bytes() != item.read_bytes():
-                          print(f'Keeping modern destination over legacy file: {destination}')
-                      item.unlink()
-                  else:
-                      shutil.move(str(item), str(destination))
-
-          for module in ('nexu-api', 'nexu-model', 'nexu-util', 'nexu-windows-keystore-plugin'):
-              merge_tree(root / module / 'src/main/java', root / 'nexu-core/src/main/java')
-              merge_tree(root / module / 'src/main/resources', root / 'nexu-core/src/main/resources')
-              merge_tree(root / module / 'src/test/java', root / 'nexu-core/src/legacy-test/java')
-              merge_tree(root / module / 'src/test/resources', root / 'nexu-core/src/legacy-test/resources')
-
-          core_tests = root / 'nexu-core/src/test'
-          if core_tests.exists():
-              merge_tree(core_tests / 'java', root / 'nexu-core/src/legacy-test/java')
-              merge_tree(core_tests / 'resources', root / 'nexu-core/src/legacy-test/resources')
-              shutil.rmtree(core_tests, ignore_errors=True)
-
-          merge_tree(root / 'nexu-standalone/src/main/java', root / 'nexu-app/src/main/java',
-                     excluded_prefixes=('lu/nowina/nexu/jetty',))
-          merge_tree(root / 'nexu-standalone/src/main/resources', root / 'nexu-app/src/main/resources')
-          merge_tree(root / 'nexu-spring-boot-server/src/main/java', root / 'nexu-app/src/main/java')
-          merge_tree(root / 'nexu-spring-boot-server/src/main/resources', root / 'nexu-app/src/main/resources')
-          merge_tree(root / 'nexu-spring-boot-server/src/test/java', root / 'nexu-app/src/test/java')
-          merge_tree(root / 'nexu-spring-boot-server/src/test/resources', root / 'nexu-app/src/test/resources')
-          merge_tree(root / 'nexu-rest-plugin/src/main/java', root / 'nexu-app/src/main/java')
-          merge_tree(root / 'nexu-rest-plugin/src/main/resources', root / 'nexu-app/src/main/resources')
-
-          for directory in (
-              'nexu-api', 'nexu-model', 'nexu-util', 'nexu-standalone',
-              'nexu-spring-boot-server', 'nexu-windows-keystore-plugin',
-              'nexu-rest-plugin', 'nexu-https-plugin', 'nexu-multi-user-support',
-              'nexu-public-object-model', 'nexu-bundle', 'nexu-proxy'
-          ):
-              shutil.rmtree(root / directory, ignore_errors=True)
-
-          NS = {'m': 'http://maven.apache.org/POM/4.0.0'}
-          ET.register_namespace('', NS['m'])
-          ET.register_namespace('xsi', 'http://www.w3.org/2001/XMLSchema-instance')
-
-          def remove_matching(parent, tag, predicate):
-              for child in list(parent.findall(tag, NS)):
-                  if predicate(child):
-                      parent.remove(child)
-
-          def artifact(node):
-              value = node.find('m:artifactId', NS)
-              return value.text if value is not None else ''
-
-          def dependency(node, group, name):
-              group_id = node.find('m:groupId', NS)
-              artifact_id = node.find('m:artifactId', NS)
-              return (group_id is not None and artifact_id is not None and
-                      group_id.text == group and artifact_id.text == name)
-
-          def clean_module(path, app=False):
-              tree = ET.parse(path)
-              project = tree.getroot()
-              properties = project.find('m:properties', NS)
-              if properties is not None:
-                  release = properties.find('m:maven.compiler.release', NS)
-                  if release is not None:
-                      properties.remove(release)
-
-              dependencies = project.find('m:dependencies', NS)
-              if app and dependencies is not None:
-                  remove_matching(dependencies, 'm:dependency',
-                                  lambda node: dependency(node, 'org.eclipse.jetty', 'jetty-server'))
-
-              build = project.find('m:build', NS)
-              if build is not None:
-                  resources = build.find('m:resources', NS)
-                  if resources is not None:
-                      remove_matching(resources, 'm:resource', lambda node:
-                          node.find('m:directory', NS) is not None and
-                          (node.find('m:directory', NS).text or '').startswith('../'))
-                  test_resources = build.find('m:testResources', NS)
-                  if test_resources is not None:
-                      remove_matching(test_resources, 'm:testResource', lambda node:
-                          node.find('m:directory', NS) is not None and
-                          (node.find('m:directory', NS).text or '').startswith('../'))
-                      if not list(test_resources):
-                          build.remove(test_resources)
-                  plugins = build.find('m:plugins', NS)
-                  if plugins is not None:
-                      remove_matching(plugins, 'm:plugin', lambda node: artifact(node) == 'build-helper-maven-plugin')
-                      if app:
-                          for plugin in plugins.findall('m:plugin', NS):
-                              if artifact(plugin) == 'maven-compiler-plugin':
-                                  configuration = plugin.find('m:configuration', NS)
-                                  if configuration is not None:
-                                      excludes = configuration.find('m:excludes', NS)
-                                      if excludes is not None:
-                                          configuration.remove(excludes)
-              ET.indent(tree, space='    ')
-              tree.write(path, encoding='UTF-8', xml_declaration=True)
-
-          clean_module(root / 'nexu-core/pom.xml')
-          clean_module(root / 'nexu-app/pom.xml', app=True)
-
-          tree = ET.parse(root / 'pom.xml')
-          project = tree.getroot()
-          build = project.find('m:build', NS)
-          if build is not None:
-              plugins = build.find('m:plugins', NS)
-              if plugins is not None:
-                  remove_matching(plugins, 'm:plugin', lambda node: artifact(node) == 'maven-install-plugin')
-          ET.indent(tree, space='    ')
-          tree.write(root / 'pom.xml', encoding='UTF-8', xml_declaration=True)
-
-          legacy_readme = root / 'nexu-core/src/legacy-test/README.md'
-          legacy_readme.parent.mkdir(parents=True, exist_ok=True)
-          legacy_readme.write_text(
-              '# Legacy tests\n\n'
-              'These tests are preserved outside Maven default test sources because they depend on '
-              'removed DSS 5 APIs, Log4j 1.x fixtures or retired server implementations. Migrate each '
-              'test to DSS 6.4 and JUnit 5 before returning it to `src/test`.\n',
-              encoding='utf-8'
-          )
-
-          Path('.github/workflows/physical-source-consolidation.yml').unlink(missing_ok=True)
-          PY
-
-      - name: Restore normal build workflow
-        shell: bash
-        run: |
-          cat > .github/workflows/spring-boot-modernization.yml <<'YAML'
-          name: Build NexU
-
-          on:
-            push:
-              branches:
-                - spring-boot-modernization-2
-            pull_request:
-              paths:
-                - 'pom.xml'
-                - 'nexu-core/**'
-                - 'nexu-app/**'
-                - '.github/workflows/spring-boot-modernization.yml'
-            workflow_dispatch:
-
-          permissions:
-            contents: read
-
-          jobs:
-            build-application:
-              runs-on: ubuntu-latest
-              timeout-minutes: 40
-              steps:
-                - name: Check out source
-                  uses: actions/checkout@v4
-                - name: Set up Java 17
-                  uses: actions/setup-java@v4
-                  with:
-                    distribution: temurin
-                    java-version: '17'
-                    cache: maven
-                - name: Build and test two-module application
-                  shell: bash
-                  run: |
-                    set -o pipefail
-                    mvn --batch-mode --errors clean package 2>&1 | tee maven-build.log
-                - name: Verify executable JAR
-                  shell: bash
-                  run: |
-                    JAR=nexu-app/target/nexu-app.jar
-                    test -f "$JAR"
-                    unzip -p "$JAR" META-INF/MANIFEST.MF | tee nexu-app-manifest.txt
-                    grep -q 'Start-Class: lu.nowina.nexu.NexuLauncher' nexu-app-manifest.txt
-                    jar tf "$JAR" | grep -q 'BOOT-INF/lib/nexu-core-'
-                    ! jar tf "$JAR" | grep -q 'BOOT-INF/lib/nexu-api-'
-                    ! jar tf "$JAR" | grep -q 'BOOT-INF/lib/nexu-model-'
-                    ! jar tf "$JAR" | grep -q 'BOOT-INF/lib/nexu-util-'
-                    ! jar tf "$JAR" | grep -q 'BOOT-INF/lib/nexu-standalone-'
-                    ! jar tf "$JAR" | grep -q 'BOOT-INF/lib/nexu-spring-boot-server-'
-                    ! jar tf "$JAR" | grep -q 'BOOT-INF/lib/nexu-windows-keystore-plugin-'
-                - name: Upload executable application
-                  uses: actions/upload-artifact@v4
-                  with:
-                    name: nexu-application
-                    path: nexu-app/target/nexu-app.jar
-                    if-no-files-found: error
-                    retention-days: 7
-                - name: Upload diagnostics
-                  if: always()
-                  uses: actions/upload-artifact@v4
-                  with:
-                    name: nexu-build-logs
-                    path: |
-                      maven-build.log
-                      nexu-app-manifest.txt
-                    if-no-files-found: warn
-                    retention-days: 7
-          YAML
+          set +e
+          python3 scripts/consolidate_sources.py > physical-cleanup-migration.log 2>&1
+          status=$?
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          cat physical-cleanup-migration.log
+          exit 0
 
       - name: Build and test cleaned repository
+        id: build
+        if: steps.migrate.outputs.status == '0'
         shell: bash
         run: |
-          set -o pipefail
-          mvn --batch-mode --errors clean package 2>&1 | tee physical-cleanup-build.log
-          test -f nexu-app/target/nexu-app.jar
-          test ! -d nexu-api
-          test ! -d nexu-model
-          test ! -d nexu-util
-          test ! -d nexu-standalone
-          test ! -d nexu-spring-boot-server
-          jar tf nexu-app/target/nexu-app.jar | grep -q 'BOOT-INF/lib/nexu-core-'
-          ! jar tf nexu-app/target/nexu-app.jar | grep -q 'BOOT-INF/lib/nexu-api-'
-          ! jar tf nexu-app/target/nexu-app.jar | grep -q 'BOOT-INF/lib/nexu-model-'
-          ! jar tf nexu-app/target/nexu-app.jar | grep -q 'BOOT-INF/lib/nexu-util-'
+          set +e
+          mvn --batch-mode --errors clean package > physical-cleanup-build.log 2>&1
+          status=$?
+          if [ "$status" -eq 0 ]; then
+            test -f nexu-app/target/nexu-app.jar || status=20
+            test ! -d nexu-api || status=21
+            test ! -d nexu-model || status=22
+            test ! -d nexu-util || status=23
+            test ! -d nexu-standalone || status=24
+            test ! -d nexu-spring-boot-server || status=25
+          fi
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          tail -n 240 physical-cleanup-build.log
+          exit 0
 
-      - name: Commit cleaned source tree
+      - name: Publish cleanup result
+        if: always()
         shell: bash
         run: |
+          migration_status='${{ steps.migrate.outputs.status }}'
+          build_status='${{ steps.build.outputs.status }}'
+          success=false
+          if [ "$migration_status" = '0' ] && [ "$build_status" = '0' ]; then
+            success=true
+          fi
+
+          cp physical-cleanup-migration.log /tmp/physical-cleanup-migration.log 2>/dev/null || true
+          cp physical-cleanup-build.log /tmp/physical-cleanup-build.log 2>/dev/null || true
+
+          if [ "$success" != true ]; then
+            git reset --hard HEAD
+          fi
+
+          git show origin/master:.github/workflows/spring-boot-modernization.yml \
+            > .github/workflows/spring-boot-modernization.yml
+          rm -f .github/workflows/physical-source-consolidation.yml
+          rm -f scripts/consolidate_sources.py
+
+          if [ "$success" = true ]; then
+            rm -f physical-cleanup-status.txt
+            commit_message='Physically consolidate sources into nexu-core and nexu-app'
+          else
+            {
+              echo "migration_status=${migration_status:-not-run}"
+              echo "build_status=${build_status:-not-run}"
+              echo
+              echo '=== migration log ==='
+              tail -n 160 /tmp/physical-cleanup-migration.log 2>/dev/null || true
+              echo
+              echo '=== build log ==='
+              tail -n 240 /tmp/physical-cleanup-build.log 2>/dev/null || true
+            } > physical-cleanup-status.txt
+            commit_message='Record failed physical source cleanup'
+          fi
+
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -A
           git diff --cached --stat
-          git commit -m 'Physically consolidate sources into nexu-core and nexu-app'
+          git commit -m "$commit_message"
           git push origin HEAD:spring-boot-modernization-2
-
-      - name: Upload failure diagnostics
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: physical-cleanup-log
-          path: physical-cleanup-build.log
-          if-no-files-found: warn
-          retention-days: 7
