@@ -36,6 +36,13 @@ jobs:
             temurin_17
           cache: maven
 
+      - name: Install Linux PCSC and display runtime
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libpcsclite1 pcscd xvfb
+
       - name: Install legacy parent POM
         shell: bash
         run: |
@@ -52,6 +59,7 @@ jobs:
           set +e
           mvn --batch-mode --errors -f pom-modernization.xml \
             -pl nexu-modern-app -am \
+            -Dnexu.app.shade.phase=none \
             -Dmaven.test.skip=true package > linux-build.log 2>&1
           status=$?
           if [ "$status" -ne 0 ]; then tail -n 200 linux-build.log; fi
@@ -78,11 +86,6 @@ jobs:
           CONFIG=nexu-modern-app/target/jpackage/NexU/nexu-config.properties
           sed -i 's/binding_ports=9795/binding_ports=19795/' "$CONFIG"
           sed -i 's#cors_allowed_origin=\*#cors_allowed_origin=http://localhost:8080#' "$CONFIG"
-
-          if ! command -v xvfb-run >/dev/null 2>&1; then
-            sudo apt-get update
-            sudo apt-get install -y xvfb
-          fi
 
           LOG=nexu-modern-app/target/jpackage/nexu-smoke.log
           STATUS_FILE=nexu-modern-app/target/jpackage/status.json
@@ -159,7 +162,7 @@ jobs:
       - name: Build Windows application
         shell: cmd
         run: |
-          mvn --batch-mode --errors -f pom-modernization.xml -pl nexu-modern-app -am -Dmaven.test.skip=true package > windows-build.log 2>&1
+          mvn --batch-mode --errors -f pom-modernization.xml -pl nexu-modern-app -am -Dnexu.app.shade.phase=none -Dmaven.test.skip=true package > windows-build.log 2>&1
           if errorlevel 1 (type windows-build.log & exit /b 1)
 
       - name: Verify Windows JavaFX runtime
