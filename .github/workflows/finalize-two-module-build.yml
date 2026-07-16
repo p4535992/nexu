@@ -1,0 +1,42 @@
+name: Finalize two-module build
+
+on:
+  push:
+    branches:
+      - spring-boot-modernization-2
+    paths:
+      - '.github/scripts/finalize-two-module-build.py'
+      - '.github/workflows/finalize-two-module-build.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  consolidate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out modernization branch
+        uses: actions/checkout@v4
+        with:
+          ref: spring-boot-modernization-2
+          fetch-depth: 1
+
+      - name: Apply two-module migration
+        run: python3 .github/scripts/finalize-two-module-build.py
+
+      - name: Remove one-time migration files
+        run: |
+          rm .github/scripts/finalize-two-module-build.py
+          rm .github/workflows/finalize-two-module-build.yml
+
+      - name: Commit consolidated reactor
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          if git diff --cached --quiet; then
+            echo 'No consolidation changes to commit'
+            exit 0
+          fi
+          git commit -m 'Reduce Maven reactor to nexu-core and nexu-app'
+          git push origin HEAD:spring-boot-modernization-2
