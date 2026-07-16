@@ -30,10 +30,29 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: spring-boot-modernization-2
-          fetch-depth: 0
+          fetch-depth: 1
 
       - name: Apply MOCCA cleanup
-        run: python3 .github/scripts/remove-mocca.py
+        id: cleanup
+        continue-on-error: true
+        shell: bash
+        run: python3 .github/scripts/remove-mocca.py > mocca-cleanup.log 2>&1
+
+      - name: Upload cleanup diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mocca-cleanup-log
+          path: mocca-cleanup.log
+          if-no-files-found: warn
+          retention-days: 1
+
+      - name: Verify cleanup result
+        if: steps.cleanup.outcome == 'failure'
+        shell: bash
+        run: |
+          cat mocca-cleanup.log
+          exit 1
 
       - name: Commit cleanup
         shell: bash
