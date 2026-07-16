@@ -5,7 +5,7 @@
 	<version>1.24-SNAPSHOT</version>
 	<packaging>pom</packaging>
 	<name>NexU</name>
-	<description>Multi-browser, multi-platform remote signature tool.</description>
+	<description>Spring Boot and JavaFX local smart-card signing agent.</description>
 	<url>https://github.com/p4535992/nexu</url>
 
 	<developers>
@@ -25,41 +25,15 @@
 			<organizationUrl>http://nowina.lu/</organizationUrl>
 		</developer>
 	</developers>
-
 	<modules>
-		<!--
 		<module>nexu-core</module>
-		<module>nexu-rest-plugin</module>
-		<module>nexu-api</module>
 		<module>nexu-app</module>
-		<module>nexu-model</module>
-		<module>nexu-util</module>
-		<module>nexu-bundle</module>
-		<module>nexu-standalone</module>
-		<module>nexu-public-object-model</module>
-		<module>nexu-https-plugin</module>
-		<module>nexu-windows-keystore-plugin</module>
-        <module>nexu-multi-user-support</module>
-        -->
-        <module>nexu-api</module>
-		<module>nexu-model</module>
-		<module>nexu-util</module>
-		<module>nexu-core</module>
-		<module>nexu-standalone</module>
-		<module>nexu-rest-plugin</module>
-		<module>nexu-https-plugin</module>
-        <module>nexu-multi-user-support</module>
-		<module>nexu-windows-keystore-plugin</module>
-		<module>nexu-public-object-model</module>
-		<module>nexu-app</module>
-		<module>nexu-bundle</module>
-        <!-- TODO <module>nexu-proxy</module> -->      
 	</modules>
 
 	<properties>
-		<java.version>11</java.version>
-		<maven.compiler.source>11</maven.compiler.source>
-		<maven.compiler.target>11</maven.compiler.target>
+		<java.version>17</java.version>
+		<maven.compiler.source>17</maven.compiler.source>
+		<maven.compiler.target>17</maven.compiler.target>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<encoding>UTF-8</encoding>
 		<skip.package>false</skip.package>
@@ -73,7 +47,7 @@
 		<jnasmartcardio.version>0.2.7</jnasmartcardio.version>
 	    <!-- We MUST use last version because of https://github.com/mapstruct/mapstruct/issues/634. -->
 		<org.mapstruct.version>1.4.2.Final</org.mapstruct.version>
-		<javafx.version>11.0.2</javafx.version><!--19.0.2.1-->
+		<javafx.version>21.0.11</javafx.version>
 		<sunpkcs11-wrapper.version>1.4.8</sunpkcs11-wrapper.version>
 		
 		<!-- dependencies necessary for jdk 11 -->

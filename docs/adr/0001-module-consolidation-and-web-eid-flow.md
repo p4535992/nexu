@@ -29,59 +29,39 @@ layout.
 
 ### Target module layout
 
-The modernization reactor will be reduced to **four Maven modules**:
+The project is reduced to **two Maven modules**:
 
 1. `nexu-core`
-   - domain models and public API;
-   - certificate filtering and token abstractions;
-   - DSS-backed raw-data and pre-hashed signing operations;
-   - no Spring, Jakarta Servlet, JavaFX or packaging dependencies;
-   - absorbs the current `nexu-api`, `nexu-model` and `nexu-util` modules.
+   - public API, domain models and utilities;
+   - DSS-backed raw-data and pre-hashed signing;
+   - PKCS#11, PC/SC and Windows keystore integration;
+   - reader, card and middleware diagnostics;
+   - no Spring Boot server lifecycle or native packaging responsibilities.
 
-2. `nexu-card-drivers`
-   - PKCS#11, PC/SC and MSCAPI adapters;
-   - reader/card detection and native integration;
-   - driver and middleware diagnostics;
-   - absorbs card-specific code currently spread across `nexu-core` and
-     `nexu-windows-keystore-plugin`.
-
-3. `nexu-local-server`
-   - Spring Boot loopback server;
-   - modern `/v1/**` protocol;
+2. `nexu-app`
+   - Spring Boot loopback server and modern `/v1/**` protocol;
    - temporary `/rest/**` compatibility facade;
-   - origin allowlist, request validation and protocol DTOs;
-   - absorbs `nexu-spring-boot-server`, `nexu-rest-plugin` and the useful
-     lifecycle pieces of `nexu-standalone`.
+   - JavaFX certificate/PIN UI and tray lifecycle;
+   - executable Boot JAR and `jlink`/`jpackage` packaging;
+   - composes and distributes `nexu-core`.
 
-4. `nexu-app`
-   - JavaFX certificate/PIN UI, tray integration and process lifecycle;
-   - application configuration and executable Boot JAR;
-   - `jlink`/`jpackage` scripts and installer metadata;
-   - composes core, card drivers and local server;
-   - preserves the historical artifact and module name `nexu-app`.
+For this project size, protocol and UI boundaries are enforced by Java packages
+and architecture tests rather than additional Maven artifacts. The remote Web
+eID-style challenge store and authentication-token validator remain part of
+the remote web application, not the local NexU build.
 
-Packaging is build infrastructure under `nexu-app`; it is not a fifth Java
-module. The historical `nexu-bundle`, HTTPS assembly and public-object-model
-modules are retired from the modern reactor.
+During migration, the old source directories are added as source roots to one
+of the two modules. Their POM files are removed immediately. Physical source
+moves follow incrementally and must not recreate Maven modules.
 
-The reduction is performed through actual package/source moves and dependency
-direction tests. Maven source-directory aggregation may be used only as a
-short-lived migration tool, never as the final structure.
+### Why retain a separate core module
 
-### Why not one Spring Boot module
-
-A single module would make packaging superficially simpler but would weaken
-important boundaries:
-
-- the card engine must be testable without starting Spring;
-- JavaFX must not leak into protocol or cryptographic code;
-- native platform dependencies must remain isolated;
-- remote authentication validation must never become an implicit
-  responsibility of the local desktop agent;
-- the loopback protocol needs independent compatibility and security tests.
-
-Four modules are small enough to understand while preserving boundaries that
-have genuine security, platform or test value.
+A single module would make packaging superficially simpler but would couple
+cryptographic and card code to Spring Boot and JavaFX. Keeping `nexu-core`
+separate allows headless tests, avoids accidental server/UI dependencies in the
+signing engine and preserves a reusable boundary for future native messaging.
+Two modules are sufficient; further Maven separation would add ceremony without
+meaningful isolation.
 
 ## Smart-card drivers and middleware
 

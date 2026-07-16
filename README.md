@@ -167,39 +167,38 @@ The modernization deliberately removes or retires components that no longer prov
 
 ## Modules and build
 
-The final target is four Maven modules:
+The project now has **two Maven modules**:
 
-- `nexu-core`
-- `nexu-card-drivers`
-- `nexu-local-server`
-- `nexu-app`
+- `nexu-core` — consolidated public API, models, utilities, DSS integration,
+  smart-card operations, PKCS#11/PCSC support and Windows keystore support;
+- `nexu-app` — Spring Boot loopback server, legacy REST compatibility,
+  JavaFX operator UI, executable application and native packaging.
 
-The current reactor is transitional. It has already removed `nexu-modern-app`, `nexu-rest-plugin`, `nexu-multi-user-support`, `nexu-https-plugin` and `nexu-public-object-model` from the modern build. The next consolidation merges `nexu-api`, `nexu-model` and `nexu-util` into core, then extracts the native card adapters.
+The old module directories are temporary source containers only. Their POM
+files are removed and they do not participate in the Maven reactor. Source
+files will be moved physically into the two modules in smaller follow-up
+commits without changing the published artifacts.
 
-The modernization reactor currently uses Java 11 for remaining legacy modules and Java 17 for Spring Boot and the executable application. Configure both Maven toolchains, then build with:
+Build everything with Java 17:
 
 ```bash
-mvn -N -f pom.xml -Dmaven.test.skip=true install
-mvn -f pom-modernization.xml \
-    -pl nexu-app \
-    -am \
-    -Dmaven.test.skip=true \
-    package
+mvn clean package
 ```
 
-The executable is:
+The resulting executable JAR is:
 
 ```text
 nexu-app/target/nexu-app.jar
 ```
 
-Start it with Java 17:
+Run it directly for diagnostics with:
 
 ```bash
 java -jar nexu-app/target/nexu-app.jar
 ```
 
-End users of portable and installed packages do not need a separate JDK because the runtime is included.
+Operators normally use the Windows or Linux native packages and do not need to
+install a separate Java runtime.
 
 ## Native and portable packages
 
