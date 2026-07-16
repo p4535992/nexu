@@ -1,20 +1,15 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<?xml version='1.0' encoding='UTF-8'?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-
     <parent>
         <groupId>lu.nowina.apps</groupId>
         <artifactId>nexu</artifactId>
         <version>1.24-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
-
     <artifactId>nexu-app</artifactId>
     <name>NexU operator application</name>
     <description>Executable Spring Boot and JavaFX smart-card agent for Windows and Linux operators.</description>
-
     <properties>
         <java.version>17</java.version>
         <maven.compiler.source>17</maven.compiler.source>
@@ -24,7 +19,6 @@
         <slf4j.version>2.0.17</slf4j.version>
         <reload4j.version>1.2.26</reload4j.version>
     </properties>
-
     <dependencyManagement>
         <dependencies>
             <dependency>
@@ -36,14 +30,12 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
-
     <dependencies>
         <dependency>
             <groupId>lu.nowina.apps</groupId>
             <artifactId>nexu-core</artifactId>
             <version>${project.version}</version>
         </dependency>
-
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
@@ -57,7 +49,6 @@
             <artifactId>dss-model</artifactId>
             <version>${dss.version}</version>
         </dependency>
-
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-controls</artifactId>
@@ -84,7 +75,6 @@
                 </exclusion>
             </exclusions>
         </dependency>
-
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
@@ -97,77 +87,41 @@
             <groupId>javax.xml.bind</groupId>
             <artifactId>jaxb-api</artifactId>
         </dependency>
-
-        <!-- NexuLauncher still uses the Log4j 1.x API. Reload4j provides that API
-             without restoring the abandoned Log4j 1.2 implementation. -->
         <dependency>
             <groupId>ch.qos.reload4j</groupId>
             <artifactId>reload4j</artifactId>
             <version>${reload4j.version}</version>
         </dependency>
-
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
-
     <build>
         <finalName>nexu-app</finalName>
         <resources>
             <resource>
-                <directory>../nexu-standalone/src/main/resources</directory>
-                <filtering>false</filtering>
-            </resource>
-            <resource>
-                <directory>../nexu-spring-boot-server/src/main/resources</directory>
-                <filtering>false</filtering>
-            </resource>
-            <resource>
                 <directory>src/main/resources</directory>
                 <filtering>true</filtering>
-                <includes><include>**/version.txt</include></includes>
+                <includes>
+                    <include>**/version.txt</include>
+                </includes>
             </resource>
             <resource>
                 <directory>src/main/resources</directory>
                 <filtering>false</filtering>
-                <excludes><exclude>**/version.txt</exclude></excludes>
+                <excludes>
+                    <exclude>**/version.txt</exclude>
+                </excludes>
             </resource>
         </resources>
         <testResources>
-            <testResource><directory>src/test/resources</directory></testResource>
-            <testResource><directory>../nexu-spring-boot-server/src/test/resources</directory></testResource>
+            <testResource>
+                <directory>src/test/resources</directory>
+            </testResource>
         </testResources>
         <plugins>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>build-helper-maven-plugin</artifactId>
-                <version>3.5.0</version>
-                <executions>
-                    <execution>
-                        <id>aggregate-application-sources</id>
-                        <phase>generate-sources</phase>
-                        <goals><goal>add-source</goal></goals>
-                        <configuration>
-                            <sources>
-                                <source>../nexu-standalone/src/main/java</source>
-                                <source>../nexu-spring-boot-server/src/main/java</source>
-                            </sources>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>aggregate-application-tests</id>
-                        <phase>generate-test-sources</phase>
-                        <goals><goal>add-test-source</goal></goals>
-                        <configuration>
-                            <sources>
-                                <source>../nexu-spring-boot-server/src/test/java</source>
-                            </sources>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -175,9 +129,6 @@
                 <configuration>
                     <source>17</source>
                     <target>17</target>
-                    <excludes>
-                        <exclude>lu/nowina/nexu/jetty/**/*.java</exclude>
-                    </excludes>
                     <compilerArgs>
                         <arg>--add-modules</arg>
                         <arg>jdk.crypto.cryptoki</arg>
@@ -192,10 +143,16 @@
                 <version>${spring-boot.version}</version>
                 <configuration>
                     <mainClass>lu.nowina.nexu.NexuLauncher</mainClass>
-                    <layers><enabled>true</enabled></layers>
+                    <layers>
+                        <enabled>true</enabled>
+                    </layers>
                 </configuration>
                 <executions>
-                    <execution><goals><goal>repackage</goal></goals></execution>
+                    <execution>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
                 </executions>
             </plugin>
         </plugins>

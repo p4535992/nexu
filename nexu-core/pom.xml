@@ -1,27 +1,21 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<?xml version='1.0' encoding='UTF-8'?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-
     <parent>
         <groupId>lu.nowina.apps</groupId>
         <artifactId>nexu</artifactId>
         <version>1.24-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
-
     <artifactId>nexu-core</artifactId>
     <name>NexU core</name>
     <description>Consolidated NexU API, model, utilities and smart-card engine.</description>
-
     <properties>
         <java.version>17</java.version>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
         <javafx.version>21.0.11</javafx.version>
     </properties>
-
     <dependencies>
         <dependency>
             <groupId>eu.europa.ec.joinup.sd-dss</groupId>
@@ -39,7 +33,6 @@
             <version>${dss.version}</version>
             <scope>runtime</scope>
         </dependency>
-
         <dependency>
             <groupId>io.github.jnasmartcardio</groupId>
             <artifactId>jnasmartcardio</artifactId>
@@ -56,7 +49,6 @@
             <groupId>net.java.dev.jna</groupId>
             <artifactId>jna-platform</artifactId>
         </dependency>
-
         <dependency>
             <groupId>commons-codec</groupId>
             <artifactId>commons-codec</artifactId>
@@ -79,7 +71,6 @@
             <artifactId>gson</artifactId>
             <version>2.5</version>
         </dependency>
-
         <dependency>
             <groupId>com.sun.xml.bind</groupId>
             <artifactId>jaxb-xjc</artifactId>
@@ -128,10 +119,6 @@
             <groupId>javax.annotation</groupId>
             <artifactId>javax.annotation-api</artifactId>
         </dependency>
-
-        <!-- Transitional: some certificate/PIN UI classes still physically live
-             under nexu-core. They will move to nexu-app without becoming another
-             Maven module. -->
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-controls</artifactId>
@@ -142,7 +129,6 @@
             <artifactId>javafx-fxml</artifactId>
             <version>${javafx.version}</version>
         </dependency>
-
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
@@ -155,36 +141,13 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-
     <build>
         <resources>
-            <resource><directory>src/main/resources</directory></resource>
-            <resource><directory>../nexu-api/src/main/resources</directory></resource>
-            <resource><directory>../nexu-model/src/main/resources</directory></resource>
-            <resource><directory>../nexu-util/src/main/resources</directory></resource>
-            <resource><directory>../nexu-windows-keystore-plugin/src/main/resources</directory></resource>
+            <resource>
+                <directory>src/main/resources</directory>
+            </resource>
         </resources>
         <plugins>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>build-helper-maven-plugin</artifactId>
-                <version>3.5.0</version>
-                <executions>
-                    <execution>
-                        <id>aggregate-core-sources</id>
-                        <phase>generate-sources</phase>
-                        <goals><goal>add-source</goal></goals>
-                        <configuration>
-                            <sources>
-                                <source>../nexu-api/src/main/java</source>
-                                <source>../nexu-model/src/main/java</source>
-                                <source>../nexu-util/src/main/java</source>
-                                <source>../nexu-windows-keystore-plugin/src/main/java</source>
-                            </sources>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>

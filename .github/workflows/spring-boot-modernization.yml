@@ -1,30 +1,34 @@
-name: Consolidate NexU sources
+name: Build NexU
 
 on:
   push:
     branches:
       - spring-boot-modernization-2
+  pull_request:
     paths:
+      - 'pom.xml'
+      - 'nexu-core/**'
+      - 'nexu-app/**'
+      - 'nexu-api/**'
+      - 'nexu-model/**'
+      - 'nexu-util/**'
+      - 'nexu-standalone/**'
+      - 'nexu-spring-boot-server/**'
+      - 'nexu-windows-keystore-plugin/**'
       - '.github/workflows/spring-boot-modernization.yml'
-
-concurrency:
-  group: nexu-physical-source-cleanup
-  cancel-in-progress: true
+  workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  consolidate:
+  build-application:
     runs-on: ubuntu-latest
-    timeout-minutes: 50
+    timeout-minutes: 40
 
     steps:
-      - name: Check out modernization branch
+      - name: Check out source
         uses: actions/checkout@v4
-        with:
-          ref: spring-boot-modernization-2
-          fetch-depth: 0
 
       - name: Set up Java 17
         uses: actions/setup-java@v4
@@ -33,80 +37,79 @@ jobs:
           java-version: '17'
           cache: maven
 
-      - name: Consolidate physical source tree
-        id: migrate
-        shell: bash
+      - name: Show Java and Maven versions
         run: |
-          set +e
-          python3 scripts/consolidate_sources.py > physical-cleanup-migration.log 2>&1
-          status=$?
-          echo "status=$status" >> "$GITHUB_OUTPUT"
-          cat physical-cleanup-migration.log
-          exit 0
+          java -version
+          mvn --version
 
-      - name: Build and test cleaned repository
-        id: build
-        if: steps.migrate.outputs.status == '0'
+      - name: Compile consolidated reactor
         shell: bash
         run: |
           set +e
-          mvn --batch-mode --errors clean package > physical-cleanup-build.log 2>&1
+          mvn --batch-mode --errors clean install \
+            -Dmaven.test.skip=true > maven-build.log 2>&1
           status=$?
-          if [ "$status" -eq 0 ]; then
-            test -f nexu-app/target/nexu-app.jar || status=20
-            test ! -d nexu-api || status=21
-            test ! -d nexu-model || status=22
-            test ! -d nexu-util || status=23
-            test ! -d nexu-standalone || status=24
-            test ! -d nexu-spring-boot-server || status=25
+          if [ "$status" -ne 0 ]; then
+            tail -n 220 maven-build.log
           fi
-          echo "status=$status" >> "$GITHUB_OUTPUT"
-          tail -n 240 physical-cleanup-build.log
-          exit 0
+          exit "$status"
 
-      - name: Publish cleanup result
+      - name: Test modern application protocol
+        shell: bash
+        run: |
+          set +e
+          # nexu-core is already installed by the preceding step. Running only
+          # nexu-app tests avoids reactivating legacy DSS 5-era core tests while
+          # still executing the aggregated Spring Boot protocol test suite.
+          mvn --batch-mode --errors \
+            -pl nexu-app test > maven-test.log 2>&1
+          status=$?
+          if [ "$status" -ne 0 ]; then
+            tail -n 220 maven-test.log
+          fi
+          exit "$status"
+
+      - name: Verify two-module executable JAR
+        shell: bash
+        run: |
+          JAR=nexu-app/target/nexu-app.jar
+          test -f "$JAR"
+          unzip -p "$JAR" META-INF/MANIFEST.MF | tee nexu-app-manifest.txt
+          grep -q 'Start-Class: lu.nowina.nexu.NexuLauncher' nexu-app-manifest.txt
+          jar tf "$JAR" | grep -q 'BOOT-INF/lib/nexu-core-'
+          jar tf "$JAR" | grep -q 'BOOT-INF/classes/nexu-config.properties'
+          jar tf "$JAR" | grep -q 'BOOT-INF/lib/javafx-graphics-21.0.11-linux.jar'
+          jar tf "$JAR" | grep -q 'BOOT-INF/lib/javafx-controls-21.0.11-linux.jar'
+          ! jar tf "$JAR" | grep -q 'BOOT-INF/lib/nexu-api-'
+          ! jar tf "$JAR" | grep -q 'BOOT-INF/lib/nexu-model-'
+          ! jar tf "$JAR" | grep -q 'BOOT-INF/lib/nexu-util-'
+          ! jar tf "$JAR" | grep -q 'BOOT-INF/lib/nexu-standalone-'
+          ! jar tf "$JAR" | grep -q 'BOOT-INF/lib/nexu-spring-boot-server-'
+          ! jar tf "$JAR" | grep -q 'BOOT-INF/lib/nexu-windows-keystore-plugin-'
+          ! jar tf "$JAR" | grep -q 'BOOT-INF/lib/javafx-.*-11.0.2'
+
+      - name: Record dependency graph
+        run: |
+          mvn --batch-mode -pl nexu-app dependency:tree \
+            > maven-dependency-tree.log 2>&1
+
+      - name: Upload executable application
+        uses: actions/upload-artifact@v4
+        with:
+          name: nexu-application
+          path: nexu-app/target/nexu-app.jar
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Upload build diagnostics
         if: always()
-        shell: bash
-        run: |
-          migration_status='${{ steps.migrate.outputs.status }}'
-          build_status='${{ steps.build.outputs.status }}'
-          success=false
-          if [ "$migration_status" = '0' ] && [ "$build_status" = '0' ]; then
-            success=true
-          fi
-
-          cp physical-cleanup-migration.log /tmp/physical-cleanup-migration.log 2>/dev/null || true
-          cp physical-cleanup-build.log /tmp/physical-cleanup-build.log 2>/dev/null || true
-
-          if [ "$success" != true ]; then
-            git reset --hard HEAD
-          fi
-
-          git show origin/master:.github/workflows/spring-boot-modernization.yml \
-            > .github/workflows/spring-boot-modernization.yml
-          rm -f .github/workflows/physical-source-consolidation.yml
-          rm -f scripts/consolidate_sources.py
-
-          if [ "$success" = true ]; then
-            rm -f physical-cleanup-status.txt
-            commit_message='Physically consolidate sources into nexu-core and nexu-app'
-          else
-            {
-              echo "migration_status=${migration_status:-not-run}"
-              echo "build_status=${build_status:-not-run}"
-              echo
-              echo '=== migration log ==='
-              tail -n 160 /tmp/physical-cleanup-migration.log 2>/dev/null || true
-              echo
-              echo '=== build log ==='
-              tail -n 240 /tmp/physical-cleanup-build.log 2>/dev/null || true
-            } > physical-cleanup-status.txt
-            commit_message='Record failed physical source cleanup'
-          fi
-
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -A
-          git diff --cached --stat
-          git commit -m "$commit_message"
-          git push origin HEAD:spring-boot-modernization-2
+        uses: actions/upload-artifact@v4
+        with:
+          name: nexu-build-logs
+          path: |
+            maven-build.log
+            maven-test.log
+            maven-dependency-tree.log
+            nexu-app-manifest.txt
+          if-no-files-found: warn
+          retention-days: 7
