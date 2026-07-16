@@ -4,14 +4,14 @@ NexU is an open-source local smart-card agent that allows a web application to r
 
 This repository is a friendly fork of [`nowina-solutions/nexu`](https://github.com/nowina-solutions/nexu). The current modernization work keeps the familiar NexU browser API while replacing obsolete infrastructure with a modular Spring Boot architecture and a Web eID-inspired signing flow.
 
-> **Modernization status:** work in progress. The historical application remains available, while the new server adapter and packaging are developed incrementally on the modernization branch.
+> **Modernization status:** work in progress. The historical application remains available, while the new server adapter, executable application and native packaging are developed incrementally on the modernization branch.
 
 ## Goals
 
 - preserve the simple NexU browser experience;
 - keep private-key operations on the user's smart card;
 - support PKCS#11 middleware and the Windows certificate store;
-- provide modular JAR, WAR and portable desktop distributions;
+- provide an executable JAR, a portable desktop package and a Windows installer with a bundled Java runtime;
 - replace the legacy embedded Jetty and assembly-based packaging;
 - isolate the smart-card engine from HTTP, UI and packaging concerns;
 - provide explicit origin checks, short-lived operations and replay protection;
@@ -123,32 +123,109 @@ Legacy requests are no longer logged with their complete payload, hashes, challe
 
 The modernization deliberately removes or retires components that no longer provide a maintainable path forward:
 
-- **MOCCA integration** — removed from the modernized runtime because the required artifacts are no longer distributed and the adapter was already non-functional;
+- **MOCCA integration** — removed because the required artifacts are no longer distributed and the adapter was already non-functional;
 - **raw-challenge legacy authentication** — retired in favour of a future origin-bound, one-time challenge protocol;
 - **incomplete identity-info flow** — retired rather than advertised as a working API;
 - **Java Applet assumptions** — obsolete and unsupported by modern browsers;
-- **legacy embedded Jetty server** — replaced incrementally by Spring Boot;
-- **manual JRE/OpenJFX bundle assembly** — to be replaced by `jlink` and `jpackage` distributions;
-- **Log4j 1.x-era logging stack** — scheduled for replacement by SLF4J 2 and the Spring Boot logging stack.
+- **legacy embedded Jetty server** — replaced by the Spring Boot adapter in the modern application;
+- **manual JRE/OpenJFX bundle assembly** — replaced in the modern application by `jlink`/`jpackage` application images;
+- **Log4j 1.2 binary** — excluded from the modern package; Reload4j temporarily provides the old API used by `NexuLauncher` while Spring Boot uses SLF4J 2 and Logback.
 
 Old configuration values that mention MOCCA may still be parsed during migration, but the modernized runtime does not offer MOCCA as a signing backend.
 
-## Modules
+## Modules and build
 
-The repository still contains the historical modules while modernization is under way. The first new module is:
+The modernization adds two modules while the historical modules remain available for comparison:
 
-- `nexu-spring-boot-server` — Spring Boot implementation of the NexU local HTTP server contract and the `nexu:2.0` protocol.
+- `nexu-spring-boot-server` — Spring Boot implementation of the NexU local HTTP server contract and the `nexu:2.0` protocol;
+- `nexu-modern-app` — executable desktop application that combines the existing NexU UI and smart-card engine with the Spring Boot server.
 
-A separate Maven reactor is provided so that the modernization can be validated without immediately destabilizing the historical root build:
+The modernization reactor uses Java 11 for legacy modules and Java 17 for the new modules. Configure both Maven toolchains, then build the executable application with:
 
 ```bash
+mvn -N -f pom.xml -Dmaven.test.skip=true install
 mvn -f pom-modernization.xml \
-    -pl nexu-spring-boot-server \
+    -pl nexu-modern-app \
     -am \
+    -Dnexu.app.shade.phase=none \
+    -Dmaven.test.skip=true \
     package
 ```
 
-The modernization build currently targets Java 17. Legacy modules are still compiled with their Java 11 toolchain during the transition. Portable distributions will bundle their own runtime, so end users will not need to install a matching JDK.
+The resulting executable is:
+
+```text
+nexu-modern-app/target/nexu-modern.jar
+```
+
+It can be started with Java 17 using:
+
+```bash
+java -jar nexu-modern-app/target/nexu-modern.jar
+```
+
+End users of the portable and installed packages do not need a separate JDK because the runtime is included.
+
+## Native and portable packages
+
+The packaging scripts use `jpackage` and an optimized `jlink` module set.
+
+### Linux portable package
+
+```bash
+bash nexu-modern-app/src/jpackage/package-linux.sh \
+    nexu-modern-app/target/nexu-modern.jar \
+    nexu-modern-app/target/jpackage \
+    1.24.0
+```
+
+This creates an application image and a compressed portable archive under `nexu-modern-app/target/jpackage`.
+
+The Java runtime is included, but the operating-system PC/SC service and reader middleware are not. On Debian or Ubuntu install the PC/SC runtime with:
+
+```bash
+sudo apt install libpcsclite1 pcscd
+```
+
+Vendor-specific PKCS#11 libraries must still be installed when required by the smart card. The portable archive must not bundle system daemons or proprietary card drivers.
+
+### Windows portable package and EXE installer
+
+Run from PowerShell on Windows with Java 17 and WiX Toolset available:
+
+```powershell
+./nexu-modern-app/src/jpackage/package-windows.ps1 `
+    -JarPath nexu-modern-app/target/nexu-modern.jar `
+    -Destination nexu-modern-app/target/jpackage `
+    -AppVersion 1.24.0
+```
+
+The script creates:
+
+- a portable ZIP containing the application and its Java runtime;
+- a native Windows EXE installer with Start menu and desktop shortcut options.
+
+Windows packages must be built on Windows so that the Boot JAR contains the Windows JavaFX native libraries. Linux packages must likewise be built on Linux.
+
+Each application image contains `LICENSE`, `THIRD_PARTY_NOTICES.md`, the historical licence directory and an editable `nexu-config.properties` template.
+
+## External configuration
+
+The embedded configuration provides safe defaults. External properties override those defaults and are searched in this order:
+
+1. the path supplied through `-Dnexu.config.file=/path/to/nexu-config.properties`;
+2. the `NEXU_CONFIG_FILE` environment variable;
+3. the directory of the `jpackage` launcher and the application-image root;
+4. the current working directory;
+5. the directory of a directly executed JAR when its code source is a normal file.
+
+A configured explicit path that does not exist is treated as an error instead of silently falling back to defaults.
+
+## WAR scope
+
+The local smart-card agent should not be deployed as a remote WAR. A WAR running on an application server can access only smart cards and desktop resources attached to that server, not the card connected to the end user's computer.
+
+A future server-side module may be packaged as a WAR for challenge issuance, Web eID-style authentication-token validation, DSS signature preparation and signature finalization. The local agent itself remains a desktop process distributed as JAR, portable application image or native installer.
 
 ## Security principles
 
