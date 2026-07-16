@@ -13,7 +13,9 @@ on:
       - 'nexu-core/**'
       - 'nexu-standalone/**'
       - 'nexu-rest-plugin/**'
+      - 'nexu-app/**'
       - 'nexu-spring-boot-server/**'
+      - 'nexu-modern-app/**'
       - '.github/workflows/spring-boot-modernization.yml'
   workflow_dispatch:
 
@@ -21,9 +23,9 @@ permissions:
   contents: read
 
 jobs:
-  build-server-adapter:
+  build-modern-application:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 40
 
     steps:
       - name: Check out source
@@ -73,20 +75,20 @@ jobs:
             -Dmaven.test.skip=true \
             install > maven-parent-install.log 2>&1
 
-      - name: Build modernization reactor
+      - name: Build executable modern application
         shell: bash
         run: |
           set +e
           mvn --batch-mode --errors \
             -f pom-modernization.xml \
-            -pl nexu-spring-boot-server \
+            -pl nexu-modern-app \
             -am \
             -Dmaven.test.skip=true \
             install > maven-build.log 2>&1
           status=$?
           if [ "$status" -ne 0 ]; then
             echo "Maven reactor build failed with exit code $status"
-            tail -n 120 maven-build.log
+            tail -n 160 maven-build.log
           fi
           exit "$status"
 
@@ -101,9 +103,35 @@ jobs:
           status=$?
           if [ "$status" -ne 0 ]; then
             echo "Spring Boot adapter tests failed with exit code $status"
-            tail -n 120 maven-test.log
+            tail -n 160 maven-test.log
           fi
           exit "$status"
+
+      - name: Verify executable JAR
+        shell: bash
+        run: |
+          JAR=nexu-modern-app/target/nexu-modern.jar
+          test -f "$JAR"
+          unzip -p "$JAR" META-INF/MANIFEST.MF | tee nexu-modern-manifest.txt
+          grep -q 'Start-Class: lu.nowina.nexu.NexuLauncher' nexu-modern-manifest.txt
+          jar tf "$JAR" | grep -q 'BOOT-INF/lib/nexu-spring-boot-server-'
+          jar tf "$JAR" | grep -q 'BOOT-INF/classes/nexu-config.properties'
+
+      - name: Record application dependency graph
+        shell: bash
+        run: |
+          mvn --batch-mode \
+            -f pom-modernization.xml \
+            -pl nexu-modern-app \
+            dependency:tree > maven-dependency-tree.log 2>&1
+
+      - name: Upload executable application
+        uses: actions/upload-artifact@v4
+        with:
+          name: nexu-modern-application
+          path: nexu-modern-app/target/nexu-modern.jar
+          if-no-files-found: error
+          retention-days: 7
 
       - name: Upload Maven logs
         if: always()
@@ -114,5 +142,7 @@ jobs:
             maven-parent-install.log
             maven-build.log
             maven-test.log
+            maven-dependency-tree.log
+            nexu-modern-manifest.txt
           if-no-files-found: warn
           retention-days: 7
