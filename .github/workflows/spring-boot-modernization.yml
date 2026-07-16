@@ -6,7 +6,11 @@ on:
       - spring-boot-modernization-2
   pull_request:
     paths:
+      - 'pom.xml'
       - 'pom-modernization.xml'
+      - 'nexu-api/**'
+      - 'nexu-core/**'
+      - 'nexu-standalone/**'
       - 'nexu-spring-boot-server/**'
       - '.github/workflows/spring-boot-modernization.yml'
   workflow_dispatch:
@@ -39,12 +43,24 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
-      - name: Set up Java 17
+      - name: Set up Java 11 and Java 17 toolchains
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: |
+            11
+            17
+          mvn-toolchain-id: |
+            temurin_11
+            temurin_17
           cache: maven
+
+      - name: Show Java and Maven toolchains
+        shell: bash
+        run: |
+          java -version
+          mvn --version
+          cat "$HOME/.m2/toolchains.xml"
 
       - name: Build Spring Boot server adapter
         shell: bash
@@ -59,7 +75,7 @@ jobs:
           status=$?
           if [ "$status" -ne 0 ]; then
             echo "Maven build failed with exit code $status"
-            tail -n 80 maven-build.log
+            tail -n 120 maven-build.log
           fi
           exit "$status"
 
