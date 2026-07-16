@@ -8,6 +8,7 @@ import org.springframework.context.annotation.Import;
 @EnableAutoConfiguration
 @Import({
         NexuHttpController.class,
+        NexuModernController.class,
         NexuLoopbackCorsFilter.class
 })
 public class NexuSpringBootConfiguration {
