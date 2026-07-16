@@ -26,6 +26,8 @@
         <module>nexu-multi-user-support</module>
         <module>nexu-windows-keystore-plugin</module>
         <module>nexu-public-object-model</module>
+        <module>nexu-app</module>
         <module>nexu-spring-boot-server</module>
+        <module>nexu-modern-app</module>
     </modules>
 </project>
