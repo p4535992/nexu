@@ -7,8 +7,14 @@ on:
   pull_request:
     paths:
       - 'pom.xml'
-      - 'pom-modernization.xml'
-      - 'nexu-*/**'
+      - 'nexu-core/**'
+      - 'nexu-app/**'
+      - 'nexu-api/**'
+      - 'nexu-model/**'
+      - 'nexu-util/**'
+      - 'nexu-standalone/**'
+      - 'nexu-spring-boot-server/**'
+      - 'nexu-windows-keystore-plugin/**'
       - 'LICENSE'
       - 'THIRD_PARTY_NOTICES.md'
       - 'licenses/**'
@@ -27,44 +33,28 @@ jobs:
       - name: Check out source
         uses: actions/checkout@v4
 
-      - name: Set up Java 11 and Java 17 toolchains
+      - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: |
-            11
-            17
-          mvn-toolchain-id: |
-            temurin_11
-            temurin_17
+          java-version: '17'
           cache: maven
 
       - name: Install Linux packaging, PCSC and display runtime
-        shell: bash
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             fakeroot libpcsclite1 pcscd xvfb
 
-      - name: Install legacy parent POM
-        shell: bash
-        run: |
-          set +e
-          mvn --batch-mode --errors -N -f pom.xml \
-            -Dmaven.test.skip=true install > linux-parent.log 2>&1
-          status=$?
-          if [ "$status" -ne 0 ]; then tail -n 160 linux-parent.log; fi
-          exit "$status"
-
       - name: Build Linux application
         shell: bash
         run: |
           set +e
-          mvn --batch-mode --errors -f pom-modernization.xml \
+          mvn --batch-mode --errors \
             -pl nexu-app -am \
             -Dmaven.test.skip=true package > linux-build.log 2>&1
           status=$?
-          if [ "$status" -ne 0 ]; then tail -n 200 linux-build.log; fi
+          if [ "$status" -ne 0 ]; then tail -n 240 linux-build.log; fi
           exit "$status"
 
       - name: Verify Linux JavaFX 21 runtime
@@ -73,11 +63,13 @@ jobs:
           JAR=nexu-app/target/nexu-app.jar
           jar tf "$JAR" | grep -q 'BOOT-INF/lib/javafx-graphics-21.0.11-linux.jar'
           jar tf "$JAR" | grep -q 'BOOT-INF/lib/javafx-controls-21.0.11-linux.jar'
+          jar tf "$JAR" | grep -q 'BOOT-INF/lib/nexu-core-'
+          ! jar tf "$JAR" | grep -q 'BOOT-INF/lib/nexu-.*-plugin-'
+          ! jar tf "$JAR" | grep -q 'BOOT-INF/lib/nexu-standalone-'
           ! jar tf "$JAR" | grep -q 'BOOT-INF/lib/javafx-.*-11.0.2'
           ! jar tf "$JAR" | grep -q 'BOOT-INF/lib/javafx-graphics-21.0.11-win.jar'
 
       - name: Build Linux portable and Debian packages
-        shell: bash
         run: |
           bash nexu-app/src/jpackage/package-linux.sh \
             nexu-app/target/nexu-app.jar \
@@ -116,9 +108,7 @@ jobs:
               started=true
               break
             fi
-            if ! kill -0 "$PID" 2>/dev/null; then
-              break
-            fi
+            if ! kill -0 "$PID" 2>/dev/null; then break; fi
             sleep 1
           done
 
@@ -145,7 +135,6 @@ jobs:
             nexu-app/target/jpackage/status.json
             nexu-app/target/jpackage/nexu-v2.js
             nexu-app/target/jpackage/nexu-smoke.log
-            linux-parent.log
             linux-build.log
           if-no-files-found: warn
           retention-days: 7
@@ -158,28 +147,17 @@ jobs:
       - name: Check out source
         uses: actions/checkout@v4
 
-      - name: Set up Java 11 and Java 17 toolchains
+      - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: |
-            11
-            17
-          mvn-toolchain-id: |
-            temurin_11
-            temurin_17
+          java-version: '17'
           cache: maven
-
-      - name: Install legacy parent POM
-        shell: cmd
-        run: |
-          mvn --batch-mode --errors -N -f pom.xml -Dmaven.test.skip=true install > windows-parent.log 2>&1
-          if errorlevel 1 (type windows-parent.log & exit /b 1)
 
       - name: Build Windows application
         shell: cmd
         run: |
-          mvn --batch-mode --errors -f pom-modernization.xml -pl nexu-app -am -Dmaven.test.skip=true package > windows-build.log 2>&1
+          mvn --batch-mode --errors -pl nexu-app -am -Dmaven.test.skip=true package > windows-build.log 2>&1
           if errorlevel 1 (type windows-build.log & exit /b 1)
 
       - name: Verify Windows JavaFX 21 runtime
@@ -191,6 +169,15 @@ jobs:
           }
           if (-not ($entries -match 'BOOT-INF/lib/javafx-controls-21.0.11-win.jar')) {
             throw 'Windows JavaFX 21 controls JAR is missing'
+          }
+          if (-not ($entries -match 'BOOT-INF/lib/nexu-core-')) {
+            throw 'Consolidated nexu-core JAR is missing'
+          }
+          if ($entries -match 'BOOT-INF/lib/nexu-.*-plugin-') {
+            throw 'A retired plugin module leaked into the Windows package'
+          }
+          if ($entries -match 'BOOT-INF/lib/nexu-standalone-') {
+            throw 'The retired standalone module leaked into the Windows package'
           }
           if ($entries -match 'BOOT-INF/lib/javafx-.*-11.0.2') {
             throw 'Obsolete JavaFX 11 runtime leaked into the Windows package'
@@ -209,9 +196,7 @@ jobs:
             $wixPattern = Join-Path $programFilesX86 'WiX Toolset v3.*\bin'
             $wixBin = Get-ChildItem -Path $wixPattern -Directory `
               -ErrorAction SilentlyContinue | Select-Object -First 1
-            if (-not $wixBin) {
-              throw 'WiX Toolset installation directory was not found'
-            }
+            if (-not $wixBin) { throw 'WiX Toolset installation directory was not found' }
             $wixBin.FullName | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
           }
 
@@ -248,7 +233,6 @@ jobs:
           path: |
             nexu-app/target/jpackage/*-portable.zip
             nexu-app/target/jpackage/*.exe
-            windows-parent.log
             windows-build.log
           if-no-files-found: warn
           retention-days: 7
