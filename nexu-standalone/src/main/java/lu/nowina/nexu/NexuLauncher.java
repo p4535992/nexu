@@ -18,9 +18,12 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.LinkedHashSet;
 import java.util.Properties;
+import java.util.Set;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.ConsoleAppender;
@@ -35,6 +38,11 @@ import javafx.application.Application;
 import lu.nowina.nexu.api.AppConfig;
 
 public class NexuLauncher {
+
+	public static final String CONFIG_FILE_PROPERTY = "nexu.config.file";
+	public static final String CONFIG_FILE_ENVIRONMENT = "NEXU_CONFIG_FILE";
+	public static final String CONFIG_FILE_NAME = "nexu-config.properties";
+
 	private static final Logger logger = LoggerFactory.getLogger(NexuLauncher.class.getName());
 
 	private static AppConfig config;
@@ -56,7 +64,7 @@ public class NexuLauncher {
 
 		// Perform this work in a separate method to have the logger well configured.
 		config.initDefaultProduct(props);
-		
+
 		proxyConfigurer = new ProxyConfigurer(config, new UserPreferences(config.getApplicationName()));
 
 		beforeLaunch();
@@ -71,39 +79,32 @@ public class NexuLauncher {
 		SLF4JBridgeHandler.removeHandlersForRootLogger();
 		SLF4JBridgeHandler.install();
 
-		ConsoleAppender console = new ConsoleAppender(); // create appender
-		String PATTERN = "%d [%p|%c|%C{1}|%t] %m%n";
-		console.setLayout(new PatternLayout(PATTERN));
+		ConsoleAppender console = new ConsoleAppender();
+		String pattern = "%d [%p|%c|%C{1}|%t] %m%n";
+		console.setLayout(new PatternLayout(pattern));
 		console.setThreshold(config.isDebug() ? Level.DEBUG : Level.INFO);
 		console.activateOptions();
 		org.apache.log4j.Logger.getRootLogger().addAppender(console);
 
 		RollingFileAppender rfa = new RollingFileAppender();
 		rfa.setName("FileLogger");
-		// MOD 4535992
-//		File nexuHome = config.getNexuHome();
-		String tmpdir = System.getProperty("java.io.tmpdir");
-	    System.out.println("Temp file path: " + tmpdir);
-	    // END MOD 4535992
-		File nexuHome = new File(tmpdir); //config.getNexuHome();
+		File nexuHome = config.getNexuHome();
+		if (nexuHome == null || (!nexuHome.exists() && !nexuHome.mkdirs())) {
+			nexuHome = new File(System.getProperty("java.io.tmpdir"));
+		}
 		rfa.setFile(new File(nexuHome, "nexu.log").getAbsolutePath());
 		rfa.setLayout(new PatternLayout("%d %-5p [%c{1}] %m%n"));
 		rfa.setThreshold(config.isDebug() ? Level.DEBUG : Level.INFO);
 		rfa.setAppend(true);
-		rfa.activateOptions();
 		rfa.setMaxFileSize(config.getRollingLogMaxFileSize());
 		rfa.setMaxBackupIndex(config.getRollingLogMaxFileNumber());
+		rfa.activateOptions();
 		org.apache.log4j.Logger.getRootLogger().addAppender(rfa);
 
 		org.apache.log4j.Logger.getLogger("org").setLevel(Level.INFO);
 		org.apache.log4j.Logger.getLogger("httpclient").setLevel(Level.INFO);
 		org.apache.log4j.Logger.getLogger("freemarker").setLevel(Level.INFO);
-		org.apache.log4j.Logger.getLogger("lu.nowina").setLevel(Level.DEBUG);
-		// Disable warnings for java.util.prefs: when loading userRoot on Windows,
-		// JRE will also try to load/create systemRoot which is under HKLM. This last
-		// operation will not be permitted unless user is Administrator. If it is not
-		// the case, a warning will be issued but we can ignore it safely as we only
-		// use userRoot which is under HKCU.
+		org.apache.log4j.Logger.getLogger("lu.nowina").setLevel(config.isDebug() ? Level.DEBUG : Level.INFO);
 		org.apache.log4j.Logger.getLogger("java.util.prefs").setLevel(Level.ERROR);
 	}
 
@@ -146,67 +147,109 @@ public class NexuLauncher {
 		return false;
 	}
 
-	private final Properties loadProperties() throws IOException {
+	private Properties loadProperties() throws IOException {
+		final Properties loadedProperties = new Properties();
+		loadPropertiesFromClasspath(loadedProperties);
 
-        Properties props = new Properties();
-		loadPropertiesFromClasspath(props);
+		final File explicitConfig = explicitConfigurationFile();
+		if (explicitConfig != null) {
+			loadExternalProperties(loadedProperties, explicitConfig, true);
+			return loadedProperties;
+		}
 
-        if (!loadPropertiesFromJarFolder(props)) {        
-            loadPropertiesFromClasspath(props);
-        }
-		return props;
-
+		for (File candidate : externalConfigurationCandidates()) {
+			if (loadExternalProperties(loadedProperties, candidate, false)) {
+				break;
+			}
+		}
+		return loadedProperties;
 	}
-	
-    private boolean loadPropertiesFromJarFolder(Properties props) {
-        // check location just outside jar file, to see if we have externalized properties there
-        try {
-            URL url = NexuLauncher.class.getProtectionDomain().getCodeSource().getLocation();
-            File jarFile = new File(NexuLauncher.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath());
-            String inputFilePath = jarFile.getParent() + File.separator + "nexu-config.properties";         
-            File propFile = new File(inputFilePath);
-            if (propFile.exists()) {
-                FileInputStream is = new FileInputStream(propFile);
-                props.load(is);
-                logger.info("Externalized properties found");
-                return true;
-            }
-        }
-        catch (Exception ex) {
-            logger.warn("Externalized properties not found, will use properties file inside JAR");
-        }
 
-        return false;
-    }
+	private static File explicitConfigurationFile() {
+		String configuredPath = System.getProperty(CONFIG_FILE_PROPERTY);
+		if (configuredPath == null || configuredPath.trim().isEmpty()) {
+			configuredPath = System.getenv(CONFIG_FILE_ENVIRONMENT);
+		}
+		if (configuredPath == null || configuredPath.trim().isEmpty()) {
+			return null;
+		}
+		return new File(configuredPath.trim()).getAbsoluteFile();
+	}
 
-	private void loadPropertiesFromClasspath(Properties props) throws IOException {
-		InputStream configFile = NexUApp.class.getClassLoader().getResourceAsStream("nexu-config.properties");
-		if (configFile != null) {
-			props.load(configFile);
-			logger.info("Loaded properties from inside JAR :" + configFile);
+	private static Set<File> externalConfigurationCandidates() {
+		final Set<File> candidates = new LinkedHashSet<>();
+
+		final String jpackageApplicationPath = System.getProperty("jpackage.app-path");
+		if (jpackageApplicationPath != null && !jpackageApplicationPath.trim().isEmpty()) {
+			final File launcher = new File(jpackageApplicationPath).getAbsoluteFile();
+			addCandidate(candidates, launcher.getParentFile());
+			if (launcher.getParentFile() != null) {
+				addCandidate(candidates, launcher.getParentFile().getParentFile());
+			}
+		}
+
+		final String userDirectory = System.getProperty("user.dir");
+		if (userDirectory != null && !userDirectory.trim().isEmpty()) {
+			addCandidate(candidates, new File(userDirectory));
+		}
+
+		try {
+			final URL location = NexuLauncher.class.getProtectionDomain().getCodeSource().getLocation();
+			if (location != null && "file".equalsIgnoreCase(location.getProtocol())) {
+				final URI locationUri = location.toURI();
+				final File codeSource = new File(locationUri).getAbsoluteFile();
+				addCandidate(candidates, codeSource.isDirectory() ? codeSource : codeSource.getParentFile());
+			}
+		} catch (Exception e) {
+			logger.debug("Unable to determine code-source directory for external configuration", e);
+		}
+
+		return candidates;
+	}
+
+	private static void addCandidate(Set<File> candidates, File directory) {
+		if (directory != null) {
+			candidates.add(new File(directory, CONFIG_FILE_NAME).getAbsoluteFile());
 		}
 	}
 
-	/**
-	 * Load the properties from the properties file.
-	 * 
-	 * @param props
-	 * @return
-	 */
-	public final void loadAppConfig(Properties props) {
+	private static boolean loadExternalProperties(
+			Properties target,
+			File propertyFile,
+			boolean required) throws IOException {
+
+		if (!propertyFile.isFile()) {
+			if (required) {
+				throw new IOException("Configured NexU properties file does not exist: " + propertyFile);
+			}
+			return false;
+		}
+
+		try (InputStream input = new FileInputStream(propertyFile)) {
+			target.load(input);
+		}
+		logger.info("Loaded external NexU properties from " + propertyFile.getAbsolutePath());
+		return true;
+	}
+
+	private void loadPropertiesFromClasspath(Properties target) throws IOException {
+		try (InputStream configFile = NexUApp.class.getClassLoader().getResourceAsStream(CONFIG_FILE_NAME)) {
+			if (configFile == null) {
+				throw new IOException("Classpath configuration not found: " + CONFIG_FILE_NAME);
+			}
+			target.load(configFile);
+		}
+	}
+
+	public final void loadAppConfig(Properties properties) {
 		config = createAppConfig();
-		config.loadFromProperties(props);
+		config.loadFromProperties(properties);
 	}
 
 	protected AppConfig createAppConfig() {
 		return new AppConfig();
 	}
 
-	/**
-	 * Returns the JavaFX {@link Application} class to launch.
-	 * 
-	 * @return The JavaFX {@link Application} class to launch.
-	 */
 	protected Class<? extends Application> getApplicationClass() {
 		return NexUApp.class;
 	}
