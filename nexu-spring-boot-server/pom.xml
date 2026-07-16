@@ -40,6 +40,17 @@
             <artifactId>nexu-standalone</artifactId>
             <version>${project.version}</version>
             <exclusions>
+                <!-- The modernized runtime uses PKCS#11 and MSCAPI. The old
+                     MOCCA artifacts are no longer published and the current
+                     adapter was already non-functional. -->
+                <exclusion>
+                    <groupId>at.gv.egiz</groupId>
+                    <artifactId>smcc</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>eu.europa.ec.joinup.sd-dss</groupId>
+                    <artifactId>sscd-mocca-adapter</artifactId>
+                </exclusion>
                 <exclusion>
                     <groupId>org.eclipse.jetty</groupId>
                     <artifactId>jetty-server</artifactId>
