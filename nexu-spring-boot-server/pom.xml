@@ -13,7 +13,7 @@
 
     <artifactId>nexu-spring-boot-server</artifactId>
     <name>NexU Spring Boot HTTP server</name>
-    <description>Spring Boot adapter for the NexU local HTTP protocol.</description>
+    <description>Spring Boot adapter for the modern and legacy-compatible NexU local HTTP protocols.</description>
 
     <properties>
         <java.version>17</java.version>
@@ -65,8 +65,30 @@
         </dependency>
         <dependency>
             <groupId>lu.nowina.apps</groupId>
+            <artifactId>nexu-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>lu.nowina.apps</groupId>
             <artifactId>nexu-util</artifactId>
             <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>eu.europa.ec.joinup.sd-dss</groupId>
+            <artifactId>dss-model</artifactId>
+            <version>${dss.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>commons-lang</groupId>
+            <artifactId>commons-lang</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>javax.xml.bind</groupId>
+            <artifactId>jaxb-api</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
