@@ -34,4 +34,25 @@ Consultez la Licence pour les autorisations et les restrictions linguistiques sp
 			<digestAlgo>MD5</digestAlgo>
 		</supportedDigestAlgo>
 	</smartcard>
+	<smartcard>
+		<atr>ADSF123FSDFS</atr>
+		<connectionInfos>
+			<connectionInfo>
+				<env>
+					<jreVendor>OPENJDK</jreVendor>
+					<osName>Windows 10</osName>
+					<osArch>amd64</osArch>
+					<osVersion>10.0</osVersion>
+					<arch>AMD64</arch>
+					<os>WINDOWS</os>
+				</env>
+				<selectedApi>MSCAPI</selectedApi>
+				<apiParam>param</apiParam>
+			</connectionInfo>
+		</connectionInfos>
+		<supportedDigestAlgo>
+			<digestAlgo>SHA1</digestAlgo>
+			<digestAlgo>MD5</digestAlgo>
+		</supportedDigestAlgo>
+	</smartcard>
 </database>

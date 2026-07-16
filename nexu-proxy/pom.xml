@@ -1,0 +1,741 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<groupId>lu.nowina.apps</groupId>
+		<artifactId>nexu</artifactId>
+		<relativePath>../pom.xml</relativePath>
+		<version>1.24-SNAPSHOT</version>
+	</parent>
+
+	<artifactId>nexu-proxy</artifactId>
+	
+	<packaging>war</packaging>
+
+	<properties>
+		<maven.javadoc.skip>true</maven.javadoc.skip>
+		
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<project.build.targetEncoding>UTF-8</project.build.targetEncoding>
+		
+		<bundle.name>${project.groupId} :: ${project.artifactId} :: ${project.name}</bundle.name>
+		<bundle.symbolicName>${project.groupId}.${project.artifactId}-${classifier}</bundle.symbolicName>
+		<bundle.namespace>${project.groupId}.${project.artifactId}</bundle.namespace>
+        
+        <tomcat.version>7.0.59</tomcat.version>        <!-- Spring boot with tomcat 7.0.59-->
+        <servlet-api.version>3.0.1</servlet-api.version>
+        <io.jsonwebtoken.version>0.11.1</io.jsonwebtoken.version>
+        <hibernate-validator.version>6.0.13.Final</hibernate-validator.version>
+		<commons-lang3.version>3.5</commons-lang3.version>
+		<guava.version>19.0</guava.version>
+		<commons-fileupload.version>1.4</commons-fileupload.version>
+        <commons-collections4.version>4.4</commons-collections4.version>
+        <camel.version>2.22.2</camel.version>
+        <zt-zip.version>1.12</zt-zip.version>
+        
+	    <jaxws-api.version>2.3.1</jaxws-api.version>
+	    <jsr181-api.version>1.0-MR1</jsr181-api.version>
+	    <javax.jws-api.version>1.1</javax.jws-api.version>
+	    <jaf-api.version>1.2.0</jaf-api.version>
+	    <jaxb-core.version>2.3.0.1</jaxb-core.version>
+	    <jaxb-api.version>2.3.1</jaxb-api.version>
+	    <jaxb-impl.version>2.3.2</jaxb-impl.version>
+	    <jaxb-runtime.version>2.3.2</jaxb-runtime.version>
+	    <xmlsec.version>1.5.8</xmlsec.version>
+	    <!-- OPTIONAL NOT NECESSARY -->   
+		<xml-security.version>1.4.1</xml-security.version>
+		<xmlsec-santuario.version>2.1.4</xmlsec-santuario.version>	 	
+	    <javax.ws.rs.version>2.1.1</javax.ws.rs.version>
+	    <xercesImpl.version>2.11.0</xercesImpl.version>
+	    <javax.validation-api.version>2.0.1.Final</javax.validation-api.version>
+	    <javax.annotation-api.version>1.3.2</javax.annotation-api.version>
+
+    	<!-- The final name of the war file -->
+    	<war.name>${project.artifactId}</war.name>
+    	
+    	<cxf.version>3.4.4</cxf.version>
+
+	</properties>
+
+	<dependencyManagement>
+	    <dependencies>
+			<dependency>
+			    <groupId>org.springframework.boot</groupId>
+			    <artifactId>spring-boot-dependencies</artifactId>
+			    <version>1.5.22.RELEASE</version>
+			    <type>pom</type>
+	            <scope>import</scope>
+	        </dependency>
+	    </dependencies>
+	</dependencyManagement>
+
+	<dependencies>
+	
+	    <!-- MOD 4535992 -->
+
+		<!-- ============================ -->
+		<!-- XML DEPENDENCIES JDK 11      -->
+		<!-- ============================ -->
+		<dependency>
+			<groupId>com.sun.xml.bind</groupId>
+			<artifactId>jaxb-xjc</artifactId>
+			<scope>compile</scope>			
+		</dependency>
+		<dependency>
+			<groupId>javax.xml.bind</groupId>
+			<artifactId>jaxb-api</artifactId>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.sun.xml.bind</groupId>
+			<artifactId>jaxb-impl</artifactId>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.sun.xml.bind</groupId>
+			<artifactId>jaxb-core</artifactId>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>javax.activation</groupId>
+			<artifactId>javax.activation-api</artifactId>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>javax.xml.ws</groupId>
+			<artifactId>jaxws-api</artifactId>
+			<scope>compile</scope>			
+		</dependency>
+		<dependency>
+		    <groupId>javax.jws</groupId>
+		    <artifactId>javax.jws-api</artifactId>
+		    <scope>compile</scope>
+		</dependency>		
+		<dependency>
+			<groupId>org.glassfish.jaxb</groupId>
+			<artifactId>jaxb-runtime</artifactId>
+			<scope>compile</scope>
+		</dependency>
+		<!-- -->
+		<dependency>
+		    <groupId>javax.ws.rs</groupId>
+		    <artifactId>javax.ws.rs-api</artifactId>
+		    <scope>compile</scope>
+		</dependency>
+		<dependency>
+		    <groupId>org.apache.santuario</groupId>
+		    <artifactId>xmlsec</artifactId>
+		    <scope>compile</scope>
+		</dependency>
+		<dependency>
+		    <groupId>javax.validation</groupId>
+		    <artifactId>validation-api</artifactId>
+		    <scope>compile</scope>
+		</dependency>
+		<dependency>
+		    <groupId>javax.annotation</groupId>
+		    <artifactId>javax.annotation-api</artifactId>
+		    <scope>compile</scope>
+		</dependency>
+		
+		<!-- ==================== -->
+        <!-- SPRING BOOT -->
+        <!-- ==================== -->
+        
+        <dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter</artifactId>
+			<!-- use log4j2 instead logback -->
+			<!--
+			<exclusions>
+				<exclusion>
+					<groupId>org.springframework.boot</groupId>
+					<artifactId>spring-boot-starter-logging</artifactId>
+				</exclusion>				   
+			</exclusions>
+			-->
+		</dependency>
+
+	    <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-devtools</artifactId>
+            <optional>true</optional>
+  			<scope>runtime</scope>         
+        </dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-configuration-processor</artifactId>
+			<optional>true</optional>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-autoconfigure-processor</artifactId>
+			<optional>true</optional>
+		</dependency>         
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-actuator</artifactId>
+		</dependency>
+		
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-jersey</artifactId>
+		</dependency>
+		
+		<dependency>
+		    <groupId>org.springframework.boot</groupId>
+		    <artifactId>spring-boot-starter-security</artifactId>
+		</dependency>
+		
+		<dependency>
+		    <groupId>org.springframework.security</groupId>
+		    <artifactId>spring-security-web</artifactId>
+		</dependency>	
+		<!-- Web -->
+		<dependency>
+		   <groupId>org.springframework.boot</groupId>
+		   <artifactId>spring-boot-starter-web</artifactId>
+		   <exclusions>
+				<exclusion>
+					<groupId>org.springframework.boot</groupId>
+					<artifactId>spring-boot-starter-logging</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-logging</artifactId>
+		</dependency>	
+		
+		<!-- juli fot tomcat 7 -->
+		<dependency>                                 
+			<groupId>org.apache.tomcat</groupId>
+			<artifactId>tomcat-juli</artifactId>
+			<version>${tomcat.version}</version>
+		</dependency>
+
+		<dependency>
+		    <groupId>org.springframework.boot</groupId>
+		      <artifactId>spring-boot-starter-tomcat</artifactId>
+		      <scope>provided</scope>
+		</dependency>
+		
+		<!-- 
+		<dependency>
+		    <groupId>org.springframework.boot</groupId>
+		    <artifactId>spring-boot-starter-json</artifactId>	
+		    <version>2.0.5.RELEASE</version>	   
+		</dependency>
+		-->
+		<!-- Thymeleaf -->
+		<dependency>
+		   <groupId>org.springframework.boot</groupId>
+		   <artifactId>spring-boot-starter-thymeleaf</artifactId>
+		</dependency>
+		<!-- FreeMarker -->
+		<!--
+		<dependency>
+		   <groupId>org.springframework.boot</groupId>
+		   <artifactId>spring-boot-starter-freemarker</artifactId>
+		</dependency>
+		-->
+		<!-- JSP -->
+		<!--
+		<dependency>
+		   <groupId>org.apache.tomcat.embed</groupId>
+		   <artifactId>tomcat-embed-jasper</artifactId>
+		</dependency>
+		-->
+		<!-- JSTL -->
+		<!--
+		<dependency>
+		   <groupId>javax.servlet</groupId>
+		   <artifactId>jstl</artifactId>
+		</dependency>
+		-->
+		<dependency>
+		    <groupId>commons-codec</groupId>
+		    <artifactId>commons-codec</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>org.apache.httpcomponents</groupId>
+			<artifactId>httpcore</artifactId>
+		</dependency>
+		
+		<dependency>
+		    <groupId>org.apache.httpcomponents</groupId>
+		    <artifactId>httpmime</artifactId>
+		</dependency>
+		
+		<dependency>
+			<groupId>org.apache.httpcomponents</groupId>
+			<artifactId>httpclient</artifactId>
+		</dependency>
+		
+		<dependency>
+		    <groupId>com.google.code.gson</groupId>
+		    <artifactId>gson</artifactId>
+		</dependency>			
+		
+		<!-- ========================= -->
+		<!-- JACKSON -->
+		<!-- ========================= -->		
+	
+		<!-- core -->
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-annotations</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-core</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
+		</dependency>
+	
+		<!-- modules -->
+		<dependency>
+			<groupId>com.fasterxml.jackson.module</groupId>
+			<artifactId>jackson-module-jaxb-annotations</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.module</groupId>
+			<artifactId>jackson-module-parameter-names</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.module</groupId>
+			<artifactId>jackson-module-kotlin</artifactId>
+		</dependency>
+
+		<!-- dataformat -->
+		<dependency>
+			<groupId>com.fasterxml.jackson.dataformat</groupId>
+			<artifactId>jackson-dataformat-avro</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.dataformat</groupId>
+			<artifactId>jackson-dataformat-cbor</artifactId>
+		</dependency>	
+		<dependency>
+			<groupId>com.fasterxml.jackson.dataformat</groupId>
+			<artifactId>jackson-dataformat-csv</artifactId>
+		</dependency>	
+		<dependency>
+			<groupId>com.fasterxml.jackson.dataformat</groupId>
+			<artifactId>jackson-dataformat-properties</artifactId>
+		</dependency>	
+		<dependency>
+			<groupId>com.fasterxml.jackson.dataformat</groupId>
+			<artifactId>jackson-dataformat-smile</artifactId>
+		</dependency>	
+		<dependency>
+			<groupId>com.fasterxml.jackson.dataformat</groupId>
+			<artifactId>jackson-dataformat-xml</artifactId>
+		</dependency>	
+		<dependency>
+			<groupId>com.fasterxml.jackson.dataformat</groupId>
+			<artifactId>jackson-dataformat-yaml</artifactId>
+		</dependency>
+	
+		<!-- datatype -->
+		<dependency>
+			<groupId>com.fasterxml.jackson.datatype</groupId>
+			<artifactId>jackson-datatype-joda</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.datatype</groupId>
+			<artifactId>jackson-datatype-guava</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.datatype</groupId>
+			<artifactId>jackson-datatype-jdk8</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.datatype</groupId>
+			<artifactId>jackson-datatype-jsr310</artifactId>
+		</dependency>
+	
+		<!-- jaxrs -->
+		<dependency>
+			<groupId>com.fasterxml.jackson.jaxrs</groupId>
+			<artifactId>jackson-jaxrs-base</artifactId>
+		</dependency>	
+		<dependency>
+			<groupId>com.fasterxml.jackson.jaxrs</groupId>
+			<artifactId>jackson-jaxrs-cbor-provider</artifactId>
+		</dependency>	
+		<dependency>
+			<groupId>com.fasterxml.jackson.jaxrs</groupId>
+			<artifactId>jackson-jaxrs-json-provider</artifactId>
+		</dependency>	
+		<dependency>
+			<groupId>com.fasterxml.jackson.jaxrs</groupId>
+			<artifactId>jackson-jaxrs-smile-provider</artifactId>
+		</dependency>	
+		<dependency>
+			<groupId>com.fasterxml.jackson.jaxrs</groupId>
+			<artifactId>jackson-jaxrs-xml-provider</artifactId>
+		</dependency>	
+		<dependency>
+			<groupId>com.fasterxml.jackson.jaxrs</groupId>
+			<artifactId>jackson-jaxrs-yaml-provider</artifactId>
+		</dependency>
+		
+		<!-- ============= -->
+		<!-- OTHER DEPENDENCIES (COMPILED) -->
+		<!-- ============= -->
+		<!-- tomcat 8 -->
+		<!--
+		<dependency>
+			<groupId>org.hibernate.validator</groupId>
+			<artifactId>hibernate-validator</artifactId>
+			<version>${hibernate-validator.version}</version>
+			<scope>compile</scope>
+			<optional>true</optional>
+		</dependency>
+		-->
+		<!-- tomcat 7 -->
+		<dependency>
+		    <groupId>org.hibernate</groupId>
+		    <artifactId>hibernate-validator</artifactId>
+		    <version>5.4.3.Final</version>
+		    <scope>compile</scope>
+		</dependency>
+		<dependency>
+		    <groupId>org.hibernate</groupId>
+		    <artifactId>hibernate-validator-annotation-processor</artifactId>
+		    <version>5.4.3.Final</version>
+		    <scope>compile</scope>
+		</dependency>
+
+		<dependency>
+		    <groupId>org.apache.commons</groupId>
+		    <artifactId>commons-lang3</artifactId>
+		    <version>${commons-lang3.version}</version>
+		    <scope>compile</scope>
+		</dependency>	
+		<dependency>
+		    <groupId>com.google.guava</groupId>
+		    <artifactId>guava</artifactId>
+		    <version>${guava.version}</version>
+		    <scope>compile</scope>
+		</dependency>
+        <dependency>
+		    <groupId>commons-fileupload</groupId>
+		    <artifactId>commons-fileupload</artifactId>
+		    <version>${commons-fileupload.version}</version>
+		    <scope>compile</scope>
+		</dependency>
+		
+		<dependency>
+		    <groupId>org.apache.commons</groupId>
+		    <artifactId>commons-collections4</artifactId>
+		    <version>${commons-collections4.version}</version>
+		    <scope>compile</scope>
+		</dependency>
+
+		 <!-- END MOD 4535992 -->
+
+		<dependency>
+			<groupId>lu.nowina.apps</groupId>
+			<artifactId>nexu-api</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>lu.nowina.apps</groupId>
+			<artifactId>nexu-model</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+		
+		<dependency>
+			<groupId>javax.servlet</groupId>
+			<artifactId>javax.servlet-api</artifactId>
+			<scope>provided</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>log4j-over-slf4j</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>jcl-over-slf4j</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>ch.qos.logback</groupId>
+			<artifactId>logback-classic</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>org.webjars</groupId>
+			<artifactId>bootstrap</artifactId>
+    		<version>4.6.0-1</version>
+		</dependency>
+		<dependency>
+			<groupId>org.webjars</groupId>
+			<artifactId>font-awesome</artifactId>
+			<version>4.7.0</version>
+		</dependency>
+
+		<!-- ================================ -->
+		<!-- CXF DEPENDENCIES -->
+		<!-- ================================ -->
+		
+		<dependency>
+			<groupId>org.apache.cxf</groupId>
+			<artifactId>cxf-rt-transports-http</artifactId>
+			<version>${cxf.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.cxf</groupId>
+			<artifactId>cxf-rt-frontend-jaxws</artifactId>
+			<version>${cxf.version}</version>
+		</dependency>
+		<dependency>
+            <groupId>org.apache.cxf</groupId>
+            <artifactId>cxf-rt-frontend-jaxrs</artifactId>
+            <version>${cxf.version}</version>
+        </dependency>
+		<!-- MOD 4535992
+		<dependency>
+			<groupId>org.springframework.ws</groupId>
+			<artifactId>spring-ws-core</artifactId>
+			<version>${spring.version}</version>
+			<exclusions>
+				<exclusion>
+					<artifactId>commons-logging</artifactId>
+					<groupId>commons-logging</groupId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		
+		<dependency>
+			<groupId>org.springframework.ws</groupId>
+			<artifactId>spring-ws-support</artifactId>
+			<version>${spring.version}</version>
+			<exclusions>
+				<exclusion>
+					<artifactId>commons-logging</artifactId>
+					<groupId>commons-logging</groupId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		-->
+		
+		<!-- ====================== -->
+		<!-- TEST -->
+		<!-- ====================== -->
+		
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+		</dependency>
+
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+	</dependencies>
+	
+    <build>
+    	<finalName>${war.name}</finalName>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+                <includes>
+                    <include>**/nexu-proxy.properties</include>
+                </includes>
+            </resource>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>false</filtering>
+                <excludes>
+                    <exclude>**/nexu-proxy.properties</exclude>
+                </excludes>
+            </resource>
+            <resource>
+		        <filtering>true</filtering>
+		        <directory>src/main/resources</directory>
+		        <includes>
+		            <include>application.properties</include>
+		        </includes>
+		    </resource>
+        </resources>
+
+        <plugins>	
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<source>${maven.compiler.source}</source>
+					<target>${maven.compiler.target}</target>
+					<project.build.sourceEncoding>${project.build.sourceEncoding}</project.build.sourceEncoding>
+				</configuration>
+			</plugin>
+	        
+			<!-- This plugin will build the war file. -->
+		    <plugin>	
+		    	<groupId>org.apache.maven.plugins</groupId>
+		        <artifactId>maven-war-plugin</artifactId>	
+		        <version>3.2.2</version>
+				<executions>
+					<execution>
+						<id>default-war</id>
+						<goals>
+							<goal>war</goal>
+						</goals>
+						<phase>package</phase>
+					</execution>
+				</executions>
+		        <configuration>	
+		        	<warName>${war.name}</warName>
+					<!--  Optionally specify where the web.xml file comes from -->					
+				    <!-- <webXml>src/main/webapp/WEB-INF/web.xml</webXml> -->
+				    <warSourceIncludes>WEB-INF/**,META-INF/**</warSourceIncludes>
+				    <failOnMissingWebXml>false</failOnMissingWebXml>
+				    <warSourceDirectory>target/classes/static/</warSourceDirectory>
+					<!--  Optionally specify extra resources to include -->                
+					<webResources>
+						<resource>
+							<directory>src/main/webapp</directory>
+							<includes>
+								<include>WEB-INF/**</include>
+							</includes>
+						</resource>						
+						<!--
+			            <resource>
+			              <directory>src/main/resources</directory>
+			              <targetPath>WEB-INF</targetPath>
+			              <includes>
+			                <include>**/*</include>
+			              </includes>
+			            </resource>
+						<resource>
+	                        <directory>src/main/webapp</directory>
+	                        <filtering>false</filtering>
+	                    </resource>  
+	                    -->                        
+			            <!-- Add frontend folder to war package -->
+			            <!--			            	
+			            <resource>
+			            	<directory>${working.directory}/dist</directory>
+			            	<targetPath>WEB-INF/classes/static/app/dist/</targetPath>
+	                    	<filtering>false</filtering>
+							<excludes>
+								<exclude>node/**</exclude>
+							</excludes>					
+		                </resource>
+		                -->
+					</webResources>
+					<!-- Exclude JCL and LOG4J since all logging should go through SLF4J. Note 
+					that we're excluding log4j-<version>.jar but keeping log4j-over-slf4j-<version>.jar -->
+					<packagingExcludes>
+						WEB-INF/lib/commons-logging-*.jar,
+						%regex[WEB-INF/lib/log4j-(?!over-slf4j).*.jar]
+					</packagingExcludes>
+					
+					<archive>
+						<manifestEntries>
+							<Implementation-Version>${project.version}</Implementation-Version>
+							<Build-Date>${maven.build.timestamp}</Build-Date>
+							<Build-Name>${project.artifactId}</Build-Name>
+							<Build-Key>${project.artifactId}</Build-Key>
+							<Build-Number>${project.version}</Build-Number>
+							<Build-Revision>${project.version}</Build-Revision>
+						</manifestEntries>
+						<manifestSections>
+							<manifestSection>
+								<name>Libraries</name>
+								<manifestEntries></manifestEntries>
+							</manifestSection>
+						</manifestSections>
+						<manifest>
+							<addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+							<addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+						</manifest>
+					</archive>
+					
+		        </configuration>		
+		    </plugin>
+			<!--
+			<plugin>
+				<groupId>org.apache.tomcat.maven</groupId>
+				<artifactId>tomcat7-maven-plugin</artifactId>
+				<configuration>
+					<update>true</update>
+					<url>http://extranet.nowina.lu:8080/manager/text</url>
+					<server>extranet.nowina.lu</server>
+				</configuration>
+			</plugin>
+			-->		    
+		
+        </plugins>
+        
+       <pluginManagement>
+            <plugins>
+				<!--This plugin's configuration is used to store Eclipse m2e settings 
+					only. It has no influence on the Maven build itself. -->
+				<plugin>
+					<groupId>org.eclipse.m2e</groupId>
+					<artifactId>lifecycle-mapping</artifactId>
+					<version>1.0.0</version>
+					<configuration>
+						<lifecycleMappingMetadata>
+							<pluginExecutions>
+								<pluginExecution>
+									<pluginExecutionFilter>
+										<groupId>org.apache.maven.plugins</groupId>
+										<artifactId>maven-toolchains-plugin</artifactId>
+										<versionRange>[${maven.toolchain.version},)</versionRange>
+										<goals>
+											<goal>toolchain</goal>
+										</goals>
+									</pluginExecutionFilter>
+									<action>
+										<ignore></ignore>
+									</action>
+								</pluginExecution>
+								<pluginExecution>
+									<pluginExecutionFilter>
+										<groupId>com.github.eirslett</groupId>
+										<artifactId>frontend-maven-plugin</artifactId>
+										<versionRange>[0,)</versionRange>
+										<goals>
+											<goal>install-node-and-yarn</goal>
+											<goal>yarn</goal>
+											<goal>install-node-and-npm</goal>
+											<goal>npm</goal>
+										</goals>
+									</pluginExecutionFilter>
+									<action>
+										<!-- ignore yarn builds triggered by eclipse -->
+										<ignore />
+									</action>
+								</pluginExecution>
+							</pluginExecutions>
+						</lifecycleMappingMetadata>
+					</configuration>
+				</plugin>                
+            </plugins>
+        </pluginManagement>
+        
+    </build>
+
+</project>

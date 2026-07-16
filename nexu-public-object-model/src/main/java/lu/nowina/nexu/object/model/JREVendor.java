@@ -20,6 +20,6 @@ package lu.nowina.nexu.object.model;
  */
 public enum JREVendor {
 
-	ORACLE, NOT_RECOGNIZED;
+	ORACLE, OPENJDK, NOT_RECOGNIZED;
 
 }

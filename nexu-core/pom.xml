@@ -3,8 +3,8 @@
 	<parent>
 		<groupId>lu.nowina.apps</groupId>
 		<artifactId>nexu</artifactId>
-        <relativePath>../pom.xml</relativePath>
-		<version>1.23-modified-04-SNAPSHOT</version>
+        	<relativePath>../pom.xml</relativePath>
+		<version>1.24-SNAPSHOT</version>
 	</parent>
 	<artifactId>nexu-core</artifactId>
 
@@ -19,11 +19,62 @@
 			<artifactId>nexu-api</artifactId>
 			<version>${project.version}</version>
 		</dependency>
+
 		<!-- unisystems change -->
+		<!-- MOD 4535992
 		<dependency>
 			<groupId>lu.nowina</groupId>
 			<artifactId>nexu_for_mocca</artifactId>
-		</dependency>      
+		</dependency>  
+		-->
+
+		<!-- MOD 4535992 -->
+		
+		
+		<dependency>
+		    <groupId>io.github.jnasmartcardio</groupId>
+		    <artifactId>jnasmartcardio</artifactId>  
+		</dependency>
+	
+		<!--
+		<dependency>
+		    <groupId>com.github.martinpaljak</groupId>
+		    <artifactId>apdu4j-core</artifactId>
+		</dependency>
+		<dependency>
+		    <groupId>com.github.martinpaljak</groupId>
+		    <artifactId>apdu4j-pcsc</artifactId>
+		</dependency>
+		<dependency>
+		    <groupId>com.github.martinpaljak</groupId>
+		    <artifactId>apdu4j-tool</artifactId>
+		</dependency>
+		-->
+		
+		<dependency>
+		    <groupId>org.openjfx</groupId>
+		    <artifactId>javafx-controls</artifactId>
+		</dependency>
+		<dependency>
+		    <groupId>org.openjfx</groupId>
+		    <artifactId>javafx-fxml</artifactId>
+		</dependency>
+		
+		<dependency>
+		    <groupId>org.xipki.iaik</groupId>
+		    <artifactId>sunpkcs11-wrapper</artifactId>
+		</dependency>
+
+		<!-- END MOD 4535992 -->
+
+		<dependency>
+			<groupId>eu.europa.ec.joinup.sd-dss</groupId>
+			<artifactId>sscd-mocca-adapter</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>at.gv.egiz</groupId>
+			<artifactId>smcc</artifactId>
+		</dependency>
 		<dependency>
 			<groupId>lu.nowina.apps</groupId>
 			<artifactId>nexu-model</artifactId>
@@ -43,19 +94,7 @@
 		<dependency>
 			<groupId>eu.europa.ec.joinup.sd-dss</groupId>
 			<artifactId>dss-token</artifactId>
-			<version>${dss.version}</version>
 		</dependency>
-		<dependency>
-			<groupId>eu.europa.ec.joinup.sd-dss</groupId>
-			<artifactId>dss-spi</artifactId>
-			<version>${dss.version}</version>
-		</dependency>   
-        <!--   
-		<dependency>
-			<groupId>eu.europa.ec.joinup.sd-dss</groupId>
-			<artifactId>sscd-mocca-adapter</artifactId>
-			<version>5.6</version>  5.9 is missing 
-		</dependency>   DSS seem to have removed 5.6 as well   -->
 		<dependency>
 			<groupId>org.mockito</groupId>
 			<artifactId>mockito-all</artifactId>
@@ -65,6 +104,10 @@
         <dependency>
             <groupId>net.java.dev.jna</groupId>
             <artifactId>jna</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>net.java.dev.jna</groupId>
+            <artifactId>jna-platform</artifactId>
         </dependency>
         <dependency>
 	        <groupId>org.powermock</groupId>
@@ -80,9 +123,29 @@
   		</dependency>
 	</dependencies>
 
-	<properties>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<powermock.version>1.7.1</powermock.version>
-	</properties>
+	<build>
+		<plugins>
+           <plugin>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<source>${maven.compiler.source}</source>
+					<target>${maven.compiler.target}</target>
+	
+                    <!-- jdk.crypto.cryptoki : SunPKCS11 -->
+                    <compilerArgs>
+						<arg>--add-modules</arg>
+						<arg>jdk.crypto.cryptoki</arg>
+						
+						<arg>--add-exports</arg>
+						<arg>jdk.crypto.cryptoki/sun.security.pkcs11.wrapper=ALL-UNNAMED</arg>		
+												
+						<!-- Reflection at runtime -->
+						<arg>--add-opens</arg>
+						<arg>jdk.crypto.cryptoki/sun.security.pkcs11=ALL-UNNAMED</arg>
+					</compilerArgs>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
 
 </project>

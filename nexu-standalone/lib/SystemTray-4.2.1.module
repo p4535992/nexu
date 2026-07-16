@@ -1,0 +1,222 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "com.dorkbox",
+    "module": "SystemTray",
+    "version": "4.2.1",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "7.6"
+    }
+  },
+  "variants": [
+    {
+      "name": "apiElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.jvm.version": 8,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "dependencies": [
+        {
+          "group": "com.dorkbox",
+          "module": "Executor",
+          "version": {
+            "requires": "3.11"
+          }
+        },
+        {
+          "group": "com.dorkbox",
+          "module": "Desktop",
+          "version": {
+            "requires": "1.0"
+          }
+        },
+        {
+          "group": "com.dorkbox",
+          "module": "JNA",
+          "version": {
+            "requires": "1.0"
+          }
+        },
+        {
+          "group": "com.dorkbox",
+          "module": "OS",
+          "version": {
+            "requires": "1.6"
+          }
+        },
+        {
+          "group": "com.dorkbox",
+          "module": "Updates",
+          "version": {
+            "requires": "1.1"
+          }
+        },
+        {
+          "group": "com.dorkbox",
+          "module": "Utilities",
+          "version": {
+            "requires": "1.39"
+          }
+        },
+        {
+          "group": "org.javassist",
+          "module": "javassist",
+          "version": {
+            "requires": "3.29.2-GA"
+          }
+        },
+        {
+          "group": "net.java.dev.jna",
+          "module": "jna-jpms",
+          "version": {
+            "requires": "5.12.1"
+          }
+        },
+        {
+          "group": "net.java.dev.jna",
+          "module": "jna-platform-jpms",
+          "version": {
+            "requires": "5.12.1"
+          }
+        },
+        {
+          "group": "org.slf4j",
+          "module": "slf4j-api",
+          "version": {
+            "requires": "1.8.0-beta4"
+          }
+        },
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib-jdk8",
+          "version": {
+            "requires": "1.7.22"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "SystemTray-4.2.1.jar",
+          "url": "SystemTray-4.2.1.jar",
+          "size": 229686,
+          "sha512": "f0f1db08559797bed573064bc11cb5860242ae006ffc798dcac10eb5c7133236a3e000ef4ca0505ae5ad680bc40126f96e9eb8fed088505be7b8836301e16b2f",
+          "sha256": "3b1ef49a81bc363623953c1bda74af3b7aa0850cc931a46b1c2a169c951415d0",
+          "sha1": "3de379d7109b709b1870097dbcfbf20c701e5e00",
+          "md5": "5fde0cb8b23aec9fd00f4ad5dba712ad"
+        }
+      ]
+    },
+    {
+      "name": "runtimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.jvm.version": 8,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "dependencies": [
+        {
+          "group": "com.dorkbox",
+          "module": "Executor",
+          "version": {
+            "requires": "3.11"
+          }
+        },
+        {
+          "group": "com.dorkbox",
+          "module": "Desktop",
+          "version": {
+            "requires": "1.0"
+          }
+        },
+        {
+          "group": "com.dorkbox",
+          "module": "JNA",
+          "version": {
+            "requires": "1.0"
+          }
+        },
+        {
+          "group": "com.dorkbox",
+          "module": "OS",
+          "version": {
+            "requires": "1.6"
+          }
+        },
+        {
+          "group": "com.dorkbox",
+          "module": "Updates",
+          "version": {
+            "requires": "1.1"
+          }
+        },
+        {
+          "group": "com.dorkbox",
+          "module": "Utilities",
+          "version": {
+            "requires": "1.39"
+          }
+        },
+        {
+          "group": "org.javassist",
+          "module": "javassist",
+          "version": {
+            "requires": "3.29.2-GA"
+          }
+        },
+        {
+          "group": "net.java.dev.jna",
+          "module": "jna-jpms",
+          "version": {
+            "requires": "5.12.1"
+          }
+        },
+        {
+          "group": "net.java.dev.jna",
+          "module": "jna-platform-jpms",
+          "version": {
+            "requires": "5.12.1"
+          }
+        },
+        {
+          "group": "org.slf4j",
+          "module": "slf4j-api",
+          "version": {
+            "requires": "1.8.0-beta4"
+          }
+        },
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib-jdk8",
+          "version": {
+            "requires": "1.7.22"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "SystemTray-4.2.1.jar",
+          "url": "SystemTray-4.2.1.jar",
+          "size": 229686,
+          "sha512": "f0f1db08559797bed573064bc11cb5860242ae006ffc798dcac10eb5c7133236a3e000ef4ca0505ae5ad680bc40126f96e9eb8fed088505be7b8836301e16b2f",
+          "sha256": "3b1ef49a81bc363623953c1bda74af3b7aa0850cc931a46b1c2a169c951415d0",
+          "sha1": "3de379d7109b709b1870097dbcfbf20c701e5e00",
+          "md5": "5fde0cb8b23aec9fd00f4ad5dba712ad"
+        }
+      ]
+    }
+  ]
+}

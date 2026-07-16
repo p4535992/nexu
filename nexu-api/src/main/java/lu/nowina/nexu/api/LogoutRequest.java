@@ -13,6 +13,9 @@
  */
 package lu.nowina.nexu.api;
 
+import eu.europa.esig.dss.enumerations.DigestAlgorithm;
+import eu.europa.esig.dss.model.ToBeSigned;
+
 public class LogoutRequest extends NexuRequest {
 
 	private TokenId tokenId;

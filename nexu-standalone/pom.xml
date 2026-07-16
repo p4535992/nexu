@@ -3,11 +3,82 @@
 	<parent>
 		<groupId>lu.nowina.apps</groupId>
 		<artifactId>nexu</artifactId>
-		<version>1.23-modified-04-SNAPSHOT</version>
+		<relativePath>../pom.xml</relativePath>
+		<version>1.24-SNAPSHOT</version>
 	</parent>
 	<artifactId>nexu-standalone</artifactId>
 
 	<dependencies>
+
+        <!-- MOD 4535992 -->
+        
+		<!-- ============================ -->
+		<!-- XML DEPENDENCIES JDK 11      -->
+		<!-- ============================ -->
+		<dependency>
+			<groupId>com.sun.xml.bind</groupId>
+			<artifactId>jaxb-xjc</artifactId>
+			<scope>compile</scope>			
+		</dependency>
+		<dependency>
+			<groupId>javax.xml.bind</groupId>
+			<artifactId>jaxb-api</artifactId>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.sun.xml.bind</groupId>
+			<artifactId>jaxb-impl</artifactId>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.sun.xml.bind</groupId>
+			<artifactId>jaxb-core</artifactId>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>javax.activation</groupId>
+			<artifactId>javax.activation-api</artifactId>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>javax.xml.ws</groupId>
+			<artifactId>jaxws-api</artifactId>
+			<scope>compile</scope>			
+		</dependency>
+		<dependency>
+		    <groupId>javax.jws</groupId>
+		    <artifactId>javax.jws-api</artifactId>
+		    <scope>compile</scope>
+		</dependency>		
+		<dependency>
+			<groupId>org.glassfish.jaxb</groupId>
+			<artifactId>jaxb-runtime</artifactId>
+			<scope>compile</scope>
+		</dependency>
+		<!-- -->
+		<dependency>
+		    <groupId>javax.ws.rs</groupId>
+		    <artifactId>javax.ws.rs-api</artifactId>
+		    <scope>compile</scope>
+		</dependency>
+		<dependency>
+		    <groupId>org.apache.santuario</groupId>
+		    <artifactId>xmlsec</artifactId>
+		    <scope>compile</scope>
+		</dependency>
+		<dependency>
+		    <groupId>javax.validation</groupId>
+		    <artifactId>validation-api</artifactId>
+		    <scope>compile</scope>
+		</dependency>
+		<dependency>
+		    <groupId>javax.annotation</groupId>
+		    <artifactId>javax.annotation-api</artifactId>
+		    <scope>compile</scope>
+		</dependency>
+		 
+		 <!-- END MOD 4535992 -->
+		 
 		<dependency>
 			<groupId>lu.nowina.apps</groupId>
 			<artifactId>nexu-core</artifactId>
@@ -63,9 +134,33 @@
         <dependency>
             <groupId>com.dorkbox</groupId>
             <artifactId>SystemTray</artifactId>
-            <version>3.0.RC6</version>
+            <version>4.2.1</version>
         </dependency>
 	</dependencies>
+	<build>
+		<plugins>
+           <plugin>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<source>${maven.compiler.source}</source>
+					<target>${maven.compiler.target}</target>
+	
+                    <!-- jdk.crypto.cryptoki : SunPKCS11 -->
+                    <compilerArgs>
+						<arg>--add-modules</arg>
+						<arg>jdk.crypto.cryptoki</arg>
+						
+						<arg>--add-exports</arg>
+						<arg>jdk.crypto.cryptoki/sun.security.pkcs11.wrapper=ALL-UNNAMED</arg>		
+												
+						<!-- Reflection at runtime -->
+						<arg>--add-opens</arg>
+						<arg>jdk.crypto.cryptoki/sun.security.pkcs11=ALL-UNNAMED</arg>
+					</compilerArgs>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

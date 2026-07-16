@@ -1,6 +1,5 @@
 package lu.nowina.nexu.api;
 
-import eu.europa.esig.dss.enumerations.KeyUsageBit;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -14,6 +13,7 @@ import org.mockito.Mockito;
 
 import eu.europa.esig.dss.token.DSSPrivateKeyEntry;
 import eu.europa.esig.dss.token.SignatureTokenConnection;
+import eu.europa.esig.dss.tsl.KeyUsageBit;
 import lu.nowina.nexu.api.CertificateFilter;
 
 public class CertificateFilterHelperTest {

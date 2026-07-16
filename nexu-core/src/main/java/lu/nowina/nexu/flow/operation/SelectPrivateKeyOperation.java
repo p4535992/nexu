@@ -13,13 +13,13 @@
  */
 package lu.nowina.nexu.flow.operation;
 
-import eu.europa.esig.dss.enumerations.KeyUsageBit;
-import eu.europa.esig.dss.model.x509.CertificateToken;
 import java.util.Iterator;
 import java.util.List;
 
 import eu.europa.esig.dss.token.DSSPrivateKeyEntry;
 import eu.europa.esig.dss.token.SignatureTokenConnection;
+import eu.europa.esig.dss.enumerations.KeyUsageBit;
+import eu.europa.esig.dss.model.x509.CertificateToken;
 import java.util.HashSet;
 import lu.nowina.nexu.CancelledOperationException;
 import lu.nowina.nexu.api.CertificateFilter;
@@ -91,10 +91,10 @@ public class SelectPrivateKeyOperation extends AbstractCompositeOperation<DSSPri
         logger.debug("SelectPrivateKeyOperation.perform");
         try {
             if((this.productAdapter != null) && (this.product != null) && this.productAdapter.supportCertificateFilter(this.product) && (this.certificateFilter != null)) {
-                logger.debug("SelectPrivateKeyOperation.perform getting keys from productAdapter");
+            	logger.debug("SelectPrivateKeyOperation.perform getting keys from productAdapter");
                 keys = this.productAdapter.getKeys(this.token, this.certificateFilter);
             } else {
-                logger.debug("SelectPrivateKeyOperation.perform getting keys from token");
+            	logger.debug("SelectPrivateKeyOperation.perform getting keys from token");
                 keys = this.token.getKeys();
             }
         } catch(final CancelledOperationException e) {
@@ -124,7 +124,7 @@ public class SelectPrivateKeyOperation extends AbstractCompositeOperation<DSSPri
         } else {
             // this will choose the first found certificate on the same token with usage = digital signature
             DSSPrivateKeyEntry digSignKey = findDigSignKey(keys);
-            if (this.api.getAppConfig().isFilterOnlyCertWithDigitalSignatureUsageBit() && digSignKey != null) {
+            if (this.keyFilter == null && this.api.getAppConfig().isFilterOnlyCertWithDigitalSignatureUsageBit() && digSignKey != null) {
                 return new OperationResult<DSSPrivateKeyEntry>(digSignKey);
             }
             else if (this.keyFilter != null) {

@@ -13,10 +13,10 @@
  */
 package lu.nowina.nexu.generic;
 
-import eu.europa.esig.dss.enumerations.DigestAlgorithm;
 import java.io.File;
 import java.util.List;
 
+import eu.europa.esig.dss.enumerations.DigestAlgorithm;
 import eu.europa.esig.dss.token.DSSPrivateKeyEntry;
 import eu.europa.esig.dss.token.MSCAPISignatureToken;
 import eu.europa.esig.dss.token.PasswordInputCallback;
@@ -36,8 +36,8 @@ import org.slf4j.LoggerFactory;
 
 public class GenericCardAdapter extends AbstractCardProductAdapter {
 
-    private final SCInfo info;
     private final Logger logger = LoggerFactory.getLogger(GenericCardAdapter.class.getName());
+    private final SCInfo info;
 
     public GenericCardAdapter(final SCInfo info) {
         super();
@@ -65,7 +65,8 @@ public class GenericCardAdapter extends AbstractCardProductAdapter {
     }
 
     @Override
-    protected SignatureTokenConnection connect(final NexuAPI api, final DetectedCard card, final PasswordInputCallback callback) {        // az Unisystems change - to debug
+    protected SignatureTokenConnection connect(final NexuAPI api, final DetectedCard card, final PasswordInputCallback callback) {
+	// az Unisystems change - to debug
         int i = 0;
         for (ConnectionInfo ci : this.info.getInfos()) {
            String msg = "ConnectionInfo [" + i + "] : " + ci.getEnv().getOsArch() + " " + ci.getEnv().getOsName() + " " + ci.getEnv().getOsVersion();
@@ -84,7 +85,7 @@ public class GenericCardAdapter extends AbstractCardProductAdapter {
               cInfo = this.info.getInfos().get(0);
            }
         }
-        
+
         final ScAPI scApi = cInfo.getSelectedApi();
         switch (scApi) {
             case MSCAPI:

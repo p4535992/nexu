@@ -13,17 +13,16 @@
  */
 package lu.nowina.nexu;
 
-import eu.europa.esig.dss.enumerations.DigestAlgorithm;
-import eu.europa.esig.dss.enumerations.MaskGenerationFunction;
-import eu.europa.esig.dss.enumerations.SignatureAlgorithm;
-import eu.europa.esig.dss.model.DSSException;
-import eu.europa.esig.dss.model.Digest;
-import eu.europa.esig.dss.model.SignatureValue;
-import eu.europa.esig.dss.model.ToBeSigned;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import eu.europa.esig.dss.DSSException;
+import eu.europa.esig.dss.DigestAlgorithm;
+import eu.europa.esig.dss.MaskGenerationFunction;
+import eu.europa.esig.dss.SignatureAlgorithm;
+import eu.europa.esig.dss.SignatureValue;
+import eu.europa.esig.dss.ToBeSigned;
 import eu.europa.esig.dss.token.DSSPrivateKeyEntry;
 import eu.europa.esig.dss.token.SignatureTokenConnection;
 
@@ -58,25 +57,5 @@ public class MockSignatureTokenConnection implements SignatureTokenConnection {
 			DSSPrivateKeyEntry keyEntry) throws DSSException {
 		return new SignatureValue(SignatureAlgorithm.RSA_SSA_PSS_SHA256_MGF1, "value".getBytes());
 	}
-
-   @Override
-   public SignatureValue signDigest(Digest digest, DSSPrivateKeyEntry keyEntry) throws DSSException {
-      throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-   }
-
-   @Override
-   public SignatureValue signDigest(Digest digest, MaskGenerationFunction mgf, DSSPrivateKeyEntry keyEntry) throws DSSException {
-      throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-   }
-
-   @Override
-   public SignatureValue sign(ToBeSigned tbs, SignatureAlgorithm sa, DSSPrivateKeyEntry dsspke) throws DSSException {
-      throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-   }
-
-   @Override
-   public SignatureValue signDigest(Digest digest, SignatureAlgorithm sa, DSSPrivateKeyEntry dsspke) throws DSSException {
-      throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-   }
 
 }

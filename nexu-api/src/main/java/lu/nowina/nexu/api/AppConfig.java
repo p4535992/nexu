@@ -86,6 +86,17 @@ public class AppConfig {
     
     private static final String FILTER_ONLY_CERT_WITH_DIGITAL_SIGNATURE_USAGE_BIT = "filter_only_cert_with_digital_signature_usage_bit";
     
+    // MOD 4535992
+    private static final String CLOSE_TOKEN = "close_token";
+    private boolean closeToken;
+    public boolean getCloseToken() {
+        return this.closeToken;
+    }
+    public void setCloseToken(final boolean closeToken) {
+        this.closeToken = closeToken;
+    }
+    // END MOD 4535992
+
     private static final String CACHE_TIME_TO_LIVE_MS = "cache_time_to_live_ms";
 
     private static final Logger logger = LoggerFactory.getLogger(AppConfig.class.getName());
@@ -157,7 +168,7 @@ public class AppConfig {
     private boolean makeSingleCardDefault;
     
     private boolean filterOnlyCertWithDigitalSignatureUsageBit;
-    
+
     private long cacheTimeToLiveMs;
 
     public AppConfig() {
@@ -357,7 +368,7 @@ public class AppConfig {
     public long getCacheTimeToLiveMs() {
         return this.cacheTimeToLiveMs;
     }
-    
+
     private void setCacheTimeToLiveMs(long ttl) {
         this.cacheTimeToLiveMs = ttl;
     }
@@ -449,6 +460,9 @@ public class AppConfig {
         this.setServerUrl(props.getProperty(SERVER_URL, "http://lab.nowina.solutions/nexu"));
         this.setInstallUrl(props.getProperty(INSTALL_URL, "http://nowina.lu/nexu/"));
         this.setNexuHostname(props.getProperty(NEXU_HOSTNAME, "localhost"));
+        // MOD 4535992
+        this.setCloseToken(Boolean.parseBoolean(props.getProperty(CLOSE_TOKEN, "true")));
+        // END MOD 4535992
         this.setHttpServerClass(props.getProperty(HTTP_SERVER_CLASS, "lu.nowina.nexu.jetty.JettyServer"));
         this.setDebug(Boolean.parseBoolean(props.getProperty(DEBUG, "false")));
         this.setAdvancedModeAvailable(Boolean.parseBoolean(props.getProperty(ADVANCED_MODE_AVAILABLE, "true")));

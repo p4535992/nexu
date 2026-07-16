@@ -13,9 +13,6 @@
  */
 package lu.nowina.nexu.keystore;
 
-import eu.europa.esig.dss.enumerations.DigestAlgorithm;
-import eu.europa.esig.dss.enumerations.MaskGenerationFunction;
-import eu.europa.esig.dss.enumerations.SignatureAlgorithm;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -27,6 +24,9 @@ import java.util.ResourceBundle;
 
 import eu.europa.esig.dss.model.DSSException;
 import eu.europa.esig.dss.model.Digest;
+import eu.europa.esig.dss.enumerations.DigestAlgorithm;
+import eu.europa.esig.dss.enumerations.MaskGenerationFunction;
+import eu.europa.esig.dss.enumerations.SignatureAlgorithm;
 import eu.europa.esig.dss.model.SignatureValue;
 import eu.europa.esig.dss.model.ToBeSigned;
 import eu.europa.esig.dss.token.DSSPrivateKeyEntry;
@@ -256,24 +256,27 @@ public class KeystoreProductAdapter implements ProductAdapter {
 			return proxied.sign(toBeSigned, digestAlgorithm, mgf, keyEntry);
 		}
 
-      @Override
-      public SignatureValue signDigest(Digest digest, DSSPrivateKeyEntry keyEntry) throws DSSException {
-         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-      }
+		@Override
+		public SignatureValue sign(ToBeSigned toBeSigned, SignatureAlgorithm signatureAlgorithm,
+				DSSPrivateKeyEntry keyEntry) throws DSSException {
+			return proxied.sign(toBeSigned, signatureAlgorithm, keyEntry);
+		}
 
-      @Override
-      public SignatureValue signDigest(Digest digest, MaskGenerationFunction mgf, DSSPrivateKeyEntry keyEntry) throws DSSException {
-         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-      }
+		@Override
+		public SignatureValue signDigest(Digest digest, DSSPrivateKeyEntry keyEntry) throws DSSException {
+			return proxied.signDigest(digest, keyEntry);
+		}
 
-      @Override
-      public SignatureValue sign(ToBeSigned tbs, SignatureAlgorithm sa, DSSPrivateKeyEntry dsspke) throws DSSException {
-         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-      }
+		@Override
+		public SignatureValue signDigest(Digest digest, MaskGenerationFunction mgf, DSSPrivateKeyEntry keyEntry)
+				throws DSSException {
+			return proxied.signDigest(digest, mgf, keyEntry);
+		}
 
-      @Override
-      public SignatureValue signDigest(Digest digest, SignatureAlgorithm sa, DSSPrivateKeyEntry dsspke) throws DSSException {
-         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-      }
+		@Override
+		public SignatureValue signDigest(Digest digest, SignatureAlgorithm signatureAlgorithm,
+				DSSPrivateKeyEntry keyEntry) throws DSSException {
+			return proxied.signDigest(digest, signatureAlgorithm, keyEntry);
+		}
 	}
 }

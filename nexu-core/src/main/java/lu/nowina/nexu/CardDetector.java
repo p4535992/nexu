@@ -271,8 +271,10 @@ public class CardDetector {
 	 */
 	public static class Handle extends IntegerType {
 		private static final long serialVersionUID = 1L;
-		
-		public static final int SIZE = Platform.isWindows() ? Pointer.SIZE : Dword.SIZE;
+		// MOD 4535992
+		//public static final int SIZE = Platform.isWindows() ? Pointer.SIZE : Dword.SIZE;
+		public static final int SIZE = Platform.isWindows() ? Native.POINTER_SIZE : Dword.SIZE;
+		// END MOD 4535992
 		
 		public Handle(long value) {
 			super(SIZE, value);

@@ -19,8 +19,6 @@ import java.util.ResourceBundle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.sun.javafx.scene.SceneHelper;
-
 import eu.europa.esig.dss.token.PasswordInputCallback;
 import java.util.Date;
 import javafx.application.Platform;
@@ -54,9 +52,10 @@ public class StandaloneUIDisplay implements UIDisplay {
 	private Stage nonBlockingStage;
 	private UIOperation<?> currentBlockingOperation;
 	private OperationFactory operationFactory;
-    private AppConfig appConfig;
+	private AppConfig appConfig;
     private char[] cachedPassword = null;
     private Date cacheLastAccessTime = new Date();
+    private static final long CACHE_TIME_TO_LIVE_MS = 5000;
 	
 	public StandaloneUIDisplay() {
 		this.blockingStage = createStage(true, null);

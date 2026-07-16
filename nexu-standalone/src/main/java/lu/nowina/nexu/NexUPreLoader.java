@@ -61,7 +61,12 @@ public class NexUPreLoader extends Preloader {
 			final Alert alert = new Alert(preloaderMessage.getMessageType());
 			alert.setTitle(preloaderMessage.getTitle());
 			alert.setHeaderText(preloaderMessage.getHeaderText());
-			alert.setContentText(preloaderMessage.getContentText());
+			// MOD 4535992
+			// alert.setContentText(preloaderMessage.getContentText());
+			alert.setContentText("PreLoaderMessage: type = " + preloaderMessage.getMessageType() + ", title = " + preloaderMessage.getTitle()
+			+", header = " + preloaderMessage.getHeaderText() + ", content = " + preloaderMessage.getContentText()
+			+ ", message = " + preloaderMessage.toString());
+			// END MOD 4535992
 			alert.showAndWait();
 		} else {
 			LOGGER.error("Unknown preloader notification class: " + info.getClass().getName());
@@ -101,8 +106,10 @@ public class NexUPreLoader extends Preloader {
 		final Alert alert = new Alert(AlertType.WARNING);
 		alert.setTitle(resourceBundle.getString("preloader.error"));
 		alert.setHeaderText(MessageFormat.format(resourceBundle.getString("preloader.error.occurred"), getConfig().getApplicationName()));
-		alert.setContentText(resourceBundle.getString("contact.application.provider"));
-		
+		// MOD 4535992
+		//alert.setContentText(resourceBundle.getString("contact.application.provider"));
+		alert.setContentText(info.toString());
+		// END MOD 4535992
 		alert.showAndWait();
 		return true;
 	}

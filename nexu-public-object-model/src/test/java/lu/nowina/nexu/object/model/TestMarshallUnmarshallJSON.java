@@ -20,12 +20,12 @@ import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-import eu.europa.esig.dss.enumerations.DigestAlgorithm;
-import eu.europa.esig.dss.enumerations.EncryptionAlgorithm;
-import eu.europa.esig.dss.enumerations.SignatureAlgorithm;
-import eu.europa.esig.dss.model.SignatureValue;
+import eu.europa.esig.dss.DigestAlgorithm;
+import eu.europa.esig.dss.EncryptionAlgorithm;
+import eu.europa.esig.dss.SignatureAlgorithm;
+import eu.europa.esig.dss.SignatureValue;
 import eu.europa.esig.dss.token.JKSSignatureToken;
-import eu.europa.esig.dss.model.x509.CertificateToken;
+import eu.europa.esig.dss.x509.CertificateToken;
 
 import java.nio.charset.StandardCharsets;
 import java.security.KeyStore.PasswordProtection;

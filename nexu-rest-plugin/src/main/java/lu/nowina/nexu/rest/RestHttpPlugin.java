@@ -13,8 +13,6 @@
  */
 package lu.nowina.nexu.rest;
 
-import eu.europa.esig.dss.enumerations.DigestAlgorithm;
-import eu.europa.esig.dss.model.ToBeSigned;
 import static org.apache.commons.lang.StringUtils.isNotBlank;
 
 import java.util.Collections;
@@ -27,6 +25,8 @@ import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import eu.europa.esig.dss.enumerations.DigestAlgorithm;
+import eu.europa.esig.dss.model.ToBeSigned;
 import lu.nowina.nexu.api.AuthenticateRequest;
 import lu.nowina.nexu.api.CertificateFilter;
 import lu.nowina.nexu.api.Execution;

@@ -29,11 +29,11 @@ import at.gv.egiz.smcc.CardNotSupportedException;
 import at.gv.egiz.smcc.SignatureCard;
 import at.gv.egiz.smcc.SignatureCardFactory;
 import at.gv.egiz.smcc.TimeoutException;
+import eu.europa.esig.dss.model.DSSException;
+import eu.europa.esig.dss.model.Digest;
 import eu.europa.esig.dss.enumerations.DigestAlgorithm;
 import eu.europa.esig.dss.enumerations.MaskGenerationFunction;
 import eu.europa.esig.dss.enumerations.SignatureAlgorithm;
-import eu.europa.esig.dss.model.DSSException;
-import eu.europa.esig.dss.model.Digest;
 import eu.europa.esig.dss.model.SignatureValue;
 import eu.europa.esig.dss.model.ToBeSigned;
 import eu.europa.esig.dss.token.DSSPrivateKeyEntry;
@@ -109,7 +109,26 @@ public class MOCCASignatureTokenConnectionAdapter implements SignatureTokenConne
 	}
 	
 	public List<DSSPrivateKeyEntry> getKeys() throws DSSException {
-        throw new UnsupportedOperationException("DSS no longer distributes MOCCA implementation, had to remove it here.");
+		/*
+		try {
+			setSignatureCard();
+			return adapted.getKeys();
+		} catch(final Exception e) {
+			Throwable t = e;
+			while(t != null) {
+				if((t instanceof CancelledException) ||
+						(t instanceof TimeoutException)) {
+					throw new CancelledOperationException(e);
+				} else if(t instanceof CancelledOperationException) {
+					throw (CancelledOperationException) t;
+				}
+				t = t.getCause();
+			}
+			// Rethrow exception as is.
+			throw e;
+		}
+		*/
+		throw new UnsupportedOperationException("DSS no longer distributes MOCCA implementation, had to remove it here.");
 	}
 
 	@Deprecated
@@ -120,26 +139,112 @@ public class MOCCASignatureTokenConnectionAdapter implements SignatureTokenConne
 	@Override
 	public SignatureValue sign(ToBeSigned toBeSigned, DigestAlgorithm digestAlgorithm, MaskGenerationFunction mgf,
 			DSSPrivateKeyEntry keyEntry) throws DSSException {
+		/*
+		try {
+			setSignatureCard();
+			return adapted.sign(toBeSigned, digestAlgorithm, mgf,keyEntry);
+		} catch(final Exception e) {
+			Throwable t = e;
+			while(t != null) {
+				if((t instanceof CancelledException) ||
+						(t instanceof TimeoutException)) {
+					throw new CancelledOperationException(e);
+				} else if(t instanceof CancelledOperationException) {
+					throw (CancelledOperationException) t;
+				}
+				t = t.getCause();
+			}
+			// Rethrow exception as is.
+			throw e;
+		}
+		*/
 		throw new UnsupportedOperationException("DSS no longer distributes MOCCA implementation, had to remove it here.");
 	}
 
-   @Override
-   public SignatureValue signDigest(Digest digest, DSSPrivateKeyEntry keyEntry) throws DSSException {
-      throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-   }
+	@Override
+	public SignatureValue sign(ToBeSigned toBeSigned, SignatureAlgorithm signatureAlgorithm,
+			DSSPrivateKeyEntry keyEntry) throws DSSException {
+		try {
+			setSignatureCard();
+			return adapted.sign(toBeSigned, signatureAlgorithm, keyEntry);
+		} catch(final Exception e) {
+			Throwable t = e;
+			while(t != null) {
+				if((t instanceof CancelledException) ||
+						(t instanceof TimeoutException)) {
+					throw new CancelledOperationException(e);
+				} else if(t instanceof CancelledOperationException) {
+					throw (CancelledOperationException) t;
+				}
+				t = t.getCause();
+			}
+			// Rethrow exception as is.
+			throw e;
+		}
+	}
 
-   @Override
-   public SignatureValue signDigest(Digest digest, MaskGenerationFunction mgf, DSSPrivateKeyEntry keyEntry) throws DSSException {
-      throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-   }
+	@Override
+	public SignatureValue signDigest(Digest digest, DSSPrivateKeyEntry keyEntry) throws DSSException {
+		try {
+			setSignatureCard();
+			return adapted.signDigest(digest, keyEntry);
+		} catch(final Exception e) {
+			Throwable t = e;
+			while(t != null) {
+				if((t instanceof CancelledException) ||
+						(t instanceof TimeoutException)) {
+					throw new CancelledOperationException(e);
+				} else if(t instanceof CancelledOperationException) {
+					throw (CancelledOperationException) t;
+				}
+				t = t.getCause();
+			}
+			// Rethrow exception as is.
+			throw e;
+		}
+	}
 
-   @Override
-   public SignatureValue sign(ToBeSigned tbs, SignatureAlgorithm sa, DSSPrivateKeyEntry dsspke) throws DSSException {
-      throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-   }
+	@Override
+	public SignatureValue signDigest(Digest digest, MaskGenerationFunction mgf, DSSPrivateKeyEntry keyEntry)
+			throws DSSException {
+		try {
+			setSignatureCard();
+			return adapted.signDigest(digest, mgf, keyEntry);
+		} catch(final Exception e) {
+			Throwable t = e;
+			while(t != null) {
+				if((t instanceof CancelledException) ||
+						(t instanceof TimeoutException)) {
+					throw new CancelledOperationException(e);
+				} else if(t instanceof CancelledOperationException) {
+					throw (CancelledOperationException) t;
+				}
+				t = t.getCause();
+			}
+			// Rethrow exception as is.
+			throw e;
+		}
+	}
 
-   @Override
-   public SignatureValue signDigest(Digest digest, SignatureAlgorithm sa, DSSPrivateKeyEntry dsspke) throws DSSException {
-      throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-   }
+	@Override
+	public SignatureValue signDigest(Digest digest, SignatureAlgorithm signatureAlgorithm, DSSPrivateKeyEntry keyEntry)
+			throws DSSException {
+		try {
+			setSignatureCard();
+			return adapted.signDigest(digest, signatureAlgorithm, keyEntry);
+		} catch(final Exception e) {
+			Throwable t = e;
+			while(t != null) {
+				if((t instanceof CancelledException) ||
+						(t instanceof TimeoutException)) {
+					throw new CancelledOperationException(e);
+				} else if(t instanceof CancelledOperationException) {
+					throw (CancelledOperationException) t;
+				}
+				t = t.getCause();
+			}
+			// Rethrow exception as is.
+			throw e;
+		}
+	}
 }

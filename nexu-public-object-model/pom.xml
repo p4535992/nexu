@@ -3,15 +3,11 @@
 	<parent>
 		<groupId>lu.nowina.apps</groupId>
 		<artifactId>nexu</artifactId>
-		<version>1.23-modified-04-SNAPSHOT</version>
+		<relativePath>../pom.xml</relativePath>
+		<version>1.24-SNAPSHOT</version>
 	</parent>
 	<artifactId>nexu-public-object-model</artifactId>
 
-	<properties>
-	    <!-- We MUST use last version because of https://github.com/mapstruct/mapstruct/issues/634. -->
-		<org.mapstruct.version>1.1.0.Final</org.mapstruct.version>
-	 <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-	</properties>
 
 	<dependencies>
 	    <dependency>
@@ -50,10 +46,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.5.1</version>
                 <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
                     <annotationProcessorPaths>
                         <path>
                             <groupId>org.mapstruct</groupId>
@@ -66,17 +59,8 @@
                             -Amapstruct.unmappedTargetPolicy=ERROR
                         </compilerArg>
                     </compilerArgs>
-                 <encoding>${project.build.sourceEncoding}</encoding>
                 </configuration>
             </plugin>
-		 <plugin>
-		  <groupId>org.apache.maven.plugins</groupId>
-		  <artifactId>maven-resources-plugin</artifactId>
-		  <version>2.4.3</version>
-		  <configuration>
-		   <encoding>${project.build.sourceEncoding}</encoding>
-		  </configuration>
-		 </plugin>
 		</plugins>
 	</build>
 </project>

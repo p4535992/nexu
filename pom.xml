@@ -2,7 +2,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>lu.nowina.apps</groupId>
 	<artifactId>nexu</artifactId>
-	<version>1.23-modified-04-SNAPSHOT</version>
+	<version>1.24-SNAPSHOT</version>
 	<packaging>pom</packaging>
 	<name>NexU</name>
 	<description>Multi-browser, multi-platform remote signature tool.</description>
@@ -27,40 +27,114 @@
 	</developers>
 
 	<modules>
+		<!--
+		<module>sscd-mocca-adapter</module>
+		<module>nexu-core</module>
+		<module>nexu-rest-plugin</module>
 		<module>nexu-api</module>
+		<module>nexu-app</module>
+		<module>nexu-model</module>
+		<module>nexu-util</module>
+		<module>nexu-bundle</module>
+		<module>nexu-standalone</module>
+		<module>nexu-public-object-model</module>
+		<module>nexu-https-plugin</module>
+		<module>nexu-windows-keystore-plugin</module>
+        <module>nexu-multi-user-support</module>
+        -->
+        <module>nexu-api</module>
 		<module>nexu-model</module>
 		<module>nexu-util</module>
 		<module>nexu-core</module>
 		<module>nexu-standalone</module>
 		<module>nexu-rest-plugin</module>
 		<module>nexu-https-plugin</module>
-                <module>nexu-multi-user-support</module>
+        <module>nexu-multi-user-support</module>
 		<module>nexu-windows-keystore-plugin</module>
 		<module>nexu-public-object-model</module>
 		<module>nexu-app</module>
 		<module>nexu-bundle</module>
+        <!-- TODO <module>nexu-proxy</module> -->      
 	</modules>
 
 	<properties>
-		<maven.compiler.source>1.8</maven.compiler.source>
-		<maven.compiler.target>1.8</maven.compiler.target>
+		<java.version>11</java.version>
+		<maven.compiler.source>11</maven.compiler.source>
+		<maven.compiler.target>11</maven.compiler.target>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<encoding>UTF-8</encoding>
 		<skip.package>false</skip.package>
-		<dss.version>5.9</dss.version>
+		<dss.version>5.11</dss.version><!-- 5.3, 5.9 -->
 		<maven.release.plugin.version>2.5.3</maven.release.plugin.version>
 		<slf4j.version>1.7.12</slf4j.version>
-		<jna.version>4.2.2</jna.version>
+		<jna.version>5.13.0</jna.version><!-- 4.2.2, 5.13.0 -->
 		<mocca.version>1.3.30</mocca.version>
+		
+		<!-- added dss dependencies for jdk11 -->
+		<powermock.version>1.7.1</powermock.version>
+		<jnasmartcardio.version>0.2.7</jnasmartcardio.version>
+	    <!-- We MUST use last version because of https://github.com/mapstruct/mapstruct/issues/634. -->
+		<org.mapstruct.version>1.4.2.Final</org.mapstruct.version>
+		<javafx.version>11.0.2</javafx.version><!--19.0.2.1-->
+		<sunpkcs11-wrapper.version>1.4.8</sunpkcs11-wrapper.version>
+		
+		<!-- dependencies necessary for jdk 11 -->
+		
+		<jaxws-api.version>2.3.1</jaxws-api.version>
+	    <jsr181-api.version>1.0-MR1</jsr181-api.version>
+	    <javax.jws-api.version>1.1</javax.jws-api.version>
+	    <jaf-api.version>1.2.0</jaf-api.version>
+	    <jaxb-core.version>2.3.0.1</jaxb-core.version>
+	    <jaxb-api.version>2.3.1</jaxb-api.version>
+	    <jaxb-impl.version>2.3.2</jaxb-impl.version>
+	    <jaxb-runtime.version>2.3.2</jaxb-runtime.version>
+	    <xmlsec.version>1.5.8</xmlsec.version>
+
+		<xml-security.version>1.4.1</xml-security.version>
+		<xmlsec-santuario.version>2.1.4</xmlsec-santuario.version>
+		<javax.ws.rs.version>2.1.1</javax.ws.rs.version>
+		<xercesImpl.version>2.11.0</xercesImpl.version>
+		<dom4j.version>1.6.1</dom4j.version> 
+		<org.dom4j.version>2.1.1</org.dom4j.version> 
+		
+		<javax.validation-api.version>2.0.1.Final</javax.validation-api.version>
+	    <javax.annotation-api.version>1.3.2</javax.annotation-api.version>
+		
+		<wsdl4j.version>1.6.3</wsdl4j.version>
+		<wss4j.version>1.6.19</wss4j.version>
+		<xalan.version>2.7.2-alfresco</xalan.version>
+		<xmpbox.version>2.0.16</xmpbox.version>
+		<xpp3.version>1.1.3_8</xpp3.version>
+		<xstream.version>1.3.1</xstream.version>
+		
+		<!-- plugin maven -->
+		
+		<maven.plugin.version>3.6.0</maven.plugin.version>
+        <maven.versions.version>2.8.1</maven.versions.version>
+        <maven.enforcer.version>1.4.1</maven.enforcer.version>
+        <maven.clean.version>3.1.0</maven.clean.version>
+        <maven.resources.version>3.1.0</maven.resources.version>
+        <maven.dependency.version>3.1.2</maven.dependency.version>
+        <maven.compiler.version>3.11.0</maven.compiler.version><!-- 3.8.1 -->
+        <maven.source.version>3.2.1</maven.source.version>
+        <maven.javadoc.version>3.2.0</maven.javadoc.version>
+        <maven.jar.version>3.2.0</maven.jar.version>
+        <maven.toolchain.version>3.0.0</maven.toolchain.version>
+        <maven.forbiddenapis.version>3.1</maven.forbiddenapis.version>
+        <maven.assembly.version>3.2.0</maven.assembly.version>
+        <maven.war.version>3.2.3</maven.war.version>
+        <maven.alfresco.version>1.1.1</maven.alfresco.version>
+        <maven-install-plugin.version>3.0.0-M1</maven-install-plugin.version><!-- 2.5.2 -->
 	</properties>
 
-<!--
+<!--MOD 4535992
 	<scm>
 		<connection>scm:git:https://github.com/nowina-solutions/nexu.git</connection>
 		<developerConnection>scm:git:https://github.com/nowina-solutions/nexu.git</developerConnection>
 		<url>http://github.com/nowina-solutions/nexu/tree/master</url>
         <tag>HEAD</tag>
 	</scm>
--->
+END MOD 4535992 -->
 
 	<licenses>
 		<license>
@@ -108,7 +182,7 @@
 			<url>https://artifacts.alfresco.com/nexus/content/repositories/public</url>
 		</repository>
 	</repositories>
-
+	<!-- MOD 4535992
 	<distributionManagement>
 		<snapshotRepository>
 			<id>ossrh</id>
@@ -119,7 +193,7 @@
 			<url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
 		</repository>
 	</distributionManagement>
-
+	END MOD 4535992 -->
 	<dependencyManagement>
 		<dependencies>
 			<dependency>
@@ -148,21 +222,29 @@
 				<artifactId>jna-platform</artifactId>
 				<version>${jna.version}</version>
 			</dependency>
+			<!-- TODO TO REMOVE IN FAVOR OF LANG 3 -->
 			<dependency>
 				<groupId>commons-lang</groupId>
 				<artifactId>commons-lang</artifactId>
 				<version>2.6</version>
 			</dependency>
 			<dependency>
+			    <groupId>org.apache.commons</groupId>
+			    <artifactId>commons-lang3</artifactId>
+			    <version>3.12.0</version>
+			</dependency>
+			<dependency>
 				<groupId>commons-io</groupId>
 				<artifactId>commons-io</artifactId>
 				<version>2.5</version>
 			</dependency>
+			<!-- MOD 4535992
 			<dependency>
 				<groupId>org.apache.santuario</groupId>
 				<artifactId>xmlsec</artifactId>
 				<version>2.0.2</version>
 			</dependency>
+			END MOD 4535992 -->
 			<dependency>
 				<groupId>eu.europa.ec.joinup.sd-dss</groupId>
 				<artifactId>dss-utils-apache-commons</artifactId>
@@ -170,16 +252,423 @@
 				<scope>runtime</scope>
 			</dependency>
 			<dependency>
+				<groupId>at.gv.egiz</groupId>
+				<artifactId>smcc</artifactId>
+				<version>${mocca.version}</version>
+			</dependency>
+
+			<!--  MOD 4535992
+			<dependency>
 				<groupId>lu.nowina</groupId>
 				<artifactId>nexu_for_mocca</artifactId>
 				<version>1.22</version>
 			</dependency>
+			END MOD 4535992 -->
+			
+			<!-- MOD 4535992 -->
+	
+			<!-- ============================ -->
+			<!-- XML DEPENDENCIES JDK 11      -->
+			<!-- ============================ -->
+			
+			<dependency>
+				<groupId>com.sun.xml.bind</groupId>
+				<artifactId>jaxb-xjc</artifactId>
+				<version>${jaxb-api.version}</version>
+				<scope>provided</scope>			
+			</dependency>
+			<!-- Java Architecture for XML Binding (JAXB), Java 11+ support -->
+			<dependency>
+				<groupId>javax.xml.bind</groupId>
+				<artifactId>jaxb-api</artifactId>
+				<version>${jaxb-api.version}</version>
+				<scope>provided</scope>				
+			</dependency>
+			<dependency>
+				<groupId>com.sun.xml.bind</groupId>
+				<artifactId>jaxb-impl</artifactId>
+				<version>${jaxb-impl.version}</version>
+				<scope>provided</scope>	
+			</dependency>
+			<dependency>
+				<groupId>com.sun.xml.bind</groupId>
+				<artifactId>jaxb-core</artifactId>
+				<version>${jaxb-core.version}</version>
+				<scope>provided</scope>			
+			</dependency>
+			<!-- JavaBeans Activation Framework (JAF), Java 11+ support -->
+			<dependency>
+				<groupId>javax.activation</groupId>
+				<artifactId>javax.activation-api</artifactId>
+				<version>${jaf-api.version}</version>
+				<scope>provided</scope>			
+			</dependency>
+			<!-- Java API for XML Web Services (JAX-WS), Java 11+ support -->
+			<dependency>
+				<groupId>javax.xml.ws</groupId>
+				<artifactId>jaxws-api</artifactId>
+				<version>${jaxws-api.version}</version>
+				<scope>provided</scope>			
+			</dependency>
+			<!--
+			<dependency>
+				<groupId>javax.jws</groupId>
+				<artifactId>jsr181-api</artifactId>
+				<version>${jsr181-api.version}</version>
+				<scope>provided</scope>
+			</dependency>
+			-->
+			<dependency>
+			    <groupId>javax.jws</groupId>
+			    <artifactId>javax.jws-api</artifactId>
+			    <version>${javax.jws-api.version}</version>
+			    <scope>provided</scope>
+			</dependency>	
+			<dependency>
+				<groupId>org.glassfish.jaxb</groupId>
+				<artifactId>jaxb-runtime</artifactId>
+				<version>${jaxb-runtime.version}</version>
+				<scope>provided</scope>
+			</dependency>
+			<!-- COMPILED DEPENDENCIES -->
+			<dependency>
+			    <groupId>javax.ws.rs</groupId>
+			    <artifactId>javax.ws.rs-api</artifactId>
+			    <version>${javax.ws.rs.version}</version>
+				<scope>provided</scope>
+			</dependency>
+			<dependency>
+			    <groupId>org.apache.santuario</groupId>
+			    <artifactId>xmlsec</artifactId>
+			    <version>${xmlsec-santuario.version}</version>
+				<scope>provided</scope>
+			    <exclusions>
+			    	<exclusion>
+			    		<groupId>jakarta.xml.bind</groupId>
+			    		<artifactId>jakarta.xml.bind-api</artifactId>
+			    	</exclusion>
+			    	<exclusion>
+			    		<groupId>commons-codec</groupId>
+			    		<artifactId>commons-codec</artifactId>
+			    	</exclusion>
+			    	<exclusion>
+			    		<groupId>org.slf4j</groupId>
+			    		<artifactId>slf4j-api</artifactId>
+			    	</exclusion>
+			    	<exclusion>
+			    		<groupId>org.glassfish.jaxb</groupId>
+			    		<artifactId>jaxb-runtime</artifactId>
+			    	</exclusion>
+			    	<exclusion>
+			    		<groupId>com.fasterxml.woodstox</groupId>
+			    		<artifactId>woodstox-core</artifactId>
+			    	</exclusion>
+			    </exclusions>
+			</dependency>
+			<dependency>
+			    <groupId>javax.validation</groupId>
+			    <artifactId>validation-api</artifactId>
+			    <version>${javax.validation-api.version}</version>
+			    <scope>provided</scope>
+			</dependency>
+			<dependency>
+			    <groupId>javax.annotation</groupId>
+			    <artifactId>javax.annotation-api</artifactId>
+			    <version>${javax.annotation-api.version}</version>
+			    <scope>provided</scope>
+			</dependency>			
+			<!--
+			<dependency>
+			    <groupId>org.apache.xml.security</groupId>
+			    <artifactId>xml-security</artifactId>
+			    <version>${xml-security.version}</version>
+			    <scope>compile</scope>
+				<scope>provided</scope>
+			</dependency>
+			-->	
+			<!--
+			<dependency>
+			    <groupId>org.apache.santuario</groupId>
+			    <artifactId>xmlsec</artifactId>
+			    <version>${xmlsec.version}</version>
+				<scope>compile</scope>
+				<scope>provided</scope>
+			</dependency>	
+			-->
+				
+			<!-- ================================= -->
+			<!-- XML UTILITIES -->
+			<!-- ================================= -->
+			
+			<dependency>
+			    <groupId>wsdl4j</groupId>
+			    <artifactId>wsdl4j</artifactId>
+			    <version>${wsdl4j.version}</version>
+			    <scope>provided</scope>
+			</dependency>
+			<dependency>
+			    <groupId>org.apache.ws.security</groupId>
+			    <artifactId>wss4j</artifactId>
+			    <version>${wss4j.version}</version>
+			    <scope>provided</scope>
+				<exclusions>
+					<exclusion>
+			            <groupId>commons-logging</groupId>
+			            <artifactId>commons-logging</artifactId>
+			        </exclusion>
+				</exclusions>			    
+			</dependency>
+			<dependency>
+			    <groupId>xalan</groupId>
+			    <artifactId>xalan</artifactId>
+			    <version>${xalan.version}</version>
+			    <scope>provided</scope>
+			    <exclusions>
+			    	<exclusion>
+			    		<groupId>xml-apis</groupId>
+			    		<artifactId>xml-apis</artifactId>
+			    	</exclusion>
+			    </exclusions>
+			</dependency>		
+			<!-- COMPILED DEPENDENCIES -->		
+			<dependency>
+				<groupId>com.thoughtworks.xstream</groupId>
+				<artifactId>xstream</artifactId>
+				<version>${xstream.version}</version>
+				<!-- <scope>compile</scope> -->
+				<scope>provided</scope>
+				<exclusions>
+					<exclusion>
+				      <groupId>xpp3</groupId>
+				      <artifactId>xpp3</artifactId>
+				    </exclusion>	
+				</exclusions>
+			</dependency>
+			<!-- 
+			<dependency>
+				<groupId>xpp3</groupId>
+				<artifactId>xpp3</artifactId>
+				<version>${xpp3.version}</version>
+				<scope>provided</scope>
+			</dependency>
+			 -->			
+			
+			<!-- ====================== -->
+			<!-- OTHER DEPENDENCIES -->
+			<!-- ====================== -->
+			
+			<dependency>
+			    <groupId>io.github.jnasmartcardio</groupId>
+			    <artifactId>jnasmartcardio</artifactId>
+			    <version>${jnasmartcardio.version}</version>
+			</dependency>
+			<!--
+			<dependency>
+				<groupId>com.github.mkentaro1</groupId>
+				<artifactId>smartcard-io</artifactId>
+				<version>1.17.1</version>
+			</dependency>
+			-->
+			<!--			
+			<dependency>
+			    <groupId>com.github.martinpaljak</groupId>
+			    <artifactId>apdu4j</artifactId>
+			    <version>21.05.06</version>
+			    <type>pom</type>
+			    <scope>import</scope>
+			</dependency>
+			<dependency>
+			    <groupId>com.github.martinpaljak</groupId>
+			    <artifactId>apdu4j-core</artifactId>
+			    <version>2020r3</version>
+			</dependency>			
+			<dependency>
+			    <groupId>com.github.martinpaljak</groupId>
+			    <artifactId>apdu4j-pcsc</artifactId>
+			    <version>21.05.06</version>
+			</dependency>		
+			<dependency>
+			    <groupId>com.github.martinpaljak</groupId>
+			    <artifactId>apdu4j-tool</artifactId>
+			    <version>21.05.06</version>
+			</dependency>
+			-->
+						
+			
+			<dependency>
+			    <groupId>org.openjfx</groupId>
+			    <artifactId>javafx-controls</artifactId>
+			    <version>${javafx.version}</version>
+			</dependency>
+			<dependency>
+			    <groupId>org.openjfx</groupId>
+			    <artifactId>javafx-fxml</artifactId>
+			    <version>${javafx.version}</version>
+			</dependency>
+			
+			
+			<dependency>
+			    <groupId>org.xipki.iaik</groupId>
+			    <artifactId>sunpkcs11-wrapper</artifactId>
+			    <version>${sunpkcs11-wrapper.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>eu.europa.ec.joinup.sd-dss</groupId>
+				<artifactId>sscd-mocca-adapter</artifactId>
+				<version>${dss.version}</version>
+			</dependency>		
+			<dependency>
+				<groupId>eu.europa.ec.joinup.sd-dss</groupId>
+				<artifactId>dss-token</artifactId>
+				<version>${dss.version}</version>
+			</dependency>							
+			<!-- END MOD 4535992 -->
 		</dependencies>
 	</dependencyManagement>
 
 	<build>
 		<pluginManagement>
 			<plugins>
+				<!-- the following is only necessary if you are using eclipse and m2e -->
+		        <plugin>
+		            <groupId>org.eclipse.m2e</groupId>
+		            <artifactId>lifecycle-mapping</artifactId>
+		            <version>1.0.0</version>
+		            <configuration>
+		                <lifecycleMappingMetadata>
+		                    <pluginExecutions>
+								<pluginExecution>
+									<pluginExecutionFilter>
+										<groupId>org.apache.maven.plugins</groupId>
+										<artifactId>maven-toolchains-plugin</artifactId>
+										<versionRange>[${maven.toolchain.version},)</versionRange>
+										<goals>
+											<goal>toolchain</goal>
+											<goal>default</goal>
+											<goal>validate</goal>
+										</goals>
+									</pluginExecutionFilter>
+									<action>
+										<ignore></ignore>
+									</action>
+								</pluginExecution>
+								<pluginExecution>
+									<pluginExecutionFilter>
+										<groupId>org.apache.maven.plugins</groupId>
+										<artifactId>maven-plugin-plugin</artifactId>
+										<versionRange>[${maven.plugin.version},)</versionRange>
+										<goals>
+											<goal>descriptor</goal>
+											<goal>helpmojo</goal>
+										</goals>
+									</pluginExecutionFilter>
+									<action>
+										<ignore></ignore>
+									</action>
+								</pluginExecution>
+								<pluginExecution>
+									<pluginExecutionFilter>
+										<groupId>org.zeroturnaround</groupId>
+										<artifactId>jrebel-maven-plugin</artifactId>
+										<versionRange>[1,)</versionRange>
+										<goals>
+											<goal>process-resources</goal>
+											<goal>generate</goal>
+										</goals>
+									</pluginExecutionFilter>
+									<action>
+										<ignore></ignore>
+									</action>
+								</pluginExecution>
+								<pluginExecution>
+									<pluginExecutionFilter>
+										<groupId>org.apache.cxf</groupId>
+										<artifactId>cxf-codegen-plugin</artifactId>
+										<versionRange>[3.2,)</versionRange>
+										<goals>
+											<goal>generate</goal>
+											<goal>generate-sources</goal>
+											<goal>generate-test-sources</goal>
+											<goal>wsdl2java</goal>
+										</goals>
+									</pluginExecutionFilter>
+									<action>
+										<ignore></ignore>
+									</action>
+								</pluginExecution>
+								<pluginExecution>
+									<pluginExecutionFilter>
+										<groupId>org.apache.cxf</groupId>
+										<artifactId>cxf-xjc-plugin</artifactId>
+										<versionRange>[3.2,)</versionRange>
+										<goals>
+											<goal>generate</goal>
+											<goal>generate-sources</goal>
+											<goal>generate-test-sources</goal>
+											<goal>xsdtojava</goal>
+										</goals>
+									</pluginExecutionFilter>
+									<action>
+										<ignore></ignore>
+									</action>
+								</pluginExecution>
+								<pluginExecution>
+									<pluginExecutionFilter>
+										<groupId>org.apache.maven.plugins</groupId>
+										<artifactId>maven-antrun-plugin</artifactId>
+										<versionRange>[1.7,)</versionRange>
+										<goals>
+											<goal>run</goal>
+										</goals>
+									</pluginExecutionFilter>
+									<action>
+										<ignore></ignore>
+									</action>
+								</pluginExecution>
+								<pluginExecution>
+									<pluginExecutionFilter>
+										<groupId>org.apache.maven.plugins</groupId>
+										<artifactId>maven-dependency-plugin</artifactId>
+										<versionRange>[1.7,)</versionRange>
+										<goals>
+											<goal>unpack-dependencies</goal>
+											<goal>copy-dependencies</goal>
+										</goals>
+									</pluginExecutionFilter>
+									<action>
+										<ignore></ignore>
+									</action>
+								</pluginExecution>								
+								<pluginExecution>
+									<pluginExecutionFilter>
+										<groupId>org.apache.felix</groupId>
+										<artifactId>maven-bundle-plugin</artifactId>
+										<versionRange>[3,)</versionRange>
+										<goals>
+											<goal>manifest</goal>
+										</goals>
+									</pluginExecutionFilter>
+									<action>
+										<ignore></ignore>
+									</action>
+								</pluginExecution>
+								<pluginExecution>
+									<pluginExecutionFilter>
+										<groupId>org.codehaus.mojo</groupId>
+										<artifactId>exec-maven-plugin</artifactId>
+										<versionRange>[1,)</versionRange>
+										<goals>
+											<goal>java</goal>
+										</goals>
+									</pluginExecutionFilter>
+									<action>
+										<ignore></ignore>
+									</action>
+								</pluginExecution> 	                              		                                                                                  
+		                    </pluginExecutions>
+		                </lifecycleMappingMetadata>
+		            </configuration>
+		        </plugin>			
 				<plugin>
 					<groupId>org.jacoco</groupId>
 					<artifactId>jacoco-maven-plugin</artifactId>
@@ -194,10 +683,55 @@
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-assembly-plugin</artifactId>
 					<version>2.5.3</version>
+				</plugin>		        
+				<plugin>
+					<artifactId>maven-compiler-plugin</artifactId>
+					<version>${maven.compiler.version}</version>
+	                <configuration>
+	                    <encoding>${project.build.sourceEncoding}</encoding>
+						<source>${maven.compiler.source}</source>
+						<target>${maven.compiler.target}</target>
+						<verbose>true</verbose>
+						<fork>true</fork>
+						<encoding>${project.build.targetEncoding}</encoding>
+						<jdkToolchain>
+			                <version>${java.version}</version>
+			            </jdkToolchain>							
+					</configuration>
 				</plugin>
+				<plugin>
+	                <groupId>org.apache.maven.plugins</groupId>
+	                <artifactId>maven-resources-plugin</artifactId>
+	                <version>${maven.resources.version}</version>
+	                <configuration>
+	                    <encoding>${project.build.sourceEncoding}</encoding>
+	                </configuration>
+	            </plugin>			
 			</plugins>
 		</pluginManagement>
 		<plugins>
+			<plugin>
+				<artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <encoding>${project.build.sourceEncoding}</encoding>
+					<source>${maven.compiler.source}</source>
+					<target>${maven.compiler.target}</target>
+					<verbose>true</verbose>
+					<fork>true</fork>
+					<encoding>${project.build.targetEncoding}</encoding>
+					<jdkToolchain>
+		                <version>${java.version}</version>
+		            </jdkToolchain>							
+				</configuration>
+			</plugin>
+			<plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <configuration>
+                    <encoding>${project.build.sourceEncoding}</encoding>
+                </configuration>
+            </plugin>
+
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-release-plugin</artifactId>
@@ -206,7 +740,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-install-plugin</artifactId>
-				<version>2.5.2</version>
+				<version>${maven-install-plugin.version}</version>
 				<inherited>false</inherited>
 				<executions>
 					<execution>
@@ -218,11 +752,11 @@
 					</execution>
 				</executions>
 				<configuration>
-					<file>nexu-standalone/lib/SystemTray-3.0.RC6.jar</file>
-					<sources>nexu-standalone/lib/SystemTray-3.0.RC6-sources.jar</sources>
+					<file>nexu-standalone/lib/SystemTray-4.2.1.jar</file>
+					<sources>nexu-standalone/lib/SystemTray-4.2.1-sources.jar</sources>
 					<groupId>com.dorkbox</groupId>
 					<artifactId>SystemTray</artifactId>
-					<version>3.0.RC6</version>
+					<version>4.2.1</version>
 					<packaging>jar</packaging>
 				</configuration>
 			</plugin>
@@ -291,6 +825,40 @@
 				</plugins>
 			</build>
 		</profile>
+		<profile>
+			<id>Toolchains</id>
+	
+			<activation>
+				<file>
+					<exists>${user.home}/.m2/toolchains.xml</exists>
+				</file>
+			</activation>
+	
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-toolchains-plugin</artifactId>
+						<version>3.0.0</version>
+						<executions>
+							<execution>
+								<goals>
+									<goal>toolchain</goal>
+								</goals>
+							</execution>
+						</executions>
+						<configuration>
+							<toolchains>
+								<jdk>
+									<version>${maven.compiler.target}</version>
+								</jdk>
+							</toolchains>
+						</configuration>
+					</plugin>					  
+				</plugins>
+			</build>
+		</profile>
+
 	</profiles>
 
 </project>

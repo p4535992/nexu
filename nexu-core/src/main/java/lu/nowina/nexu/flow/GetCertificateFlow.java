@@ -13,7 +13,6 @@
  */
 package lu.nowina.nexu.flow;
 
-import eu.europa.esig.dss.model.x509.CertificateToken;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +22,8 @@ import org.slf4j.LoggerFactory;
 
 import eu.europa.esig.dss.token.DSSPrivateKeyEntry;
 import eu.europa.esig.dss.token.SignatureTokenConnection;
+import eu.europa.esig.dss.enumerations.EncryptionAlgorithm;
+import eu.europa.esig.dss.model.x509.CertificateToken;
 import lu.nowina.nexu.api.DetectedCard;
 import lu.nowina.nexu.api.Execution;
 import lu.nowina.nexu.api.GetCertificateRequest;
@@ -68,37 +69,37 @@ class GetCertificateFlow extends AbstractCoreFlow<GetCertificateRequest, GetCert
     		while (true) {
     			final Product selectedProduct;
     			if(defaultProduct != null) {
-               logger.info("defaultProduct is not null from previous operation - selecting it");
+    				logger.info("defaultProduct is not null from previous operation - selecting it");
     				selectedProduct = defaultProduct;
     				defaultProduct = null; // this does not make sense - we should not reset the default product in case of multiple signatures, but we should reset it somewhere in case of an error, or a normal end of operation (i.e.logout)
     			} else {
-               logger.info("defaultProduct is null, getting it from api.detectCards");
-                    // Unisystems change
-                    List<DetectedCard> cards = api.detectCards();
-                    if (api.getAppConfig().isMakeSingleCardDefault() && cards != null && cards.size() == 1) {
-                       logger.info("cards size is exactly 1, selecting it");
-                        selectedProduct = cards.get(0); // setting of selectedProduct should be followed by setting of defaultProduct for the next operations to continue properly with this selected card
-                        if (api != null && api.getAppConfig() != null && api.getAppConfig().getDefaultProduct() == null) {
-                            logger.info("setting default product to this card");
-                            api.getAppConfig().setDefaultProduct(selectedProduct);
-                        }                              
-                    }
-                    else {
-                        // end of Unisystems change
-                        final Object[] params = {
-                                    api.getAppConfig().getApplicationName(), api.detectCards(), api.detectProducts(), api
-                        };
-                        final Operation<Product> operation = this.getOperationFactory().getOperation(UIOperation.class, "/fxml/product-selection.fxml", params);
-                        final OperationResult<Product> selectProductOperationResult = operation.perform();
-                        if (selectProductOperationResult.getStatus().equals(BasicOperationStatus.SUCCESS)) {
-                            selectedProduct = selectProductOperationResult.getResult();
-                            if (api != null && api.getAppConfig() != null && api.getAppConfig().getDefaultProduct() == null) {
-                                api.getAppConfig().setDefaultProduct(selectedProduct);
-                            }
-                        } else {
-                            return this.handleErrorOperationResult(selectProductOperationResult);
-                        }                        
-                    }
+    				logger.info("defaultProduct is null, getting it from api.detectCards");
+    				// Unisystems change: setDefaultProduct on product selection for multiple signing
+    				List<DetectedCard> cards = api.detectCards();
+    				if (api.getAppConfig().isMakeSingleCardDefault() && cards != null && cards.size() == 1) {
+    				    	logger.info("cards size is exactly 1, selecting it");
+    				        selectedProduct = cards.get(0); // setting of selectedProduct should be followed by setting of defaultProduct for the next operations to continue properly with this selected card
+    				        if (api != null && api.getAppConfig() != null && api.getAppConfig().getDefaultProduct() == null) {
+    				        	logger.info("setting default product to this card");
+    				            api.getAppConfig().setDefaultProduct(selectedProduct);
+    				        }                              
+    				}
+    				else {
+    				        // end of Unisystems change
+    				        final Object[] params = {
+    				                api.getAppConfig().getApplicationName(), api.detectCards(), api.detectProducts(), api
+    				        };
+    				        final Operation<Product> operation = this.getOperationFactory().getOperation(UIOperation.class, "/fxml/product-selection.fxml", params);
+    				        final OperationResult<Product> selectProductOperationResult = operation.perform();
+    				        if (selectProductOperationResult.getStatus().equals(BasicOperationStatus.SUCCESS)) {
+    				            selectedProduct = selectProductOperationResult.getResult();
+    				            if (api != null && api.getAppConfig() != null && api.getAppConfig().getDefaultProduct() == null) {
+    				                api.getAppConfig().setDefaultProduct(selectedProduct);
+    				            }
+    				        } else {
+    				            return this.handleErrorOperationResult(selectProductOperationResult);
+    				        }
+    				}
     			}
 
     			final OperationResult<List<Match>> getMatchingCardAdaptersOperationResult = this.getOperationFactory()
@@ -115,6 +116,7 @@ class GetCertificateFlow extends AbstractCoreFlow<GetCertificateRequest, GetCert
     					if (createTokenOperationResult.getStatus().equals(BasicOperationStatus.SUCCESS)) {
     						final Map<TokenOperationResultKey, Object> map = createTokenOperationResult.getResult();
     						tokenId = (TokenId) map.get(TokenOperationResultKey.TOKEN_ID);
+
     						final OperationResult<SignatureTokenConnection> getTokenConnectionOperationResult = this.getOperationFactory()
     								.getOperation(GetTokenConnectionOperation.class, api, tokenId).perform();
     						if (getTokenConnectionOperationResult.getStatus().equals(BasicOperationStatus.SUCCESS)) {
@@ -139,8 +141,13 @@ class GetCertificateFlow extends AbstractCoreFlow<GetCertificateRequest, GetCert
     								final CertificateToken certificate = key.getCertificate();
     								resp.setCertificate(certificate);
     								resp.setKeyId(certificate.getDSSIdAsString());
+    								// MOD 4535992 NEW CERTIFICATE TOKEN NOT HAVE ENCRYPTYION ANYMORE
+    								//resp.setEncryptionAlgorithm(certificate.getEncryptionAlgorithm());
+    								// OLD 4535992
+    								//resp.setEncryptionAlgorithm(certificate.getSignatureAlgorithm().getEncryptionAlgorithm());
+    								// NEW Zhukov Andreas
     								resp.setEncryptionAlgorithm(key.getEncryptionAlgorithm());
-
+    								// END MOD 4535992
     								final CertificateToken[] certificateChain = key.getCertificateChain();
     								if (certificateChain != null) {
     									resp.setCertificateChain(certificateChain);
@@ -192,6 +199,17 @@ class GetCertificateFlow extends AbstractCoreFlow<GetCertificateRequest, GetCert
             else {
                 api.logout(new LogoutRequest(tokenId, false, req.isCloseToken()));
             }
+                // MOD 4535992 it should be removed ?
+    		if (token != null) {
+    			if (req.isCloseToken()) {
+    				try {
+    					token.close();
+    				} catch (final Exception e) {
+    					logger.error("Exception when closing token", e);
+    				}
+    			}
+    		}
+                // END MOD 4535992
     	}
     }
     

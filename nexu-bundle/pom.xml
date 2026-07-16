@@ -3,7 +3,8 @@
 	<parent>
 		<groupId>lu.nowina.apps</groupId>
 		<artifactId>nexu</artifactId>
-		<version>1.23-modified-04-SNAPSHOT</version>
+		<relativePath>../pom.xml</relativePath>
+		<version>1.24-SNAPSHOT</version>
 	</parent>
 	<artifactId>nexu-bundle</artifactId>
 	<packaging>pom</packaging>
@@ -31,6 +32,14 @@
 			<groupId>lu.nowina.apps</groupId>
 			<artifactId>nexu-app</artifactId>
 			<version>${project.version}</version>
+			<classifier>jar-with-dependencies</classifier>
+			<scope>compile</scope>
+		</dependency>
+		<!-- MOD 4535992
+		<dependency>
+			<groupId>lu.nowina.apps</groupId>
+			<artifactId>nexu-app</artifactId>
+			<version>${project.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>com.oracle.java</groupId>
@@ -38,7 +47,8 @@
 			<version>1.8.0_131</version>
 			<classifier>${platform.classifier}</classifier>
 			<type>tgz</type>
-		</dependency>            
+		</dependency>
+		END MOD 4535992 -->
 	</dependencies>
 
 	<build>
@@ -50,7 +60,56 @@
             <plugin>
               <groupId>org.apache.maven.plugins</groupId>
               <artifactId>maven-dependency-plugin</artifactId>
+              <version>${maven.dependency.version}</version>
               <executions>
+		<!-- MOD 4535992 -->
+		<!--
+				<execution>
+					<id>copy-dependencies</id>
+					<phase>process-resources</phase>
+					<goals>
+						<goal>copy-dependencies</goal>
+					</goals>
+					<configuration>		
+						<excludeScope>provided</excludeScope>
+						<excludeTransitive>false</excludeTransitive>
+						<outputDirectory>${project.build.directory}/lib</outputDirectory>
+						<overWriteReleases>true</overWriteReleases>
+						<overWriteSnapshots>true</overWriteSnapshots>
+						<overWriteIfNewer>true</overWriteIfNewer>
+						<stripClassifier>false</stripClassifier>
+						<prependGroupId>false</prependGroupId>
+						<transitive>false</transitive>
+					</configuration>
+				</execution>
+		-->
+		<!-- END MOD 4535992 -->
+		<!-- MOD 4535992 -->
+			<!--
+                <execution>
+                   <id>copy-nexu-app</id>
+                   <phase>process-resources</phase>
+                   <goals>
+                     <goal>copy</goal>
+                   </goals>
+                   <configuration>
+                     <artifactItems>
+                       <artifactItem>
+                         <groupId>lu.nowina.apps</groupId>
+                         <artifactId>nexu-app</artifactId>
+                         <version>${project.version}</version>
+                         <type>jar</type>
+                         <classifier>jar-with-dependencies</classifier>
+                         <overWrite>true</overWrite>
+                         <outputDirectory>${project.build.directory}/nexu/nexu</outputDirectory>
+                         <includes>store.xml,nexu-config.properties</includes>
+                       </artifactItem>
+                     </artifactItems>
+                     <outputDirectory>${project.build.directory}</outputDirectory>
+                   </configuration>
+                 </execution>
+                 -->
+              <!-- END MOD 4535992 -->
                 <execution>
                    <id>unpack</id>
                    <phase>process-resources</phase>
@@ -94,16 +153,7 @@
 			</plugin>
 		    <plugin>
 		        <groupId>org.apache.maven.plugins</groupId>
-		        <artifactId>maven-compiler-plugin</artifactId>
-		        <version>2.3.2</version>
-		        <configuration>
-		            <encoding>${project.build.sourceEncoding}</encoding>
-		        </configuration>
-		    </plugin>
-		    <plugin>
-		        <groupId>org.apache.maven.plugins</groupId>
 		        <artifactId>maven-resources-plugin</artifactId>
-		        <version>2.4.3</version>
 		        <configuration>
 		            <encoding>${project.build.sourceEncoding}</encoding>
 		        </configuration>                
@@ -120,7 +170,7 @@
                 <!-- CANNOT distribute JPS.exe outside JDK bundle - found solution with wmic instead
                <plugin>
                  <artifactId>maven-antrun-plugin</artifactId>
-                 <version>1.8</version>
+                 <version>${java.version}</version>
                  <executions>
                    <execution>
                      <phase>process-resources</phase>
@@ -136,6 +186,7 @@
                    </execution>
                  </executions>
                </plugin>          -->     
+               <!-- MOD 4535992
                   <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>exec-maven-plugin</artifactId>
@@ -171,7 +222,7 @@
                     </executions>
 
                   </plugin>  
-                 
+             END MOD 4535992 -->    
 		</plugins>
             <resources>
                <resource>
@@ -210,7 +261,5 @@
             </resources>      
                    
 	</build>
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    </properties>
+
 </project>

@@ -81,6 +81,13 @@ public class RequestProcessor extends AbstractHandler {
 	public void setNexuHostname(String nexuHostname) {
 		this.nexuHostname = nexuHostname;
 	}
+	
+	// MOD 4535992
+	private boolean closeToken;
+	public void setCloseToken(boolean closeToken) {
+		this.closeToken = closeToken;
+	}
+	// END MOD 4535992
 
 	@Override
 	public void handle(String target, Request arg1, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
@@ -217,7 +224,10 @@ public class RequestProcessor extends AbstractHandler {
 		model.put("scheme", request.getScheme());
 		model.put("nexu_hostname", nexuHostname);
 		model.put("nexu_port", Integer.toString(request.getLocalPort()));
-
+		
+		// MOD 4535992
+		model.put("close_token", String.valueOf(closeToken));
+		// END MOD 4535992
 		try {
 			template.process(model, writer);
 		} catch (Exception e) {

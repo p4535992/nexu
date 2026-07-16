@@ -13,8 +13,6 @@
  */
 package lu.nowina.nexu.flow;
 
-import eu.europa.esig.dss.enumerations.DigestAlgorithm;
-import eu.europa.esig.dss.model.ToBeSigned;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
@@ -45,6 +43,8 @@ import lu.nowina.nexu.view.core.UIOperation;
 import org.junit.Assert;
 import org.junit.Test;
 
+import eu.europa.esig.dss.DigestAlgorithm;
+import eu.europa.esig.dss.ToBeSigned;
 import eu.europa.esig.dss.token.JKSSignatureToken;
 import eu.europa.esig.dss.token.SignatureTokenConnection;
 

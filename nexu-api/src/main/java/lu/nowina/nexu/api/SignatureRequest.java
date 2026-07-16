@@ -11,12 +11,11 @@
  * SANS GARANTIES OU CONDITIONS QUELLES QU’ELLES SOIENT, expresses ou implicites.
  * Consultez la Licence pour les autorisations et les restrictions linguistiques spécifiques relevant de la Licence.
  */
-// Unisystems change: added closeToken flag for multiple document signing (like in GetCertificateRequest)
 package lu.nowina.nexu.api;
 
 import eu.europa.esig.dss.enumerations.DigestAlgorithm;
 import eu.europa.esig.dss.model.ToBeSigned;
-
+//Unisystems change: added closeToken flag for multiple document signing (like in GetCertificateRequest)
 public class SignatureRequest extends NexuRequest {
 
 	private TokenId tokenId;
@@ -26,8 +25,8 @@ public class SignatureRequest extends NexuRequest {
 	private DigestAlgorithm digestAlgorithm;
 
 	private String keyId;
-   
-    private String doClearCache;
+   	// Unisystems change: added closeToken flag for multiple document signing (like in GetCertificateRequest)
+    	private String doClearCache;
 	
 	public SignatureRequest() {
 	}

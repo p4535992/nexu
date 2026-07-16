@@ -20,3 +20,7 @@ pom.xml.versionsBackup
 hs_err_pid*
 
 **/.DS_Store
+/test
+/nexu-bundle/src/main/resources/java11/lib/modules
+/nexu-bundle/src/main/resources/java11/lib/src.zip
+/nexu-bundle/src/main/resources/java11

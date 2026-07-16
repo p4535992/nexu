@@ -29,13 +29,22 @@ import org.slf4j.LoggerFactory;
 @XmlEnum
 public enum JREVendor {
 
-	ORACLE, NOT_RECOGNIZED;
+	ORACLE, OPENJDK, NOT_RECOGNIZED;
 
 	private static Logger logger = LoggerFactory.getLogger(JREVendor.class);
 
 	public static JREVendor forJREVendor(String jreVendor) {
 		if (jreVendor.toLowerCase().contains("oracle")) {
 			return ORACLE;
+		} 
+		// MOD 4535992
+		else if (jreVendor.toLowerCase().contains("openjdk")) {
+			return OPENJDK;
+		}else if(jreVendor.toLowerCase().contains("eclipse openj9")) {
+			return OPENJDK;
+		}else if(jreVendor.toLowerCase().contains("openj9")) {
+			return OPENJDK;
+		// END MOD 4535992
 		} else {
 			logger.warn("JRE not recognized " + jreVendor);
 			return NOT_RECOGNIZED;

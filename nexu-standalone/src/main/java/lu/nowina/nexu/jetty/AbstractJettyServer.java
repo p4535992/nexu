@@ -49,7 +49,9 @@ public abstract class AbstractJettyServer implements HttpServer {
 		final RequestProcessor handler = clazz.newInstance();
 		handler.setConfig(api);
 		handler.setNexuHostname(api.getAppConfig().getNexuHostname());
-
+		// MOD 4535992
+		handler.setCloseToken(api.getAppConfig().getCloseToken());
+		// END MOD 4535992
 		server.setHandler(handler);
 		server.start();
 	}

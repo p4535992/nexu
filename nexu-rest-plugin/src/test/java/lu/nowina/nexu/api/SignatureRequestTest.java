@@ -17,9 +17,9 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import com.google.gson.Gson;
-import eu.europa.esig.dss.enumerations.DigestAlgorithm;
-import eu.europa.esig.dss.model.ToBeSigned;
 
+import eu.europa.esig.dss.DigestAlgorithm;
+import eu.europa.esig.dss.ToBeSigned;
 import lu.nowina.nexu.json.GsonHelper;
 import org.apache.commons.lang.StringUtils;
 
