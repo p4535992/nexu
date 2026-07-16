@@ -33,12 +33,14 @@ The modernization follows the separation used by the Web eID projects while reta
 
 ### Document signing
 
-1. The browser asks the local NexU agent for the signing certificate and supported signature algorithms.
+1. The browser asks the local NexU agent for the signing certificate and supported hash functions.
 2. The browser sends the selected certificate to the remote signing application.
 3. The remote application prepares the signature structure and returns a hash plus its hash function.
-4. The browser asks the local NexU agent to sign that hash with the selected smart-card key.
+4. The browser asks the local NexU agent to sign that already prepared hash with the selected smart-card key.
 5. The browser sends the signature value and signature algorithm to the remote application.
 6. The remote application validates the response and finalizes the signed document.
+
+The pre-hashed path calls DSS `SignatureTokenConnection.signDigest(...)`. It does not pass the hash through the historical `sign(ToBeSigned, ...)` method, because that would hash the value a second time and produce an invalid signature.
 
 Conceptually, the modern API maps to the Web eID operations:
 
@@ -47,6 +49,49 @@ Conceptually, the modern API maps to the Web eID operations:
 - `sign(certificate, hash, hashFunction)`
 
 The legacy NexU JavaScript functions remain a compatibility façade during migration, including certificate discovery and token-based signing calls already used by DSS demonstrations.
+
+### Modern local API
+
+The first modern protocol version is `nexu:2.0`:
+
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| `GET` | `/v1/status` | Returns the NexU version, protocol version and supported capabilities. |
+| `POST` | `/v1/signing-certificate` | Selects a signing certificate and returns its certificate data, supported hash functions and an opaque local `keyHandle`. |
+| `POST` | `/v1/sign` | Signs a Base64-encoded, already prepared hash using the selected `keyHandle`. |
+| `GET` | `/nexu-v2.js` | Promise-based browser client implemented with `fetch`, without a jQuery dependency. |
+
+Minimal browser flow:
+
+```html
+<script src="http://127.0.0.1:9795/nexu-v2.js"></script>
+<script>
+async function signPreparedHash(hash, hashFunction) {
+    const certificate = await NexU.getSigningCertificate({
+        certificatePurpose: "SIGNATURE"
+    });
+
+    // Send certificate.certificate to the remote application. The remote
+    // application prepares the signature structure and returns hash/hashFunction.
+
+    return NexU.sign(certificate, hash, hashFunction, {
+        clearToken: true
+    });
+}
+</script>
+```
+
+`keyHandle` contains only local opaque identifiers. It is not a private key and is meaningful only to the running NexU process. The private key remains in the smart card or operating-system key store.
+
+### Browser origin configuration
+
+The local service listens only on loopback. Modern `/v1` browser requests additionally require an explicit origin allowlist:
+
+```properties
+cors_allowed_origin=https://sign.example.org,https://test-sign.example.org
+```
+
+The historical value `cors_allowed_origin=*` remains available for legacy `/rest/**` compatibility, but it is rejected for browser requests to `/v1/**`. Requests from loopback command-line clients without an `Origin` header remain possible for diagnostics.
 
 ### Authentication
 
@@ -59,22 +104,28 @@ Authentication is intentionally separate from document signing. A future authent
 
 Authentication certificates received from the client must be treated as untrusted until server-side validation succeeds.
 
+The old `/rest/authenticate` endpoint performed raw challenge signing and was not backed by a complete registered flow. It is retired and now responds with HTTP `410 Gone`. The incomplete `/rest/identityInfo` endpoint is retired for the same reason.
+
 ## Legacy protocol compatibility
 
-The Spring Boot adapter is designed to preserve the endpoints expected by existing NexU clients:
+The Spring Boot adapter preserves the endpoints required by existing signing clients:
 
 - `GET /nexu-info`
 - `GET /nexu.js`
 - `GET /favicon.ico`
-- plugin routes such as `POST /rest/certificates` and `POST /rest/sign`
+- `POST /rest/certificates`
+- `POST /rest/sign`
+- `POST /rest/logout`
 
-The local service binds to the loopback interface. Production integrations should use an explicit origin allowlist rather than permissive `Access-Control-Allow-Origin: *` configuration.
+Legacy requests are no longer logged with their complete payload, hashes, challenges or signing material.
 
 ## Removed and deprecated components
 
 The modernization deliberately removes or retires components that no longer provide a maintainable path forward:
 
 - **MOCCA integration** — removed from the modernized runtime because the required artifacts are no longer distributed and the adapter was already non-functional;
+- **raw-challenge legacy authentication** — retired in favour of a future origin-bound, one-time challenge protocol;
+- **incomplete identity-info flow** — retired rather than advertised as a working API;
 - **Java Applet assumptions** — obsolete and unsupported by modern browsers;
 - **legacy embedded Jetty server** — replaced incrementally by Spring Boot;
 - **manual JRE/OpenJFX bundle assembly** — to be replaced by `jlink` and `jpackage` distributions;
@@ -86,7 +137,7 @@ Old configuration values that mention MOCCA may still be parsed during migration
 
 The repository still contains the historical modules while modernization is under way. The first new module is:
 
-- `nexu-spring-boot-server` — Spring Boot implementation of the NexU local HTTP server contract.
+- `nexu-spring-boot-server` — Spring Boot implementation of the NexU local HTTP server contract and the `nexu:2.0` protocol.
 
 A separate Maven reactor is provided so that the modernization can be validated without immediately destabilizing the historical root build:
 
@@ -97,18 +148,18 @@ mvn -f pom-modernization.xml \
     package
 ```
 
-The modernization build currently targets Java 17. Portable distributions will bundle their own runtime, so end users will not need to install a matching JDK.
+The modernization build currently targets Java 17. Legacy modules are still compiled with their Java 11 toolchain during the transition. Portable distributions will bundle their own runtime, so end users will not need to install a matching JDK.
 
 ## Security principles
 
 - The private key must never leave the smart card or operating-system key store.
 - PIN entry and certificate selection belong to the trusted local application, not the remote webpage.
 - The local API must listen only on loopback interfaces.
-- Browser origins must be validated against an allowlist.
+- Browser origins must be validated against an explicit allowlist.
 - Each signing or authentication operation should have a short-lived, single-use identifier.
 - The server must validate certificate trust, certificate purpose and signature algorithms independently of client claims.
 - Authentication challenges must be bound to the browser session and consumed exactly once.
-- Sensitive values, including PINs and signature material, must not be written to logs.
+- Sensitive values, including PINs, hashes, token handles and signature material, must not be written to logs.
 
 ## Web eID references
 
