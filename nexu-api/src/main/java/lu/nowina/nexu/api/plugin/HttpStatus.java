@@ -15,16 +15,20 @@ package lu.nowina.nexu.api.plugin;
 
 public enum HttpStatus {
 
-	OK(200), ERROR(500);
+	OK(200),
+	BAD_REQUEST(400),
+	NOT_FOUND(404),
+	GONE(410),
+	UNPROCESSABLE_ENTITY(422),
+	ERROR(500);
 
-	private int httpCode;
+	private final int httpCode;
 
-	private HttpStatus(int httpCode) {
+	HttpStatus(int httpCode) {
 		this.httpCode = httpCode;
 	}
 
 	public int getHttpCode() {
 		return httpCode;
 	}
-
 }

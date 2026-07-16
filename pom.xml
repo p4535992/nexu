@@ -6,7 +6,7 @@
 	<packaging>pom</packaging>
 	<name>NexU</name>
 	<description>Multi-browser, multi-platform remote signature tool.</description>
-	<url>https://github.com/nowina-solutions/nexu</url>
+	<url>https://github.com/p4535992/nexu</url>
 
 	<developers>
 		<developer>
@@ -28,7 +28,6 @@
 
 	<modules>
 		<!--
-		<module>sscd-mocca-adapter</module>
 		<module>nexu-core</module>
 		<module>nexu-rest-plugin</module>
 		<module>nexu-api</module>
@@ -68,7 +67,6 @@
 		<maven.release.plugin.version>2.5.3</maven.release.plugin.version>
 		<slf4j.version>1.7.12</slf4j.version>
 		<jna.version>5.13.0</jna.version><!-- 4.2.2, 5.13.0 -->
-		<mocca.version>1.3.30</mocca.version>
 		
 		<!-- added dss dependencies for jdk11 -->
 		<powermock.version>1.7.1</powermock.version>
@@ -138,8 +136,8 @@ END MOD 4535992 -->
 
 	<licenses>
 		<license>
-			<name>European Union Public Licence (EUPL) v1.1</name>
-			<url>http://ec.europa.eu/idabc/eupl.html</url>
+			<name>European Union Public Licence (EUPL) v1.2</name>
+			<url>https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12</url>
 		</license>
 	</licenses>
 
@@ -149,10 +147,6 @@ END MOD 4535992 -->
 			<url>https://ec.europa.eu/cefdigital/artifact/content/groups/public/</url>
 		</repository>
 
-		<repository>
-			<id>egiz-mocca</id>
-			<url>https://apps.egiz.gv.at/maven/</url>
-		</repository>
 		<!-- This will disable repository lookup that comes from transitive dependency -->
 		<!-- and that will make the build failed because of 403 HTTP error. -->
 		<repository>
@@ -251,19 +245,6 @@ END MOD 4535992 -->
 				<version>${dss.version}</version>
 				<scope>runtime</scope>
 			</dependency>
-			<dependency>
-				<groupId>at.gv.egiz</groupId>
-				<artifactId>smcc</artifactId>
-				<version>${mocca.version}</version>
-			</dependency>
-
-			<!--  MOD 4535992
-			<dependency>
-				<groupId>lu.nowina</groupId>
-				<artifactId>nexu_for_mocca</artifactId>
-				<version>1.22</version>
-			</dependency>
-			END MOD 4535992 -->
 			
 			<!-- MOD 4535992 -->
 	
@@ -512,11 +493,6 @@ END MOD 4535992 -->
 			    <artifactId>sunpkcs11-wrapper</artifactId>
 			    <version>${sunpkcs11-wrapper.version}</version>
 			</dependency>
-			<dependency>
-				<groupId>eu.europa.ec.joinup.sd-dss</groupId>
-				<artifactId>sscd-mocca-adapter</artifactId>
-				<version>${dss.version}</version>
-			</dependency>		
 			<dependency>
 				<groupId>eu.europa.ec.joinup.sd-dss</groupId>
 				<artifactId>dss-token</artifactId>

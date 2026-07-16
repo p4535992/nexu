@@ -8,6 +8,13 @@
 	</parent>
 	<artifactId>nexu-app</artifactId>
 
+	<properties>
+		<!-- The historical build still creates its attached shaded JAR. The
+		     modernization reactor overrides this property with "none" because
+		     Spring Boot Loader creates the executable application package. -->
+		<nexu.app.shade.phase>package</nexu.app.shade.phase>
+	</properties>
+
 	<dependencies>
 	
 		<!-- MOD 4535992 -->
@@ -134,7 +141,7 @@
 				<version>2.4.1</version>
 				<executions>
 					<execution>
-						<phase>package</phase>
+						<phase>${nexu.app.shade.phase}</phase>
 						<goals>
 							<goal>shade</goal>
 						</goals>
@@ -154,7 +161,7 @@
 							<addClasspath>true</addClasspath>
 							<createDependencyReducedPom>false</createDependencyReducedPom>
 							<keepDependenciesWithProvidedScope>true</keepDependenciesWithProvidedScope>
-			
+		
 							<transformers>
 								<transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
 									<manifestEntries>

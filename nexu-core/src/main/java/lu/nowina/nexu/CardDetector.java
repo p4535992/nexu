@@ -13,7 +13,6 @@
  */
 package lu.nowina.nexu;
 
-import java.io.File;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.text.MessageFormat;
@@ -63,16 +62,7 @@ public class CardDetector {
 	
 	public CardDetector(final EnvironmentInfo info) {
 		if (info.getOs() == OS.LINUX) {
-			logger.info("The OS is Linux, we check for Library");
-			try {
-				final File libFile = at.gv.egiz.smcc.util.LinuxLibraryFinder.getLibraryPath("pcsclite", "1");
-				if (libFile != null) {
-					logger.info("Library installed is at " + libFile.getAbsolutePath());
-					System.setProperty("sun.security.smartcardio.library", libFile.getAbsolutePath());
-				}
-			} catch (final Exception e) {
-				logger.error("Error while loading library for Linux", e);
-			}
+			logger.info("Using the JDK Smart Card I/O PC/SC provider on Linux");
 		}
 		
 		this.cardTerminals = null;

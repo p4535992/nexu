@@ -20,13 +20,6 @@
 			<version>${project.version}</version>
 		</dependency>
 
-		<!-- unisystems change -->
-		<!-- MOD 4535992
-		<dependency>
-			<groupId>lu.nowina</groupId>
-			<artifactId>nexu_for_mocca</artifactId>
-		</dependency>  
-		-->
 
 		<!-- MOD 4535992 -->
 		
@@ -67,14 +60,6 @@
 
 		<!-- END MOD 4535992 -->
 
-		<dependency>
-			<groupId>eu.europa.ec.joinup.sd-dss</groupId>
-			<artifactId>sscd-mocca-adapter</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>at.gv.egiz</groupId>
-			<artifactId>smcc</artifactId>
-		</dependency>
 		<dependency>
 			<groupId>lu.nowina.apps</groupId>
 			<artifactId>nexu-model</artifactId>
@@ -138,7 +123,7 @@
 						
 						<arg>--add-exports</arg>
 						<arg>jdk.crypto.cryptoki/sun.security.pkcs11.wrapper=ALL-UNNAMED</arg>		
-												
+											
 						<!-- Reflection at runtime -->
 						<arg>--add-opens</arg>
 						<arg>jdk.crypto.cryptoki/sun.security.pkcs11=ALL-UNNAMED</arg>

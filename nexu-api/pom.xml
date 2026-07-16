@@ -117,19 +117,6 @@
 		    <artifactId>apdu4j-tool</artifactId>
 		</dependency>
 		-->
-		
-		<dependency>
-			<groupId>at.gv.egiz</groupId>
-			<artifactId>smcc</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>eu.europa.ec.joinup.sd-dss</groupId>
-			<artifactId>sscd-mocca-adapter</artifactId>
-		</dependency>		
-		<dependency>
-			<groupId>eu.europa.ec.joinup.sd-dss</groupId>
-			<artifactId>dss-token</artifactId>
-		</dependency>
 								
 		<!-- END MOD 4535992 -->
 		

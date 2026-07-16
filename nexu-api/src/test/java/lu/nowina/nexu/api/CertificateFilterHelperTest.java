@@ -11,10 +11,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import eu.europa.esig.dss.enumerations.KeyUsageBit;
 import eu.europa.esig.dss.token.DSSPrivateKeyEntry;
 import eu.europa.esig.dss.token.SignatureTokenConnection;
-import eu.europa.esig.dss.tsl.KeyUsageBit;
-import lu.nowina.nexu.api.CertificateFilter;
 
 public class CertificateFilterHelperTest {
 

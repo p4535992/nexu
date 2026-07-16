@@ -25,6 +25,8 @@ public enum ScAPI {
 
 	@XmlEnumValue("PKCS11") PKCS_11("PKCS11"),
 
+	/** Retained only to read historical configuration; no runtime backend exists. */
+	@Deprecated
 	@XmlEnumValue("MOCCA") MOCCA("MOCCA");
 
 	private final String value;

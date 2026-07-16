@@ -48,9 +48,6 @@ public class APISelectionController extends AbstractUIOperationController<ScAPI>
 	private RadioButton pkcs11;
 
 	@FXML
-	private RadioButton mocca;
-
-	@FXML
 	private ToggleGroup api;
 
 	@FXML
@@ -58,12 +55,8 @@ public class APISelectionController extends AbstractUIOperationController<ScAPI>
 	
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
-		select.setOnAction((e) -> {
-			signalEnd(getSelectedAPI());
-		});
-		cancel.setOnAction((e) -> {
-			signalUserCancel();
-		});
+		select.setOnAction((e) -> signalEnd(getSelectedAPI()));
+		cancel.setOnAction((e) -> signalUserCancel());
 		
 		select.disableProperty().bind(api.selectedToggleProperty().isNull());
 		
@@ -81,8 +74,6 @@ public class APISelectionController extends AbstractUIOperationController<ScAPI>
 			return ScAPI.MSCAPI;
 		} else if (pkcs11.isSelected()) {
 			return ScAPI.PKCS_11;
-		} else if (mocca.isSelected()) {
-			return ScAPI.MOCCA;
 		}
 		return null;
 	}

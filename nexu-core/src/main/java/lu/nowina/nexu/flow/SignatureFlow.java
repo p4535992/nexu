@@ -11,9 +11,6 @@
  * SANS GARANTIES OU CONDITIONS QUELLES QU’ELLES SOIENT, expresses ou implicites.
  * Consultez la Licence pour les autorisations et les restrictions linguistiques spécifiques relevant de la Licence.
  */
-
-// Unisystems change: added condition if(token != null && req.isCloseToken()) for when to close token
-// Unisystems change: added setDefaultProduct to null
 package lu.nowina.nexu.flow;
 
 import java.util.Map;
@@ -24,7 +21,6 @@ import org.slf4j.LoggerFactory;
 import eu.europa.esig.dss.model.SignatureValue;
 import eu.europa.esig.dss.token.DSSPrivateKeyEntry;
 import eu.europa.esig.dss.token.SignatureTokenConnection;
-import lu.nowina.nexu.InternalAPI;
 import lu.nowina.nexu.NexuException;
 import lu.nowina.nexu.api.Execution;
 import lu.nowina.nexu.api.LogoutRequest;
@@ -40,6 +36,7 @@ import lu.nowina.nexu.flow.operation.AdvancedCreationFeedbackOperation;
 import lu.nowina.nexu.flow.operation.GetTokenConnectionOperation;
 import lu.nowina.nexu.flow.operation.GetTokenOperation;
 import lu.nowina.nexu.flow.operation.SelectPrivateKeyOperation;
+import lu.nowina.nexu.flow.operation.SignDigestOperation;
 import lu.nowina.nexu.flow.operation.SignOperation;
 import lu.nowina.nexu.flow.operation.TokenOperationResultKey;
 import lu.nowina.nexu.view.core.UIDisplay;
@@ -56,18 +53,21 @@ class SignatureFlow extends AbstractCoreFlow<SignatureRequest, SignatureResponse
 	@Override
 	@SuppressWarnings("unchecked")
 	protected Execution<SignatureResponse> process(NexuAPI api, SignatureRequest req) throws Exception {
-        logger.info("SignatureFlow.process called with doClearCache = " + req.getDoClearCache());
-        
-		if ((req.getToBeSigned() == null) || (req.getToBeSigned().getBytes() == null)) {
-			throw new NexuException("ToBeSigned is null");
-		}
+		final boolean hasDigest = req.isPreHashed();
+		final boolean hasDataToSign = req.getToBeSigned() != null && req.getToBeSigned().getBytes() != null;
 
-		if ((req.getDigestAlgorithm() == null)) {
+		if (hasDigest == hasDataToSign) {
+			throw new NexuException("Exactly one of digest or toBeSigned must be provided");
+		}
+		if (hasDigest && req.getDigest().getAlgorithm() == null) {
+			throw new NexuException("Digest algorithm expected");
+		}
+		if (hasDataToSign && req.getDigestAlgorithm() == null) {
 			throw new NexuException("Digest algorithm expected");
 		}
 
 		SignatureTokenConnection token = null;
-            TokenId tokenId = null;
+		TokenId tokenId = null;
 		try {
 			final OperationResult<Map<TokenOperationResultKey, Object>> getTokenOperationResult =
 					getOperationFactory().getOperation(GetTokenOperation.class, api, req.getTokenId()).perform();
@@ -79,8 +79,7 @@ class SignatureFlow extends AbstractCoreFlow<SignatureRequest, SignatureResponse
 						getOperationFactory().getOperation(GetTokenConnectionOperation.class, api, tokenId).perform();
 				if (getTokenConnectionOperationResult.getStatus().equals(BasicOperationStatus.SUCCESS)) {
 					token = getTokenConnectionOperationResult.getResult();
-					logger.info("Token " + token);
-					
+
 					final Product product = (Product) map.get(TokenOperationResultKey.SELECTED_PRODUCT);
 					final ProductAdapter productAdapter = (ProductAdapter) map.get(TokenOperationResultKey.SELECTED_PRODUCT_ADAPTER);
 					final OperationResult<DSSPrivateKeyEntry> selectPrivateKeyOperationResult =
@@ -88,59 +87,56 @@ class SignatureFlow extends AbstractCoreFlow<SignatureRequest, SignatureResponse
 									SelectPrivateKeyOperation.class, token, api, product, productAdapter, null, req.getKeyId()).perform();
 					if (selectPrivateKeyOperationResult.getStatus().equals(BasicOperationStatus.SUCCESS)) {
 						final DSSPrivateKeyEntry key = selectPrivateKeyOperationResult.getResult();
+						final OperationResult<SignatureValue> signOperationResult;
+						if (hasDigest) {
+							signOperationResult = getOperationFactory().getOperation(
+									SignDigestOperation.class, token, req.getDigest(), key).perform();
+						} else {
+							signOperationResult = getOperationFactory().getOperation(
+									SignOperation.class, token, req.getToBeSigned(), req.getDigestAlgorithm(), key).perform();
+						}
 
-						logger.info("Key " + key + " " + key.getCertificate().getCertificate().getSubjectDN() + " from " + key.getCertificate().getCertificate().getIssuerDN());
-						final OperationResult<SignatureValue> signOperationResult = getOperationFactory().getOperation(
-								SignOperation.class, token, req.getToBeSigned(), req.getDigestAlgorithm(), key).perform();
-						if(signOperationResult.getStatus().equals(BasicOperationStatus.SUCCESS)) {
+						if (signOperationResult.getStatus().equals(BasicOperationStatus.SUCCESS)) {
 							final SignatureValue value = signOperationResult.getResult();
-							logger.info("Signature performed " + value);
 
 							if ((Boolean) map.get(TokenOperationResultKey.ADVANCED_CREATION)) {
 								getOperationFactory().getOperation(AdvancedCreationFeedbackOperation.class,
 										api, map).perform();
 							}
-							
-							if(api.getAppConfig().isEnablePopUps() && api.getAppConfig().isEnableInformativePopUps()) {
+
+							if (api.getAppConfig().isEnablePopUps() && api.getAppConfig().isEnableInformativePopUps()) {
 								getOperationFactory().getOperation(UIOperation.class, "/fxml/message.fxml",
-									"signature.flow.finished", api.getAppConfig().getApplicationName()).perform();
+										"signature.flow.finished", api.getAppConfig().getApplicationName()).perform();
 							}
-							
-							return new Execution<SignatureResponse>(new SignatureResponse(value, key.getCertificate(), key.getCertificateChain()));
-						} else {
-							return handleErrorOperationResult(signOperationResult);
+
+							return new Execution<SignatureResponse>(
+									new SignatureResponse(value, key.getCertificate(), key.getCertificateChain()));
 						}
-					} else {
-						if(api.getAppConfig().isEnablePopUps()) {
-							getOperationFactory().getOperation(UIOperation.class, "/fxml/message.fxml",
-								"signature.flow.no.key.selected", api.getAppConfig().getApplicationName()).perform();
-						}
-						return handleErrorOperationResult(selectPrivateKeyOperationResult);
+						return handleErrorOperationResult(signOperationResult);
 					}
-				} else {
-					if(api.getAppConfig().isEnablePopUps()) {
+
+					if (api.getAppConfig().isEnablePopUps()) {
 						getOperationFactory().getOperation(UIOperation.class, "/fxml/message.fxml",
-							"signature.flow.bad.token", api.getAppConfig().getApplicationName()).perform();
+								"signature.flow.no.key.selected", api.getAppConfig().getApplicationName()).perform();
 					}
-					return handleErrorOperationResult(getTokenConnectionOperationResult);
+					return handleErrorOperationResult(selectPrivateKeyOperationResult);
 				}
-			} else {
-				return handleErrorOperationResult(getTokenOperationResult);
+
+				if (api.getAppConfig().isEnablePopUps()) {
+					getOperationFactory().getOperation(UIOperation.class, "/fxml/message.fxml",
+							"signature.flow.bad.token", api.getAppConfig().getApplicationName()).perform();
+				}
+				return handleErrorOperationResult(getTokenConnectionOperationResult);
 			}
+			return handleErrorOperationResult(getTokenOperationResult);
 		} catch (Exception e) {
-			logger.error("Flow error", e);
+			logger.error("Signature flow failed", e);
 			throw handleException(e);
 		} finally {
-            // unisystems
-			if(token != null) {
-                api.logout(new LogoutRequest(tokenId, req.isDoClearCache(), true)); // always need to close token, because get certificates operation requires login to be called(?)
-				// MOD 4535992 it should be removed ?
-                                try {
-					token.close();
-				} catch(final Exception e) {
-					logger.error("Exception when closing token", e);
-				}
-                                // END MOD 4535992
+			if (token != null) {
+				// LogoutFlow owns token closing and cache cleanup. Avoid closing the
+				// same connection twice here.
+				api.logout(new LogoutRequest(tokenId, req.isDoClearCache(), true));
 			}
 		}
 	}

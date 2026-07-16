@@ -1,136 +1,265 @@
 # NexU
 
-To fill in the gap left by the demise of Java Applets to communicate with smartcards, 
-Nowina has developed an innovative, open-source multi-browser multi-platform remote 
-signature tool called NexU.
+NexU is an open-source local smart-card agent that allows a web application to request certificates and signatures from a smart card without exposing the private key to the browser or to the remote server.
 
-## Overview 
+This repository is a friendly fork of [`nowina-solutions/nexu`](https://github.com/nowina-solutions/nexu). The current modernization work keeps the familiar NexU browser API while replacing obsolete infrastructure with a modular Spring Boot architecture and a Web eID-inspired signing flow.
 
-http://nowina.lu/solutions/java-less-browser-signing-nexu/
+> **Modernization status:** work in progress. The historical application remains available, while the new server adapter, executable application and native packaging are developed incrementally on the modernization branch.
 
-# NOTE
+## Goals
 
-## My Smartcard is not been read why ???
+- preserve the simple NexU browser experience;
+- keep private-key operations on the user's smart card;
+- support PKCS#11 middleware and the Windows certificate store;
+- provide an executable JAR, a portable desktop package and a Windows installer with a bundled Java runtime;
+- replace the legacy embedded Jetty and assembly-based packaging;
+- isolate the smart-card engine from HTTP, UI and packaging concerns;
+- provide explicit origin checks, short-lived operations and replay protection;
+- remain compatible with existing DSS integrations during migration.
 
-If nexu do not "see" the connected smartcard try to delete the folder 
+## Architecture
 
-`C:\Users\<YOUR USER WIDNOWS>\AppData\Local\Nowina\NexU-Nowina`
+The target architecture separates three responsibilities:
 
-The new store xml should be write in the path:
+1. **Local smart-card agent** — detects certificates and performs card-backed signatures through PKCS#11 or MSCAPI.
+2. **Spring Boot protocol adapter** — exposes the local loopback HTTP API and delegates operations to the smart-card engine.
+3. **Remote signing application** — prepares the data to sign, receives the resulting signature and finalizes the document with DSS or another signing library.
 
-`C:\Users\<YOUR USER WINDOWS>\AppData\Local\Nowina\NexU`
+The Spring Boot adapter implements the existing `lu.nowina.nexu.HttpServer` contract, allowing the HTTP layer to be replaced without rewriting all card, PIN and certificate-selection logic at once.
 
-The xml file for store information, has many options here a example of the file `luxtrust-database.xml` :
+## Web eID-inspired flow
 
+The modernization follows the separation used by the Web eID projects while retaining NexU usability.
+
+### Document signing
+
+1. The browser asks the local NexU agent for the signing certificate and supported hash functions.
+2. The browser sends the selected certificate to the remote signing application.
+3. The remote application prepares the signature structure and returns a hash plus its hash function.
+4. The browser asks the local NexU agent to sign that already prepared hash with the selected smart-card key.
+5. The browser sends the signature value and signature algorithm to the remote application.
+6. The remote application validates the response and finalizes the signed document.
+
+The pre-hashed path calls DSS `SignatureTokenConnection.signDigest(...)`. It does not pass the hash through the historical `sign(ToBeSigned, ...)` method, because that would hash the value a second time and produce an invalid signature.
+
+Conceptually, the modern API maps to the Web eID operations:
+
+- `status`
+- `getSigningCertificate`
+- `sign(certificate, hash, hashFunction)`
+
+The legacy NexU JavaScript functions remain a compatibility façade during migration, including certificate discovery and token-based signing calls already used by DSS demonstrations.
+
+### Modern local API
+
+The first modern protocol version is `nexu:2.0`:
+
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| `GET` | `/v1/status` | Returns the NexU version, protocol version and supported capabilities. |
+| `POST` | `/v1/signing-certificate` | Selects a signing certificate and returns its certificate data, supported hash functions and an opaque local `keyHandle`. |
+| `POST` | `/v1/sign` | Signs a Base64-encoded, already prepared hash using the selected `keyHandle`. |
+| `GET` | `/nexu-v2.js` | Promise-based browser client implemented with `fetch`, without a jQuery dependency. |
+
+Minimal browser flow:
+
+```html
+<script src="http://127.0.0.1:9795/nexu-v2.js"></script>
+<script>
+async function signPreparedHash(hash, hashFunction) {
+    const certificate = await NexU.getSigningCertificate({
+        certificatePurpose: "SIGNATURE"
+    });
+
+    // Send certificate.certificate to the remote application. The remote
+    // application prepares the signature structure and returns hash/hashFunction.
+
+    return NexU.sign(certificate, hash, hashFunction, {
+        clearToken: true
+    });
+}
+</script>
 ```
-<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<database>
-	<pkcs11LibPath>C:\applet\win32\pkcs11wrapper.dll</pkcs11LibPath>
-</database>
+
+`keyHandle` contains only local opaque identifiers. It is not a private key and is meaningful only to the running NexU process. The private key remains in the smart card or operating-system key store.
+
+### Browser origin configuration
+
+The local service listens only on loopback. Modern `/v1` browser requests additionally require an explicit origin allowlist:
+
+```properties
+cors_allowed_origin=https://sign.example.org,https://test-sign.example.org
 ```
 
-# INFORMATION ABOUT THIS FORK
+The historical value `cors_allowed_origin=*` remains available for legacy `/rest/**` compatibility, but it is rejected for browser requests to `/v1/**`. Requests from loopback command-line clients without an `Origin` header remain possible for diagnostics.
 
-This project is a friendly fork of the [nowina-solutions/nexu project](https://github.com/nowina-solutions/nexu). We will provide pull requests as needed.
+### Authentication
 
-The purpose of this fork is to provide caching ability for user entered data, for the length of the signing session
-Features:
+Authentication is intentionally separate from document signing. A future authentication module will use the Web eID model:
 
-The main features we are targeting are :
+1. the server creates and stores a one-time cryptographic challenge;
+2. the local agent signs data bound to both the challenge and the requesting origin;
+3. the server validates the certificate chain, certificate purpose and token signature;
+4. the challenge is removed after use to prevent replay attacks.
 
-* provide an easier installation procedure for Ubuntu LTS
-* support of OpenJDK 11
-* fix the [javafx mess](https://stackoverflow.com/questions/18547362/javafx-and-openjdk)
-* caches entered password for the duration of a single session
-* caches selected product for the duration of a single session
-* created InnoSetup script and incorporated the setup package build process in the Maven POM file for nexu-standalone project
-* added flag to be able to bypass product/token selection dialog, if exactly one card was found (as if the user selected it)
-* upgrade the esign DSS to 5.9RC1
-* added cache_time_to_live_ms option to nexu-config.properties, and added external configuration support (modifiable nexu-config.properties outside of nexu.jar)
+Authentication certificates received from the client must be treated as untrusted until server-side validation succeeds.
 
-NB: ...\nexu-bundle\src\main\resources\inno-setup-script.iss is a handy script that creates a setup package with InnoSetup.
+The old `/rest/authenticate` endpoint performed raw challenge signing and was not backed by a complete registered flow. It is retired and now responds with HTTP `410 Gone`. The incomplete `/rest/identityInfo` endpoint is retired for the same reason.
 
-InnoSetup has to be installed on the development machine. When building nexu-bundle, the following extras have been added in the fork:
+## Legacy protocol compatibility
 
-1) additional Maven targets, win32 and win64 that bundle nexu with 32-bit and 64-bit JRE respectively (have to change target and build two times)
-2) exec-maven-plugin that runs inno-setup-script.iss during package phase of Maven build - the result is in \target\nexu\nexu\inno directory
+The Spring Boot adapter preserves the endpoints required by existing signing clients:
 
-The install package will install NexU and place it into Windows Startup folder.
+- `GET /nexu-info`
+- `GET /nexu.js`
+- `GET /favicon.ico`
+- `POST /rest/certificates`
+- `POST /rest/sign`
+- `POST /rest/logout`
 
-**IMPORTANT:** Due to strange issues with the javaFX library for java version 11 onwards (the library is no longer embedd in the jdk), the java machine to be used to start the nexu application must be the one packaged by Bellsoft https://bell-sw.com/pages/downloads/.
+Legacy requests are no longer logged with their complete payload, hashes, challenges or signing material.
 
-**How to debug: (https://github.com/nowina-solutions/nexu/issues/31)**
+## Removed and deprecated components
 
-- [edit] I figured out that nexu-standalone is not supposed to run as a jar - it is supposed to be referenced in nexu-app, and nexu-app should be launched with java -jar ... command - this way the resources referenced in nexu-standalone are relative to root classpath, which is nexu-app - anyway, the references make sense then. - nexu-app SHOULD NOT be referenced by nexu-standalone of course, because this creates cyclic reference, and doesn't make sense anyway.
+The modernization deliberately removes or retires components that no longer provide a maintainable path forward:
 
-- [edit] The above way of running nexu seems to create a problem for Netbeans - because nexu-app uses Maven shade plugin to create the final JAR, Netbeans doesn't seem to detect the Main Class for execution, which is actually situated in a dependency artifact, nexu-standalone, and is appended to the MANIFEST.MF during the creation of the shaded JAR (... the only way I found to be able to debug NexU this way was to start up NexU from command line, supplying JDWP options to Java, and then to attach the Netbeans debugger to this process:
+- **MOCCA integration** — removed because the required artifacts are no longer distributed and the adapter was already non-functional;
+- **raw-challenge legacy authentication** — retired in favour of a future origin-bound, one-time challenge protocol;
+- **incomplete identity-info flow** — retired rather than advertised as a working API;
+- **Java Applet assumptions** — obsolete and unsupported by modern browsers;
+- **legacy embedded Jetty server** — replaced by the Spring Boot adapter in the modern application;
+- **manual JRE/OpenJFX bundle assembly** — replaced in the modern application by `jlink`/`jpackage` application images;
+- **Log4j 1.2 binary** — excluded from the modern package; Reload4j temporarily provides the old API used by `NexuLauncher` while Spring Boot uses SLF4J 2 and Logback.
 
+Old configuration values that mention MOCCA may still be parsed during migration, but the modernized runtime does not offer MOCCA as a signing backend.
+
+## Modules and build
+
+The modernization adds two modules while the historical modules remain available for comparison:
+
+- `nexu-spring-boot-server` — Spring Boot implementation of the NexU local HTTP server contract and the `nexu:2.0` protocol;
+- `nexu-modern-app` — executable desktop application that combines the existing NexU UI and smart-card engine with the Spring Boot server.
+
+The modernization reactor uses Java 11 for legacy modules and Java 17 for the new modules. Configure both Maven toolchains, then build the executable application with:
+
+```bash
+mvn -N -f pom.xml -Dmaven.test.skip=true install
+mvn -f pom-modernization.xml \
+    -pl nexu-modern-app \
+    -am \
+    -Dnexu.app.shade.phase=none \
+    -Dmaven.test.skip=true \
+    package
 ```
-java -Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=8000 -jar nexu-app-1.24-SNAPSHOT-jar-with-dependencies.jar
+
+The resulting executable is:
+
+```text
+nexu-modern-app/target/nexu-modern.jar
 ```
 
-**Additional Info**
+It can be started with Java 17 using:
 
-(attention: java.exe should belong to x64 or x86 version of JDK, depending on what kind of driver was installed)
-"C:\Program Files\Java\jdk1.8.0_251\bin\java.exe" -Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=8000 -jar nexu-app-shaded.jar
+```bash
+java -jar nexu-modern-app/target/nexu-modern.jar
+```
 
-take care of the project version - when it does not end with -SNAPSHOT then Maven will try to find artifacts in the remote repository first and will fail
-when compiling with netbeans, should explicitly change properties->build->compile JDK to 1.8 because higher JDK would need inclusion of extra modules
+End users of the portable and installed packages do not need a separate JDK because the runtime is included.
 
-full build order: nexu-api, nexu-model, nexu-util, nexu-core, nexu-standalone, nexu-rest-plugin, nexu-https-plugin, nexu-multi-user-support, nexu-windows-keystore-plugin, nexu-app, nexu-bundle
-usual build order: nexu-api (if e.g. added AppConfig setting), nexu-core (if e.g. changed one of the Operation's that take part in the Flow), nexu-standalone, nexu-app, nexu-bundle -
-carefull with that, because a change in nexu-standalone will not be detected automatically when building nexu-bundle (e.g. in netbeans)
-store.xml is in standalone
+## Native and portable packages
 
-to change version in all projects:
-cd nexu-master-modified
-c:\tools\apache-maven-3.6.3\bin\mvn versions:set -DnewVersion=1.23-modified-03-SNAPSHOT
-c:\tools\apache-maven-3.6.3\bin\mvn versions:commit
+The packaging scripts use `jpackage` and an optimized `jlink` module set.
 
-to build win32 & win64 versions, always do clean & build, and check that the final setup packages have different sizes.
+### Linux portable package
 
-Also, if you care to compile nexu to be able to debug it, egiz/smcc dependency is missing - to workaround this problem, just run install_as_mvn_artifact script, which installs the whole nexu.jar as the missing dependency (it contains the necessary classes inside)
+```bash
+bash nexu-modern-app/src/jpackage/package-linux.sh \
+    nexu-modern-app/target/nexu-modern.jar \
+    nexu-modern-app/target/jpackage \
+    1.24.0
+```
 
-IMPORTANT: before installing nexu.jar as artifact, copy it to e.g. nexu1.jar and strip it of all class files apart from egiz ones
+This creates an application image and a compressed portable archive under `nexu-modern-app/target/jpackage`.
 
-## The configuration
+The Java runtime is included, but the operating-system PC/SC service and reader middleware are not. On Debian or Ubuntu install the PC/SC runtime with:
 
-### The "Close Token" Property
+```bash
+sudo apt install libpcsclite1 pcscd
+```
 
-On this fork we have implemented some drastic "features", which might be considered questionable security-wise - albeit very useful. On the file "nexu-config.properties" there is a new property called "close_token" by default is true if is setted to false the server-side caching the user PKCS11 token password for the duration of a single signing session. 
+Vendor-specific PKCS#11 libraries must still be installed when required by the smart card. The portable archive must not bundle system daemons or proprietary card drivers.
 
-There are use cases in which this can be very useful to the operator, but other cases in which precisely for safety reasons it must be avoided.
+### Windows portable package and EXE installer
 
-### System
+Run from PowerShell on Windows with Java 17 and WiX Toolset available:
 
-For now this is tested on windows machine 64bit
+```powershell
+./nexu-modern-app/src/jpackage/package-windows.ps1 `
+    -JarPath nexu-modern-app/target/nexu-modern.jar `
+    -Destination nexu-modern-app/target/jpackage `
+    -AppVersion 1.24.0
+```
 
-# Additional info
+The script creates:
 
-- Due to the lack of maven projects to download runtime for OpenJDK 11 and JavaFX 11 (or OpenJFX) and for ease of integration some unpacked versions of the two have been made for the integration of the bundle. This mechanism needs to be revised.
+- a portable ZIP containing the application and its Java runtime;
+- a native Windows EXE installer with Start menu and desktop shortcut options.
 
-- The project "nexu-proxy" is still in developing...
+Windows packages must be built on Windows so that the Boot JAR contains the Windows JavaFX native libraries. Linux packages must likewise be built on Linux.
 
-- [Setup the toolchain for maven](https://maven.apache.org/guides/mini/guide-using-toolchains.html)
+Each application image contains `LICENSE`, `THIRD_PARTY_NOTICES.md`, the historical licence directory and an editable `nexu-config.properties` template.
 
-- [Setup Smartcardio for JDk 11](https://nicedoc.io/jnasmartcardio/jnasmartcardio)
+## External configuration
 
+The embedded configuration provides safe defaults. External properties override those defaults and are searched in this order:
 
-# LICENSE
+1. the path supplied through `-Dnexu.config.file=/path/to/nexu-config.properties`;
+2. the `NEXU_CONFIG_FILE` environment variable;
+3. the directory of the `jpackage` launcher and the application-image root;
+4. the current working directory;
+5. the directory of a directly executed JAR when its code source is a normal file.
 
-- BSD License [intarsys smartcard-io](https://github.com/mkentaro1/smartcard-io/blob/master/License.txt) 
-- CC0 License [jnasmartcardio](https://github.com/jnasmartcardio/jnasmartcardio/blob/master/LICENSE)
-- MIT License [apdu4j](https://github.com/martinpaljak/apdu4j/blob/master/LICENSE)
-- Apache License 2.0 [Spring boot](https://github.com/spring-projects/spring-boot/blob/main/LICENSE.txt)
-- GNU General Public License 2.1 (LPGL) [eSign DSS](https://github.com/esig/dss/blob/master/LICENSE)
-- GNU General Public License 2.0 (GPL) [OpenJdk](https://openjdk.java.net/legal/gplv2+ce.html)
-- GNU General Public License 2.0 (GPL) [JavaFX 11 or OpenJFX](https://github.com/openjdk/jfx/blob/master/LICENSE)
+A configured explicit path that does not exist is treated as an error instead of silently falling back to defaults.
 
-# Credits
+## WAR scope
 
-Ty to all the other developer with their contribution and all their fork...
+The local smart-card agent should not be deployed as a remote WAR. A WAR running on an application server can access only smart cards and desktop resources attached to that server, not the card connected to the end user's computer.
 
-- [dlemaignent](https://github.com/dlemaignent/nexu) for [use jsonp to avoid cors errors](https://github.com/dlemaignent/nexu/commit/60aa14245f5e2ffce70aa21d214367e36f4b458b)
-- [sharedchains](https://github.com/sharedchains/nexu/) for [Fixed failure removing and inserting SmartCard Token ](https://github.com/sharedchains/nexu/commit/7b2d18f361d59ba5351efc4035a8f1c6aa19fbed)
-- [IntesysOpenway](https://github.com/IntesysOpenway) for [some modification and the starting nexu-proxy](https://github.com/IntesysOpenway)
-- [hello-earth-gh](https://github.com/hello-earth-gh) for [various changes and fixes](https://github.com/hello-earth-gh)
+A future server-side module may be packaged as a WAR for challenge issuance, Web eID-style authentication-token validation, DSS signature preparation and signature finalization. The local agent itself remains a desktop process distributed as JAR, portable application image or native installer.
+
+## Security principles
+
+- The private key must never leave the smart card or operating-system key store.
+- PIN entry and certificate selection belong to the trusted local application, not the remote webpage.
+- The local API must listen only on loopback interfaces.
+- Browser origins must be validated against an explicit allowlist.
+- Each signing or authentication operation should have a short-lived, single-use identifier.
+- The server must validate certificate trust, certificate purpose and signature algorithms independently of client claims.
+- Authentication challenges must be bound to the browser session and consumed exactly once.
+- Sensitive values, including PINs, hashes, token handles and signature material, must not be written to logs.
+
+## Web eID references
+
+The protocol and server-side separation are informed by these open-source projects maintained by the Estonian Information System Authority:
+
+- [`web-eid/web-eid-spring-boot-example`](https://github.com/web-eid/web-eid-spring-boot-example) — archived Spring Boot example for authentication and document signing;
+- [`web-eid/web-eid-authtoken-validation-java`](https://github.com/web-eid/web-eid-authtoken-validation-java) — maintained Java challenge-generation and authentication-token validation library, including its current Spring Boot example.
+
+NexU is not an official Web eID implementation. The projects are used as architectural and security references, while NexU keeps its own compatibility API and support for existing smart-card middleware.
+
+## License
+
+NexU is distributed under the **European Union Public Licence, version 1.2 (EUPL-1.2)**. See [`LICENSE`](LICENSE).
+
+The Web eID reference projects are distributed under the **MIT License**:
+
+- `web-eid-spring-boot-example`: copyright © 2020–2023 Estonian Information System Authority;
+- `web-eid-authtoken-validation-java`: copyright © 2020–2025 Estonian Information System Authority.
+
+Complete attribution and third-party license notices are available in [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md). Dependency licenses remain governed by their respective projects and distribution terms.
+
+## Credits
+
+NexU originated at [Nowina Solutions](https://github.com/nowina-solutions/nexu). This fork also includes contributions and ideas from the wider NexU community, including work by `dlemaignent`, `sharedchains`, `IntesysOpenway` and `hello-earth-gh`.
+
+The modernization additionally acknowledges the Web eID maintainers for publishing reusable protocol documentation, examples and validation components under open-source licences.

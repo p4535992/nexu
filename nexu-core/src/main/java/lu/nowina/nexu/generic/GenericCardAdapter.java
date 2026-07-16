@@ -21,7 +21,6 @@ import eu.europa.esig.dss.token.DSSPrivateKeyEntry;
 import eu.europa.esig.dss.token.MSCAPISignatureToken;
 import eu.europa.esig.dss.token.PasswordInputCallback;
 import eu.europa.esig.dss.token.SignatureTokenConnection;
-import eu.europa.esig.dss.token.mocca.MOCCASignatureTokenConnection;
 import lu.nowina.nexu.api.AbstractCardProductAdapter;
 import lu.nowina.nexu.api.CertificateFilter;
 import lu.nowina.nexu.api.CertificateFilterHelper;
@@ -66,17 +65,17 @@ public class GenericCardAdapter extends AbstractCardProductAdapter {
 
     @Override
     protected SignatureTokenConnection connect(final NexuAPI api, final DetectedCard card, final PasswordInputCallback callback) {
-	// az Unisystems change - to debug
         int i = 0;
         for (ConnectionInfo ci : this.info.getInfos()) {
            String msg = "ConnectionInfo [" + i + "] : " + ci.getEnv().getOsArch() + " " + ci.getEnv().getOsName() + " " + ci.getEnv().getOsVersion();
            logger.info(msg);
+           i++;
         }
-        
+
         EnvironmentInfo apiInfo = api.getEnvironmentInfo();
         String msg = "EnvironmentInfo : " + apiInfo.getOsArch() + " " + apiInfo.getOsName() + " " + apiInfo.getOsVersion();
         logger.info(msg);
-       
+
         ConnectionInfo cInfo = this.info.getConnectionInfo(api.getEnvironmentInfo());
         if (cInfo == null) {
            logger.error("NO MATCH between available ConnectionInfos and EnvironmentInfo");
@@ -85,17 +84,19 @@ public class GenericCardAdapter extends AbstractCardProductAdapter {
               cInfo = this.info.getInfos().get(0);
            }
         }
+        if (cInfo == null) {
+            throw new IllegalStateException("No smart-card connection configuration is available");
+        }
 
         final ScAPI scApi = cInfo.getSelectedApi();
         switch (scApi) {
             case MSCAPI:
-                // Cannot intercept cancel and timeout for MSCAPI (too generic error).
                 return new MSCAPISignatureToken();
             case PKCS_11:
                 final String absolutePath = cInfo.getApiParam();
                 return new Pkcs11SignatureTokenAdapter(new File(absolutePath), callback, card.getTerminalIndex());
             case MOCCA:
-                return new MOCCASignatureTokenConnectionAdapter(new MOCCASignatureTokenConnection(callback), api, card);
+                throw new UnsupportedOperationException("MOCCA support is not available in the modernized runtime");
             default:
                 throw new RuntimeException("API not supported");
         }

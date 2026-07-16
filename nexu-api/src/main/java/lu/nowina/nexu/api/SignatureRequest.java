@@ -7,27 +7,39 @@
  *
  * http://ec.europa.eu/idabc/eupl5
  *
- * Sauf obligation légale ou contractuelle écrite, le logiciel distribué sous la Licence est distribué «en l’état»,
+ * Sauf obligation légale ou contractuelle écrite, le logiciel distribué sous la Licence est distribué «en l’état»,
  * SANS GARANTIES OU CONDITIONS QUELLES QU’ELLES SOIENT, expresses ou implicites.
  * Consultez la Licence pour les autorisations et les restrictions linguistiques spécifiques relevant de la Licence.
  */
 package lu.nowina.nexu.api;
 
 import eu.europa.esig.dss.enumerations.DigestAlgorithm;
+import eu.europa.esig.dss.model.Digest;
 import eu.europa.esig.dss.model.ToBeSigned;
-//Unisystems change: added closeToken flag for multiple document signing (like in GetCertificateRequest)
+
+/**
+ * Signature request supporting both the historical "data to be signed" flow and
+ * the modern pre-hashed flow used when a remote signing application prepares
+ * the document signature structure.
+ */
 public class SignatureRequest extends NexuRequest {
 
 	private TokenId tokenId;
 
 	private ToBeSigned toBeSigned;
 
+	private Digest digest;
+
 	private DigestAlgorithm digestAlgorithm;
 
 	private String keyId;
-   	// Unisystems change: added closeToken flag for multiple document signing (like in GetCertificateRequest)
-    	private String doClearCache;
-	
+
+	/*
+	 * Historical flag name retained for JSON compatibility. False keeps the
+	 * cached token session available for a following operation.
+	 */
+	private String doClearCache;
+
 	public SignatureRequest() {
 	}
 
@@ -47,6 +59,18 @@ public class SignatureRequest extends NexuRequest {
 		this.toBeSigned = toBeSigned;
 	}
 
+	public Digest getDigest() {
+		return digest;
+	}
+
+	public void setDigest(Digest digest) {
+		this.digest = digest;
+	}
+
+	public boolean isPreHashed() {
+		return digest != null && digest.getValue() != null;
+	}
+
 	public DigestAlgorithm getDigestAlgorithm() {
 		return digestAlgorithm;
 	}
@@ -63,15 +87,15 @@ public class SignatureRequest extends NexuRequest {
 		this.keyId = keyId;
 	}
 
-    public boolean isDoClearCache() {
-        return !"false".equals(this.doClearCache);
-    }
+	public boolean isDoClearCache() {
+		return !"false".equals(this.doClearCache);
+	}
 
-    public void setDoClearCache(final String doClearCache) {
-        this.doClearCache = doClearCache;
-    }
-    
-    public String getDoClearCache() {
-        return this.doClearCache;
-    }
+	public void setDoClearCache(final String doClearCache) {
+		this.doClearCache = doClearCache;
+	}
+
+	public String getDoClearCache() {
+		return this.doClearCache;
+	}
 }
