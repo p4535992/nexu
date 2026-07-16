@@ -158,7 +158,9 @@ jobs:
           $candle = Get-Command candle.exe -ErrorAction SilentlyContinue
           if (-not $candle) {
             choco install wixtoolset --yes --no-progress
-            $wixBin = Get-ChildItem '${env:ProgramFiles(x86)}\WiX Toolset v3.*\bin' -Directory `
+            $programFilesX86 = [Environment]::GetFolderPath('ProgramFilesX86')
+            $wixPattern = Join-Path $programFilesX86 'WiX Toolset v3.*\bin'
+            $wixBin = Get-ChildItem -Path $wixPattern -Directory `
               -ErrorAction SilentlyContinue | Select-Object -First 1
             if (-not $wixBin) {
               throw 'WiX Toolset installation directory was not found'
