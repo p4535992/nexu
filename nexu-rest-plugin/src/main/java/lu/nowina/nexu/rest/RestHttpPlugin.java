@@ -27,13 +27,11 @@ import org.slf4j.LoggerFactory;
 
 import eu.europa.esig.dss.enumerations.DigestAlgorithm;
 import eu.europa.esig.dss.model.ToBeSigned;
-import lu.nowina.nexu.api.AuthenticateRequest;
 import lu.nowina.nexu.api.CertificateFilter;
 import lu.nowina.nexu.api.Execution;
 import lu.nowina.nexu.api.Feedback;
 import lu.nowina.nexu.api.FeedbackStatus;
 import lu.nowina.nexu.api.GetCertificateRequest;
-import lu.nowina.nexu.api.GetIdentityInfoRequest;
 import lu.nowina.nexu.api.LogoutRequest;
 import lu.nowina.nexu.api.NexuAPI;
 import lu.nowina.nexu.api.NexuRequest;
@@ -48,13 +46,12 @@ import lu.nowina.nexu.api.plugin.InitializationMessage;
 import lu.nowina.nexu.json.GsonHelper;
 
 /**
- * Default implementation of HttpPlugin for NexU.
- *
- * @author David Naramski
+ * Legacy REST compatibility plugin. New integrations should use the /v1 API.
  */
 public class RestHttpPlugin implements HttpPlugin {
 
 	private static final Logger logger = LoggerFactory.getLogger(RestHttpPlugin.class.getName());
+	private static final String JSON_CONTENT_TYPE = "application/json;charset=UTF-8";
 
 	@Override
 	public List<InitializationMessage> init(String pluginId, NexuAPI api) {
@@ -63,198 +60,147 @@ public class RestHttpPlugin implements HttpPlugin {
 
 	@Override
 	public HttpResponse process(NexuAPI api, HttpRequest req) throws Exception {
-
 		final String target = req.getTarget();
-		logger.info("PathInfo " + target);
+		logger.debug("Legacy REST request for {}", target);
 
+		// Never log request bodies: they may contain hashes, token handles,
+		// certificate identifiers or other signing material.
 		final String payload = IOUtils.toString(req.getInputStream());
-		logger.info("Payload '" + payload + "'");
 
-		switch(target) {
+		switch (target) {
 		case "/sign":
 			return signRequest(api, req, payload);
 		case "/certificates":
 			return getCertificates(api, req, payload);
-		case "/identityInfo":
-			return getIdentityInfo(api, payload);
-		case "/authenticate":
-			return authenticate(api, req, payload);
 		case "/logout":
-			return logout(api, req, payload);
+			return logout(api);
+		case "/identityInfo":
+			return retiredEndpoint("identityInfo",
+					"Identity information was never backed by a complete registered flow and has been removed.");
+		case "/authenticate":
+			return retiredEndpoint("authenticate",
+					"Raw challenge signing has been removed. Use the origin-bound, one-time challenge authentication protocol when available.");
 		default:
-			throw new RuntimeException("Target not recognized " + target);
+			return new HttpResponse(
+					"{\"success\":false,\"error\":\"ENDPOINT_NOT_FOUND\",\"errorMessage\":\"Unknown NexU REST endpoint\"}",
+					JSON_CONTENT_TYPE,
+					HttpStatus.NOT_FOUND);
 		}
 	}
 
 	protected <T> Execution<T> returnNullIfValid(NexuRequest request) {
 		return null;
 	}
-	
+
 	private HttpResponse signRequest(NexuAPI api, HttpRequest req, String payload) {
-		logger.info("Signature");
-		final SignatureRequest r;
+		final SignatureRequest request;
 		if (StringUtils.isEmpty(payload)) {
-			r = new SignatureRequest();
+			request = new SignatureRequest();
 
-			String data = req.getParameter("dataToSign");
+			final String data = req.getParameter("dataToSign");
 			if (data != null) {
-				logger.info("Data to sign " + data);
-				ToBeSigned tbs = new ToBeSigned();
-				tbs.setBytes(DatatypeConverter.parseBase64Binary(data));
-				r.setToBeSigned(tbs);
+				final ToBeSigned toBeSigned = new ToBeSigned();
+				toBeSigned.setBytes(DatatypeConverter.parseBase64Binary(data));
+				request.setToBeSigned(toBeSigned);
 			}
 
-			String digestAlgo = req.getParameter("digestAlgo");
-			if (digestAlgo != null) {
-				logger.info("digestAlgo " + digestAlgo);
-				r.setDigestAlgorithm(DigestAlgorithm.forName(digestAlgo, DigestAlgorithm.SHA256));
+			final String digestAlgorithm = req.getParameter("digestAlgo");
+			if (digestAlgorithm != null) {
+				request.setDigestAlgorithm(DigestAlgorithm.forName(digestAlgorithm, DigestAlgorithm.SHA256));
 			}
 
-			String tokenIdString = req.getParameter("tokenId");
-			if (tokenIdString != null) {
-				TokenId tokenId = new TokenId(tokenIdString);
-				r.setTokenId(tokenId);
+			final String tokenId = req.getParameter("tokenId");
+			if (tokenId != null) {
+				request.setTokenId(new TokenId(tokenId));
 			}
 
-			String keyId = req.getParameter("keyId");
+			final String keyId = req.getParameter("keyId");
 			if (keyId != null) {
-				r.setKeyId(keyId);
+				request.setKeyId(keyId);
 			}
 		} else {
-			r = GsonHelper.fromJson(payload, SignatureRequest.class);
+			request = GsonHelper.fromJson(payload, SignatureRequest.class);
 		}
 
-		final HttpResponse invalidRequestHttpResponse = checkRequestValidity(api, r);
-		if(invalidRequestHttpResponse != null) {
-			return invalidRequestHttpResponse;
-		} else {
-			logger.info("Call API");
-			final Execution<?> respObj = api.sign(r);
-			return toHttpResponse(respObj);
+		final HttpResponse invalidRequest = checkRequestValidity(api, request);
+		if (invalidRequest != null) {
+			return invalidRequest;
 		}
+		return toHttpResponse(api.sign(request));
 	}
-      
-      private HttpResponse logout(NexuAPI api, HttpRequest req, String payload) {
-		logger.info("Logout");
-        
-        // just logout from everywhere regardless of tokenId when this gets called through HTTP API
-        LogoutRequest r = new LogoutRequest(null, true, true);
-		final HttpResponse invalidRequestHttpResponse = checkRequestValidity(api, r);
-		if(invalidRequestHttpResponse != null) {
-			return invalidRequestHttpResponse;
-		} else {
-			logger.info("Call API");
-			final Execution<?> respObj = api.logout(r);
-			return toHttpResponse(respObj);
+
+	private HttpResponse logout(NexuAPI api) {
+		// Legacy HTTP logout intentionally clears all cached state.
+		final LogoutRequest request = new LogoutRequest(null, true, true);
+		final HttpResponse invalidRequest = checkRequestValidity(api, request);
+		if (invalidRequest != null) {
+			return invalidRequest;
 		}
+		return toHttpResponse(api.logout(request));
 	}
 
 	private HttpResponse getCertificates(NexuAPI api, HttpRequest req, String payload) {
-		logger.info("API call certificates");
-		final GetCertificateRequest r;
+		final GetCertificateRequest request;
 		if (StringUtils.isEmpty(payload)) {
-			r = new GetCertificateRequest();
+			request = new GetCertificateRequest();
 
 			final String certificatePurpose = req.getParameter("certificatePurpose");
 			if (certificatePurpose != null) {
-				logger.info("Certificate purpose " + certificatePurpose);
-				final Purpose purpose = Enum.valueOf(Purpose.class, certificatePurpose);
-				final CertificateFilter certificateFilter = new CertificateFilter();
-				certificateFilter.setPurpose(purpose);
-				r.setCertificateFilter(certificateFilter);
-			}else {
+				final CertificateFilter filter = new CertificateFilter();
+				filter.setPurpose(Enum.valueOf(Purpose.class, certificatePurpose));
+				request.setCertificateFilter(filter);
+			} else {
 				final String nonRepudiation = req.getParameter("nonRepudiation");
-				if(isNotBlank(nonRepudiation)) {
-					final CertificateFilter certificateFilter = new CertificateFilter();
-					certificateFilter.setNonRepudiationBit(Boolean.parseBoolean(nonRepudiation));
-					r.setCertificateFilter(certificateFilter);
+				if (isNotBlank(nonRepudiation)) {
+					final CertificateFilter filter = new CertificateFilter();
+					filter.setNonRepudiationBit(Boolean.parseBoolean(nonRepudiation));
+					request.setCertificateFilter(filter);
 				}
 			}
-			
 		} else {
-			r = GsonHelper.fromJson(payload, GetCertificateRequest.class);
+			request = GsonHelper.fromJson(payload, GetCertificateRequest.class);
 		}
 
-		final HttpResponse invalidRequestHttpResponse = checkRequestValidity(api, r);
-		if(invalidRequestHttpResponse != null) {
-			return invalidRequestHttpResponse;
-		} else {
-			logger.info("Call API");
-			final Execution<?> respObj = api.getCertificate(r);
-			return toHttpResponse(respObj);
+		final HttpResponse invalidRequest = checkRequestValidity(api, request);
+		if (invalidRequest != null) {
+			return invalidRequest;
 		}
-	}
-
-	private HttpResponse getIdentityInfo(NexuAPI api, String payload) {
-		logger.info("API call get identity info");
-		final GetIdentityInfoRequest r;
-		if (StringUtils.isEmpty(payload)) {
-			r = new GetIdentityInfoRequest();
-		} else {
-			r = GsonHelper.fromJson(payload, GetIdentityInfoRequest.class);
-		}
-
-		final HttpResponse invalidRequestHttpResponse = checkRequestValidity(api, r);
-		if(invalidRequestHttpResponse != null) {
-			return invalidRequestHttpResponse;
-		} else {
-			logger.info("Call API");
-			final Execution<?> respObj = api.getIdentityInfo(r);
-			return toHttpResponse(respObj);
-		}
-	}
-
-	private HttpResponse authenticate(NexuAPI api, HttpRequest req, String payload) {
-		logger.info("Authenticate");
-		final AuthenticateRequest r;
-		if (StringUtils.isEmpty(payload)) {
-			r = new AuthenticateRequest();
-
-			final String data = req.getParameter("challenge");
-			if (data != null) {
-				logger.info("Challenge " + data);
-				final ToBeSigned tbs = new ToBeSigned();
-				tbs.setBytes(DatatypeConverter.parseBase64Binary(data));
-				r.setChallenge(tbs);
-			}
-		} else {
-			r = GsonHelper.fromJson(payload, AuthenticateRequest.class);
-		}
-
-		final HttpResponse invalidRequestHttpResponse = checkRequestValidity(api, r);
-		if(invalidRequestHttpResponse != null) {
-			return invalidRequestHttpResponse;
-		} else {
-			logger.info("Call API");
-			final Execution<?> respObj = api.authenticate(r);
-			return toHttpResponse(respObj);
-		}
+		return toHttpResponse(api.getCertificate(request));
 	}
 
 	private HttpResponse checkRequestValidity(final NexuAPI api, final NexuRequest request) {
 		final Execution<Object> verification = returnNullIfValid(request);
-		if(verification != null) {
-			final Feedback feedback;
-			if(verification.getFeedback() == null) {
-				feedback = new Feedback();
-				feedback.setFeedbackStatus(FeedbackStatus.SIGNATURE_VERIFICATION_FAILED);
-				verification.setFeedback(feedback);
-			} else {
-				feedback = verification.getFeedback();
-			}
-			feedback.setInfo(api.getEnvironmentInfo());
-			feedback.setNexuVersion(api.getAppConfig().getApplicationVersion());
-			return toHttpResponse(verification);
-		} else {
+		if (verification == null) {
 			return null;
 		}
-	}
-	
-	private HttpResponse toHttpResponse(final Execution<?> respObj) {
-		if (respObj.isSuccess()) {
-			return new HttpResponse(GsonHelper.toJson(respObj), "application/json;charset=UTF-8", HttpStatus.OK);
+
+		final Feedback feedback;
+		if (verification.getFeedback() == null) {
+			feedback = new Feedback();
+			feedback.setFeedbackStatus(FeedbackStatus.SIGNATURE_VERIFICATION_FAILED);
+			verification.setFeedback(feedback);
 		} else {
-			return new HttpResponse(GsonHelper.toJson(respObj), "application/json;charset=UTF-8", HttpStatus.ERROR);
+			feedback = verification.getFeedback();
 		}
+		feedback.setInfo(api.getEnvironmentInfo());
+		feedback.setNexuVersion(api.getAppConfig().getApplicationVersion());
+		return toHttpResponse(verification);
+	}
+
+	private HttpResponse toHttpResponse(final Execution<?> response) {
+		return new HttpResponse(
+				GsonHelper.toJson(response),
+				JSON_CONTENT_TYPE,
+				response.isSuccess() ? HttpStatus.OK : HttpStatus.UNPROCESSABLE_ENTITY);
+	}
+
+	private static HttpResponse retiredEndpoint(final String endpoint, final String message) {
+		final String content = "{\"success\":false,\"error\":\"ENDPOINT_RETIRED\","
+				+ "\"errorMessage\":\"Legacy /rest/" + endpoint + " is retired. " + escapeJson(message) + "\"}";
+		return new HttpResponse(content, JSON_CONTENT_TYPE, HttpStatus.GONE);
+	}
+
+	private static String escapeJson(final String value) {
+		return value.replace("\\", "\\\\").replace("\"", "\\\"");
 	}
 }
