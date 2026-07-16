@@ -1,0 +1,1 @@
+java.base,java.compiler,java.desktop,java.instrument,java.management,java.naming,java.net.http,java.prefs,java.rmi,java.scripting,java.security.jgss,java.smartcardio,java.sql,jdk.attach,jdk.crypto.cryptoki,jdk.jdi,jdk.jfr,jdk.unsupported
