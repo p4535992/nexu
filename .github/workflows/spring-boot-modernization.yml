@@ -54,12 +54,15 @@ jobs:
           fi
           exit "$status"
 
-      - name: Test application protocol
+      - name: Test modern application protocol
         shell: bash
         run: |
           set +e
+          # nexu-core is already installed by the preceding step. Running only
+          # nexu-app tests avoids reactivating legacy DSS 5-era core tests while
+          # still executing the aggregated Spring Boot protocol test suite.
           mvn --batch-mode --errors \
-            -pl nexu-app -am test > maven-test.log 2>&1
+            -pl nexu-app test > maven-test.log 2>&1
           status=$?
           if [ "$status" -ne 0 ]; then
             tail -n 220 maven-test.log
