@@ -68,14 +68,6 @@
 		<!-- END MOD 4535992 -->
 
 		<dependency>
-			<groupId>eu.europa.ec.joinup.sd-dss</groupId>
-			<artifactId>sscd-mocca-adapter</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>at.gv.egiz</groupId>
-			<artifactId>smcc</artifactId>
-		</dependency>
-		<dependency>
 			<groupId>lu.nowina.apps</groupId>
 			<artifactId>nexu-model</artifactId>
 			<version>${project.version}</version>
@@ -138,7 +130,7 @@
 						
 						<arg>--add-exports</arg>
 						<arg>jdk.crypto.cryptoki/sun.security.pkcs11.wrapper=ALL-UNNAMED</arg>		
-												
+											
 						<!-- Reflection at runtime -->
 						<arg>--add-opens</arg>
 						<arg>jdk.crypto.cryptoki/sun.security.pkcs11=ALL-UNNAMED</arg>
