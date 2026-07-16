@@ -1,0 +1,247 @@
+build_status=1
+test_status=99
+
+=== build log tail ===
+[INFO] [parsing started SimpleFileObject[/home/runner/work/nexu/nexu/nexu-api/src/main/java/lu/nowina/nexu/api/FeedbackStatus.java]]
+[INFO] [parsing completed 1ms]
+[INFO] [parsing started SimpleFileObject[/home/runner/work/nexu/nexu/nexu-core/src/main/java/lu/nowina/nexu/view/core/UIDisplay.java]]
+[INFO] [parsing completed 0ms]
+[INFO] [parsing started SimpleFileObject[/home/runner/work/nexu/nexu/nexu-core/src/main/java/lu/nowina/nexu/flow/LogoutFlow.java]]
+[INFO] [parsing completed 2ms]
+[INFO] [parsing started SimpleFileObject[/home/runner/work/nexu/nexu/nexu-api/src/main/java/lu/nowina/nexu/api/flow/FutureOperationInvocation.java]]
+[INFO] [parsing completed 0ms]
+[INFO] [parsing started SimpleFileObject[/home/runner/work/nexu/nexu/nexu-api/src/main/java/lu/nowina/nexu/api/OS.java]]
+[INFO] [parsing completed 0ms]
+[INFO] [parsing started SimpleFileObject[/home/runner/work/nexu/nexu/nexu-util/src/main/java/lu/nowina/nexu/process/NativeProcessExecutor.java]]
+[INFO] [parsing completed 1ms]
+[INFO] [parsing started SimpleFileObject[/home/runner/work/nexu/nexu/nexu-api/src/main/java/lu/nowina/nexu/api/flow/Operation.java]]
+[INFO] [parsing completed 0ms]
+[INFO] [parsing started SimpleFileObject[/home/runner/work/nexu/nexu/nexu-core/src/main/java/lu/nowina/nexu/view/core/AbstractUIOperationController.java]]
+[INFO] [parsing completed 1ms]
+[INFO] [parsing started SimpleFileObject[/home/runner/work/nexu/nexu/nexu-api/src/main/java/lu/nowina/nexu/api/flow/NoOpFutureOperationInvocation.java]]
+[INFO] [parsing completed 0ms]
+[INFO] [parsing started SimpleFileObject[/home/runner/work/nexu/nexu/nexu-api/src/main/java/lu/nowina/nexu/api/plugin/NexuPlugin.java]]
+[INFO] [parsing completed 1ms]
+[INFO] [parsing started SimpleFileObject[/home/runner/work/nexu/nexu/nexu-api/src/main/java/lu/nowina/nexu/api/LogoutResponse.java]]
+[INFO] [parsing completed 0ms]
+[INFO] [parsing started SimpleFileObject[/home/runner/work/nexu/nexu/nexu-api/src/main/java/lu/nowina/nexu/api/ConfigurationManager.java]]
+[INFO] [parsing completed 1ms]
+[INFO] [parsing started SimpleFileObject[/home/runner/work/nexu/nexu/nexu-core/src/main/java/lu/nowina/nexu/flow/operation/SignDigestOperation.java]]
+[INFO] [parsing completed 1ms]
+[INFO] [parsing started SimpleFileObject[/home/runner/work/nexu/nexu/nexu-api/src/main/java/lu/nowina/nexu/api/SignatureRequest.java]]
+[INFO] [parsing completed 0ms]
+[INFO] [parsing started SimpleFileObject[/home/runner/work/nexu/nexu/nexu-core/src/main/java/lu/nowina/nexu/view/ui/ConfigureKeystoreController.java]]
+[INFO] [parsing completed 1ms]
+[INFO] [parsing started SimpleFileObject[/home/runner/work/nexu/nexu/nexu-api/src/main/java/lu/nowina/nexu/api/Execution.java]]
+[INFO] [parsing completed 1ms]
+[INFO] [parsing started SimpleFileObject[/home/runner/work/nexu/nexu/nexu-api/src/main/java/lu/nowina/nexu/api/KeystoreType.java]]
+[INFO] [parsing completed 0ms]
+[INFO] [parsing started SimpleFileObject[/home/runner/work/nexu/nexu/nexu-core/src/main/java/lu/nowina/nexu/view/core/ExtensionFilter.java]]
+[INFO] [parsing completed 1ms]
+[INFO] [parsing started SimpleFileObject[/home/runner/work/nexu/nexu/nexu-model/src/main/java/lu/nowina/nexu/generic/NexuInfo.java]]
+[INFO] [parsing completed 0ms]
+[INFO] [parsing started SimpleFileObject[/home/runner/work/nexu/nexu/nexu-core/src/main/java/sun/security/pkcs11/SunPKCS11.java]]
+[INFO] [parsing completed 1ms]
+[INFO] [parsing started SimpleFileObject[/home/runner/work/nexu/nexu/nexu-util/src/main/java/lu/nowina/nexu/cache/FIFOCache.java]]
+[INFO] [parsing completed 0ms]
+[INFO] [parsing started SimpleFileObject[/home/runner/work/nexu/nexu/nexu-api/src/main/java/lu/nowina/nexu/api/DetectedCard.java]]
+[INFO] [parsing completed 0ms]
+[INFO] [parsing started SimpleFileObject[/home/runner/work/nexu/nexu/nexu-core/src/main/java/lu/nowina/nexu/generic/Pkcs11SignatureTokenAdapter.java]]
+[INFO] [parsing completed 1ms]
+[INFO] [parsing started SimpleFileObject[/home/runner/work/nexu/nexu/nexu-core/src/main/java/lu/nowina/nexu/view/ui/ManageKeystoresController.java]]
+[INFO] [parsing completed 0ms]
+[INFO] [parsing started SimpleFileObject[/home/runner/work/nexu/nexu/nexu-api/src/main/java/lu/nowina/nexu/api/GetIdentityInfoResponse.java]]
+[INFO] [parsing completed 1ms]
+[INFO] [parsing started SimpleFileObject[/home/runner/work/nexu/nexu/nexu-util/src/main/java/lu/nowina/nexu/web/WebUtilities.java]]
+[INFO] [parsing completed 1ms]
+[INFO] [parsing started SimpleFileObject[/home/runner/work/nexu/nexu/nexu-api/src/main/java/lu/nowina/nexu/api/flow/OperationResult.java]]
+[INFO] [parsing completed 0ms]
+[INFO] [parsing started SimpleFileObject[/home/runner/work/nexu/nexu/nexu-api/src/main/java/lu/nowina/nexu/api/flow/OperationFactory.java]]
+[INFO] [parsing completed 1ms]
+[INFO] [parsing started SimpleFileObject[/home/runner/work/nexu/nexu/nexu-core/src/main/java/lu/nowina/nexu/view/core/NonBlockingUIOperation.java]]
+[INFO] [parsing completed 0ms]
+[INFO] [parsing started SimpleFileObject[/home/runner/work/nexu/nexu/nexu-core/src/main/java/lu/nowina/nexu/flow/operation/GetMatchingProductAdaptersOperation.java]]
+[INFO] [parsing completed 0ms]
+[INFO] [parsing started SimpleFileObject[/home/runner/work/nexu/nexu/nexu-api/src/main/java/lu/nowina/nexu/api/AppConfig.java]]
+[INFO] [parsing completed 3ms]
+[INFO] [parsing started SimpleFileObject[/home/runner/work/nexu/nexu/nexu-api/src/main/java/lu/nowina/nexu/api/Feedback.java]]
+[INFO] [parsing completed 2ms]
+[INFO] [parsing started SimpleFileObject[/home/runner/work/nexu/nexu/nexu-core/src/main/java/lu/nowina/nexu/generic/GenericCardAdapter.java]]
+[INFO] [parsing completed 1ms]
+[INFO] [parsing started SimpleFileObject[/home/runner/work/nexu/nexu/nexu-core/src/main/java/lu/nowina/nexu/flow/operation/AdvancedCreationFeedbackOperation.java]]
+[INFO] [parsing completed 2ms]
+[INFO] [parsing started SimpleFileObject[/home/runner/work/nexu/nexu/nexu-core/src/main/java/lu/nowina/nexu/flow/operation/GetTokenConnectionOperation.java]]
+[INFO] [parsing completed 0ms]
+[INFO] [parsing started SimpleFileObject[/home/runner/work/nexu/nexu/nexu-core/src/main/java/lu/nowina/nexu/flow/operation/SelectPrivateKeyOperation.java]]
+[INFO] [parsing completed 2ms]
+[INFO] [parsing started SimpleFileObject[/home/runner/work/nexu/nexu/nexu-core/src/main/java/lu/nowina/nexu/flow/StageHelper.java]]
+[INFO] [parsing completed 0ms]
+[INFO] [parsing started SimpleFileObject[/home/runner/work/nexu/nexu/nexu-core/src/main/java/lu/nowina/nexu/flow/operation/ConfigureProductOperation.java]]
+[INFO] [parsing completed 1ms]
+[INFO] [parsing started SimpleFileObject[/home/runner/work/nexu/nexu/nexu-core/src/main/java/lu/nowina/nexu/flow/operation/GetTokenOperation.java]]
+[INFO] [parsing completed 1ms]
+[INFO] [parsing started SimpleFileObject[/home/runner/work/nexu/nexu/nexu-api/src/main/java/lu/nowina/nexu/api/GetCertificateRequest.java]]
+[INFO] [parsing completed 0ms]
+[INFO] [parsing started SimpleFileObject[/home/runner/work/nexu/nexu/nexu-core/src/main/java/lu/nowina/nexu/flow/SignatureFlow.java]]
+[INFO] [parsing completed 1ms]
+[INFO] [parsing started SimpleFileObject[/home/runner/work/nexu/nexu/nexu-core/src/main/java/lu/nowina/nexu/flow/operation/BasicOperationFactory.java]]
+[INFO] [parsing completed 0ms]
+[INFO] [parsing started SimpleFileObject[/home/runner/work/nexu/nexu/nexu-core/src/main/java/lu/nowina/nexu/view/ui/SaveKeystoreController.java]]
+[INFO] [parsing completed 1ms]
+[INFO] [parsing started SimpleFileObject[/home/runner/work/nexu/nexu/nexu-api/src/main/java/lu/nowina/nexu/api/Arch.java]]
+[INFO] [parsing completed 1ms]
+[INFO] [loading modules/jdk.nio.mapmode/module-info.class]
+[INFO] [loading modules/java.security.jgss/module-info.class]
+[INFO] [loading modules/jdk.jfr/module-info.class]
+[INFO] [loading modules/java.transaction.xa/module-info.class]
+[INFO] [loading modules/jdk.jstatd/module-info.class]
+[INFO] [loading modules/jdk.jsobject/module-info.class]
+[INFO] [loading modules/jdk.jconsole/module-info.class]
+[INFO] [loading modules/jdk.zipfs/module-info.class]
+[INFO] [loading modules/jdk.crypto.cryptoki/module-info.class]
+[INFO] [loading modules/jdk.javadoc/module-info.class]
+[INFO] [loading modules/jdk.security.auth/module-info.class]
+[INFO] [loading modules/java.desktop/module-info.class]
+[INFO] [loading modules/java.base/module-info.class]
+[INFO] [loading modules/jdk.jdwp.agent/module-info.class]
+[INFO] [loading modules/jdk.compiler/module-info.class]
+[INFO] [loading modules/jdk.dynalink/module-info.class]
+[INFO] [loading modules/jdk.unsupported/module-info.class]
+[INFO] [loading modules/jdk.attach/module-info.class]
+[INFO] [loading modules/java.management.rmi/module-info.class]
+[INFO] [loading modules/jdk.jartool/module-info.class]
+[INFO] [loading modules/jdk.naming.dns/module-info.class]
+[INFO] [loading modules/java.se/module-info.class]
+[INFO] [loading modules/jdk.management.jfr/module-info.class]
+[INFO] [loading modules/java.smartcardio/module-info.class]
+[INFO] [loading modules/java.management/module-info.class]
+[INFO] [loading modules/java.rmi/module-info.class]
+[INFO] [loading modules/jdk.jdeps/module-info.class]
+[INFO] [loading modules/java.sql/module-info.class]
+[INFO] [loading modules/java.logging/module-info.class]
+[INFO] [loading modules/jdk.net/module-info.class]
+[INFO] [loading modules/jdk.jlink/module-info.class]
+[INFO] [loading modules/jdk.jdi/module-info.class]
+[INFO] [loading modules/jdk.accessibility/module-info.class]
+[INFO] [loading modules/java.compiler/module-info.class]
+[INFO] [loading modules/java.xml.crypto/module-info.class]
+[INFO] [loading modules/java.net.http/module-info.class]
+[INFO] [loading modules/java.scripting/module-info.class]
+[INFO] [loading modules/jdk.localedata/module-info.class]
+[INFO] [loading modules/jdk.sctp/module-info.class]
+[INFO] [loading modules/jdk.jpackage/module-info.class]
+[INFO] [loading modules/java.instrument/module-info.class]
+[INFO] [loading modules/java.sql.rowset/module-info.class]
+[INFO] [loading modules/jdk.management.agent/module-info.class]
+[INFO] [loading modules/jdk.crypto.ec/module-info.class]
+[INFO] [loading modules/jdk.incubator.foreign/module-info.class]
+[INFO] [loading modules/jdk.incubator.vector/module-info.class]
+[INFO] [loading modules/jdk.httpserver/module-info.class]
+[INFO] [loading modules/java.xml/module-info.class]
+[INFO] [loading modules/jdk.naming.rmi/module-info.class]
+[INFO] [loading modules/java.naming/module-info.class]
+[INFO] [loading modules/jdk.jcmd/module-info.class]
+[INFO] [loading modules/jdk.charsets/module-info.class]
+[INFO] [loading modules/jdk.hotspot.agent/module-info.class]
+[INFO] [loading modules/jdk.management/module-info.class]
+[INFO] [loading modules/jdk.editpad/module-info.class]
+[INFO] [loading modules/java.datatransfer/module-info.class]
+[INFO] [loading modules/jdk.jshell/module-info.class]
+[INFO] [loading modules/jdk.security.jgss/module-info.class]
+[INFO] [loading modules/java.prefs/module-info.class]
+[INFO] [loading modules/java.security.sasl/module-info.class]
+[INFO] [loading modules/jdk.xml.dom/module-info.class]
+[INFO] [total 279ms]
+[INFO] -------------------------------------------------------------
+[ERROR] COMPILATION ERROR : 
+[INFO] -------------------------------------------------------------
+[ERROR] error: exporting a package from system module jdk.crypto.cryptoki is not allowed with --release
+[INFO] 1 error
+[INFO] -------------------------------------------------------------
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for NexU 1.24-SNAPSHOT:
+[INFO] 
+[INFO] NexU ............................................... SUCCESS [  3.354 s]
+[INFO] NexU core .......................................... FAILURE [ 51.748 s]
+[INFO] NexU operator application .......................... SKIPPED
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  01:20 min
+[INFO] Finished at: 2026-07-16T16:16:07Z
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-compiler-plugin:3.11.0:compile (default-compile) on project nexu-core: Compilation failure
+[ERROR] error: exporting a package from system module jdk.crypto.cryptoki is not allowed with --release
+[ERROR] -> [Help 1]
+org.apache.maven.lifecycle.LifecycleExecutionException: Failed to execute goal org.apache.maven.plugins:maven-compiler-plugin:3.11.0:compile (default-compile) on project nexu-core: Compilation failure
+error: exporting a package from system module jdk.crypto.cryptoki is not allowed with --release
+
+    at org.apache.maven.lifecycle.internal.MojoExecutor.doExecute2 (MojoExecutor.java:333)
+    at org.apache.maven.lifecycle.internal.MojoExecutor.doExecute (MojoExecutor.java:316)
+    at org.apache.maven.lifecycle.internal.MojoExecutor.execute (MojoExecutor.java:212)
+    at org.apache.maven.lifecycle.internal.MojoExecutor.execute (MojoExecutor.java:174)
+    at org.apache.maven.lifecycle.internal.MojoExecutor.access$000 (MojoExecutor.java:75)
+    at org.apache.maven.lifecycle.internal.MojoExecutor$1.run (MojoExecutor.java:162)
+    at org.apache.maven.plugin.DefaultMojosExecutionStrategy.execute (DefaultMojosExecutionStrategy.java:39)
+    at org.apache.maven.lifecycle.internal.MojoExecutor.execute (MojoExecutor.java:159)
+    at org.apache.maven.lifecycle.internal.LifecycleModuleBuilder.buildProject (LifecycleModuleBuilder.java:105)
+    at org.apache.maven.lifecycle.internal.LifecycleModuleBuilder.buildProject (LifecycleModuleBuilder.java:73)
+    at org.apache.maven.lifecycle.internal.builder.singlethreaded.SingleThreadedBuilder.build (SingleThreadedBuilder.java:53)
+    at org.apache.maven.lifecycle.internal.LifecycleStarter.execute (LifecycleStarter.java:118)
+    at org.apache.maven.DefaultMaven.doExecute (DefaultMaven.java:261)
+    at org.apache.maven.DefaultMaven.doExecute (DefaultMaven.java:173)
+    at org.apache.maven.DefaultMaven.execute (DefaultMaven.java:101)
+    at org.apache.maven.cli.MavenCli.execute (MavenCli.java:919)
+    at org.apache.maven.cli.MavenCli.doMain (MavenCli.java:285)
+    at org.apache.maven.cli.MavenCli.main (MavenCli.java:207)
+    at jdk.internal.reflect.NativeMethodAccessorImpl.invoke0 (Native Method)
+    at jdk.internal.reflect.NativeMethodAccessorImpl.invoke (NativeMethodAccessorImpl.java:77)
+    at jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke (DelegatingMethodAccessorImpl.java:43)
+    at java.lang.reflect.Method.invoke (Method.java:569)
+    at org.codehaus.plexus.classworlds.launcher.Launcher.launchEnhanced (Launcher.java:255)
+    at org.codehaus.plexus.classworlds.launcher.Launcher.launch (Launcher.java:201)
+    at org.codehaus.plexus.classworlds.launcher.Launcher.mainWithExitCode (Launcher.java:362)
+    at org.codehaus.plexus.classworlds.launcher.Launcher.main (Launcher.java:314)
+Caused by: org.apache.maven.plugin.compiler.CompilationFailureException: Compilation failure
+error: exporting a package from system module jdk.crypto.cryptoki is not allowed with --release
+
+    at org.apache.maven.plugin.compiler.AbstractCompilerMojo.execute (AbstractCompilerMojo.java:1212)
+    at org.apache.maven.plugin.compiler.CompilerMojo.execute (CompilerMojo.java:193)
+    at org.apache.maven.plugin.DefaultBuildPluginManager.executeMojo (DefaultBuildPluginManager.java:126)
+    at org.apache.maven.lifecycle.internal.MojoExecutor.doExecute2 (MojoExecutor.java:328)
+    at org.apache.maven.lifecycle.internal.MojoExecutor.doExecute (MojoExecutor.java:316)
+    at org.apache.maven.lifecycle.internal.MojoExecutor.execute (MojoExecutor.java:212)
+    at org.apache.maven.lifecycle.internal.MojoExecutor.execute (MojoExecutor.java:174)
+    at org.apache.maven.lifecycle.internal.MojoExecutor.access$000 (MojoExecutor.java:75)
+    at org.apache.maven.lifecycle.internal.MojoExecutor$1.run (MojoExecutor.java:162)
+    at org.apache.maven.plugin.DefaultMojosExecutionStrategy.execute (DefaultMojosExecutionStrategy.java:39)
+    at org.apache.maven.lifecycle.internal.MojoExecutor.execute (MojoExecutor.java:159)
+    at org.apache.maven.lifecycle.internal.LifecycleModuleBuilder.buildProject (LifecycleModuleBuilder.java:105)
+    at org.apache.maven.lifecycle.internal.LifecycleModuleBuilder.buildProject (LifecycleModuleBuilder.java:73)
+    at org.apache.maven.lifecycle.internal.builder.singlethreaded.SingleThreadedBuilder.build (SingleThreadedBuilder.java:53)
+    at org.apache.maven.lifecycle.internal.LifecycleStarter.execute (LifecycleStarter.java:118)
+    at org.apache.maven.DefaultMaven.doExecute (DefaultMaven.java:261)
+    at org.apache.maven.DefaultMaven.doExecute (DefaultMaven.java:173)
+    at org.apache.maven.DefaultMaven.execute (DefaultMaven.java:101)
+    at org.apache.maven.cli.MavenCli.execute (MavenCli.java:919)
+    at org.apache.maven.cli.MavenCli.doMain (MavenCli.java:285)
+    at org.apache.maven.cli.MavenCli.main (MavenCli.java:207)
+    at jdk.internal.reflect.NativeMethodAccessorImpl.invoke0 (Native Method)
+    at jdk.internal.reflect.NativeMethodAccessorImpl.invoke (NativeMethodAccessorImpl.java:77)
+    at jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke (DelegatingMethodAccessorImpl.java:43)
+    at java.lang.reflect.Method.invoke (Method.java:569)
+    at org.codehaus.plexus.classworlds.launcher.Launcher.launchEnhanced (Launcher.java:255)
+    at org.codehaus.plexus.classworlds.launcher.Launcher.launch (Launcher.java:201)
+    at org.codehaus.plexus.classworlds.launcher.Launcher.mainWithExitCode (Launcher.java:362)
+    at org.codehaus.plexus.classworlds.launcher.Launcher.main (Launcher.java:314)
+[ERROR] 
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException
+[ERROR] 
+[ERROR] After correcting the problems, you can resume the build with the command
+[ERROR]   mvn <args> -rf :nexu-core
+
+=== test log tail ===
+Tests not run because compilation failed.
