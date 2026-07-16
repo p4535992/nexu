@@ -19,8 +19,9 @@ import lu.nowina.nexu.api.AppConfig;
 import lu.nowina.nexu.api.NexuAPI;
 
 /**
- * Restricts the local signature service to loopback clients and reproduces the
- * CORS headers expected by the legacy NexU JavaScript client.
+ * Restricts the signature service to loopback clients. Legacy routes retain the
+ * historical CORS behaviour, while the modern /v1 protocol requires an
+ * explicit browser-origin allowlist.
  */
 @Order(Ordered.HIGHEST_PRECEDENCE)
 final class NexuLoopbackCorsFilter extends OncePerRequestFilter {
@@ -42,7 +43,12 @@ final class NexuLoopbackCorsFilter extends OncePerRequestFilter {
             return;
         }
 
-        applyCorsHeaders(request, response, api.getAppConfig());
+        if (!applyCorsHeaders(request, response, api.getAppConfig())) {
+            response.sendError(
+                    HttpStatus.FORBIDDEN.value(),
+                    "Browser origin is not allowed. Configure cors_allowed_origin with an explicit origin for /v1.");
+            return;
+        }
 
         if (HttpMethod.OPTIONS.matches(request.getMethod())) {
             response.setStatus(HttpStatus.OK.value());
@@ -63,21 +69,53 @@ final class NexuLoopbackCorsFilter extends OncePerRequestFilter {
         }
     }
 
-    private static void applyCorsHeaders(
+    /**
+     * @return true when the request may continue
+     */
+    private static boolean applyCorsHeaders(
             final HttpServletRequest request,
             final HttpServletResponse response,
             final AppConfig config) {
 
         final String origin = request.getHeader(HttpHeaders.ORIGIN);
-        if (config.isCorsAllowAllOrigins()) {
-            response.setHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
-        } else {
-            final Set<String> allowedOrigins = config.getCorsAllowedOrigins();
-            if (origin != null && allowedOrigins != null && allowedOrigins.contains(origin)) {
-                response.setHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, origin);
-            }
+        final boolean modernApi = modernApiRequest(request);
+
+        // Non-browser clients do not send Origin. They are still constrained to
+        // loopback by the check above.
+        if (origin == null || origin.isBlank()) {
+            applyCommonCorsHeaders(response);
+            return true;
         }
 
+        if (config.isCorsAllowAllOrigins()) {
+            if (modernApi) {
+                return false;
+            }
+            response.setHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
+            applyCommonCorsHeaders(response);
+            return true;
+        }
+
+        final Set<String> allowedOrigins = config.getCorsAllowedOrigins();
+        if (allowedOrigins == null || !allowedOrigins.contains(origin)) {
+            return false;
+        }
+
+        response.setHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, origin);
+        applyCommonCorsHeaders(response);
+        return true;
+    }
+
+    private static boolean modernApiRequest(final HttpServletRequest request) {
+        String path = request.getRequestURI();
+        final String contextPath = request.getContextPath();
+        if (contextPath != null && !contextPath.isEmpty() && path.startsWith(contextPath)) {
+            path = path.substring(contextPath.length());
+        }
+        return path.equals("/v1") || path.startsWith("/v1/");
+    }
+
+    private static void applyCommonCorsHeaders(final HttpServletResponse response) {
         response.setHeader(HttpHeaders.VARY, HttpHeaders.ORIGIN);
         response.setHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_METHODS, "OPTIONS, GET, POST");
         response.setHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_HEADERS, HttpHeaders.CONTENT_TYPE);
