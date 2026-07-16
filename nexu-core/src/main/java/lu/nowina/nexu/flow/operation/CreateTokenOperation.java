@@ -23,7 +23,6 @@ import org.slf4j.LoggerFactory;
 
 import eu.europa.esig.dss.token.MSCAPISignatureToken;
 import eu.europa.esig.dss.token.SignatureTokenConnection;
-import eu.europa.esig.dss.token.mocca.MOCCASignatureTokenConnection;
 import lu.nowina.nexu.api.DetectedCard;
 import lu.nowina.nexu.api.Match;
 import lu.nowina.nexu.api.NexuAPI;
@@ -35,7 +34,6 @@ import lu.nowina.nexu.api.flow.BasicOperationStatus;
 import lu.nowina.nexu.api.flow.OperationResult;
 import lu.nowina.nexu.generic.ConnectionInfo;
 import lu.nowina.nexu.generic.GenericCardAdapter;
-import lu.nowina.nexu.generic.MOCCASignatureTokenConnectionAdapter;
 import lu.nowina.nexu.generic.Pkcs11SignatureTokenAdapter;
 import lu.nowina.nexu.generic.SCInfo;
 import lu.nowina.nexu.model.Pkcs11Params;
@@ -158,10 +156,7 @@ public class CreateTokenOperation extends AbstractCompositeOperation<Map<TokenOp
         final TokenId tokenId;
         switch (result.getResult()) {
             case MOCCA:
-                tokenId = this.api.registerTokenConnection(
-                        new MOCCASignatureTokenConnectionAdapter(new MOCCASignatureTokenConnection(
-                                this.display.getPasswordInputCallback()), this.api, selectedCard));
-                break;
+                return new OperationResult<Map<TokenOperationResultKey, Object>>(CoreOperationStatus.UNSUPPORTED_PRODUCT);
             case MSCAPI:
                 tokenId = this.api.registerTokenConnection(new MSCAPISignatureToken());
                 break;
