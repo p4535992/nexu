@@ -23,6 +23,22 @@ jobs:
       - name: Check out source
         uses: actions/checkout@v4
 
+      - name: Package source snapshot
+        shell: bash
+        run: |
+          git ls-files -z -- \
+            '*.java' '*.xml' '*.properties' '*.yml' '*.yaml' \
+            '*.md' '*.js' '*.fxml' '*.css' '*.iss' '*.bat' '*.sh' \
+            | tar --null --files-from=- -czf source-snapshot.tar.gz
+
+      - name: Upload source snapshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: nexu-source-snapshot
+          path: source-snapshot.tar.gz
+          if-no-files-found: error
+          retention-days: 7
+
       - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
