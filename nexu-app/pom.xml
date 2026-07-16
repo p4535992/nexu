@@ -12,8 +12,8 @@
     </parent>
 
     <artifactId>nexu-app</artifactId>
-    <name>NexU desktop application</name>
-    <description>Executable NexU desktop application using the Spring Boot local HTTP adapter.</description>
+    <name>NexU operator application</name>
+    <description>Executable Spring Boot and JavaFX smart-card agent for Windows and Linux operators.</description>
 
     <properties>
         <java.version>17</java.version>
@@ -39,60 +39,26 @@
     </dependencyManagement>
 
     <dependencies>
-        <!-- JAXB/JAX-WS compatibility still required by historical configuration
-             and model classes while the remaining legacy modules are consolidated. -->
         <dependency>
-            <groupId>com.sun.xml.bind</groupId>
-            <artifactId>jaxb-xjc</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>javax.xml.bind</groupId>
-            <artifactId>jaxb-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.sun.xml.bind</groupId>
-            <artifactId>jaxb-impl</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.sun.xml.bind</groupId>
-            <artifactId>jaxb-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>javax.activation</groupId>
-            <artifactId>javax.activation-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>javax.xml.ws</groupId>
-            <artifactId>jaxws-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>javax.jws</groupId>
-            <artifactId>javax.jws-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.glassfish.jaxb</groupId>
-            <artifactId>jaxb-runtime</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>javax.ws.rs</groupId>
-            <artifactId>javax.ws.rs-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.santuario</groupId>
-            <artifactId>xmlsec</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>javax.validation</groupId>
-            <artifactId>validation-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>javax.annotation</groupId>
-            <artifactId>javax.annotation-api</artifactId>
+            <groupId>lu.nowina.apps</groupId>
+            <artifactId>nexu-core</artifactId>
+            <version>${project.version}</version>
         </dependency>
 
-        <!-- Keep JavaFX at the executable boundary. Direct dependencies ensure
-             Maven packages the maintained JavaFX 21 runtime instead of the
-             JavaFX 11 baseline still used to compile transitional modules. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.freemarker</groupId>
+            <artifactId>freemarker</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>eu.europa.ec.joinup.sd-dss</groupId>
+            <artifactId>dss-model</artifactId>
+            <version>${dss.version}</version>
+        </dependency>
+
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-controls</artifactId>
@@ -103,56 +69,58 @@
             <artifactId>javafx-fxml</artifactId>
             <version>${javafx.version}</version>
         </dependency>
-
         <dependency>
-            <groupId>lu.nowina.apps</groupId>
-            <artifactId>nexu-standalone</artifactId>
-            <version>${project.version}</version>
+            <groupId>com.dorkbox</groupId>
+            <artifactId>SystemTray</artifactId>
+            <version>4.2.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+            <version>4.5.1</version>
             <exclusions>
                 <exclusion>
-                    <groupId>org.eclipse.jetty</groupId>
-                    <artifactId>jetty-server</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.freemarker</groupId>
-                    <artifactId>freemarker</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-log4j12</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>jcl-over-slf4j</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>jul-to-slf4j</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>log4j</groupId>
-                    <artifactId>log4j</artifactId>
+                    <groupId>commons-logging</groupId>
+                    <artifactId>commons-logging</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
+
+        <!-- The old Jetty classes remain in the aggregated standalone source only
+             until their physical deletion. They are compile-only and excluded from
+             the executable Spring Boot package. -->
         <dependency>
-            <groupId>lu.nowina.apps</groupId>
-            <artifactId>nexu-windows-keystore-plugin</artifactId>
-            <version>${project.version}</version>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>lu.nowina.apps</groupId>
-            <artifactId>nexu-spring-boot-server</artifactId>
-            <version>${project.version}</version>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-server</artifactId>
+            <version>9.3.3.v20150827</version>
+            <scope>provided</scope>
         </dependency>
 
-        <!-- NexuLauncher still uses the Log4j 1.x API directly. Reload4j keeps
-             that API available without restoring the abandoned Log4j 1.2 JAR. -->
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>commons-lang</groupId>
+            <artifactId>commons-lang</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>javax.xml.bind</groupId>
+            <artifactId>jaxb-api</artifactId>
+        </dependency>
+
+        <!-- NexuLauncher still uses the Log4j 1.x API. Reload4j provides that API
+             without restoring the abandoned Log4j 1.2 implementation. -->
         <dependency>
             <groupId>ch.qos.reload4j</groupId>
             <artifactId>reload4j</artifactId>
             <version>${reload4j.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
@@ -160,27 +128,69 @@
         <finalName>nexu-app</finalName>
         <resources>
             <resource>
+                <directory>../nexu-standalone/src/main/resources</directory>
+                <filtering>false</filtering>
+            </resource>
+            <resource>
+                <directory>../nexu-spring-boot-server/src/main/resources</directory>
+                <filtering>false</filtering>
+            </resource>
+            <resource>
                 <directory>src/main/resources</directory>
                 <filtering>true</filtering>
-                <includes>
-                    <include>**/version.txt</include>
-                </includes>
+                <includes><include>**/version.txt</include></includes>
             </resource>
             <resource>
                 <directory>src/main/resources</directory>
                 <filtering>false</filtering>
-                <excludes>
-                    <exclude>**/version.txt</exclude>
-                </excludes>
+                <excludes><exclude>**/version.txt</exclude></excludes>
             </resource>
         </resources>
+        <testResources>
+            <testResource><directory>src/test/resources</directory></testResource>
+            <testResource><directory>../nexu-spring-boot-server/src/test/resources</directory></testResource>
+        </testResources>
         <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <version>3.5.0</version>
+                <executions>
+                    <execution>
+                        <id>aggregate-application-sources</id>
+                        <phase>generate-sources</phase>
+                        <goals><goal>add-source</goal></goals>
+                        <configuration>
+                            <sources>
+                                <source>../nexu-standalone/src/main/java</source>
+                                <source>../nexu-spring-boot-server/src/main/java</source>
+                            </sources>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>aggregate-application-tests</id>
+                        <phase>generate-test-sources</phase>
+                        <goals><goal>add-test-source</goal></goals>
+                        <configuration>
+                            <sources>
+                                <source>../nexu-spring-boot-server/src/test/java</source>
+                            </sources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>${maven.compiler.version}</version>
                 <configuration>
                     <release>17</release>
+                    <compilerArgs>
+                        <arg>--add-modules</arg>
+                        <arg>jdk.crypto.cryptoki</arg>
+                        <arg>--add-exports</arg>
+                        <arg>jdk.crypto.cryptoki/sun.security.pkcs11.wrapper=ALL-UNNAMED</arg>
+                    </compilerArgs>
                 </configuration>
             </plugin>
             <plugin>
@@ -189,16 +199,11 @@
                 <version>${spring-boot.version}</version>
                 <configuration>
                     <mainClass>lu.nowina.nexu.NexuLauncher</mainClass>
-                    <layers>
-                        <enabled>true</enabled>
-                    </layers>
+                    <excludeGroupIds>org.eclipse.jetty</excludeGroupIds>
+                    <layers><enabled>true</enabled></layers>
                 </configuration>
                 <executions>
-                    <execution>
-                        <goals>
-                            <goal>repackage</goal>
-                        </goals>
-                    </execution>
+                    <execution><goals><goal>repackage</goal></goals></execution>
                 </executions>
             </plugin>
         </plugins>
