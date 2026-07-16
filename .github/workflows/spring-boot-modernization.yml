@@ -18,9 +18,35 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
+  cleanup-mocca:
+    if: github.event_name == 'push' && github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out modernization branch
+        uses: actions/checkout@v4
+        with:
+          ref: spring-boot-modernization-2
+          fetch-depth: 0
+
+      - name: Apply MOCCA cleanup
+        run: python3 .github/scripts/remove-mocca.py
+
+      - name: Commit cleanup
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          if git diff --cached --quiet; then
+            echo 'No cleanup changes were required'
+            exit 0
+          fi
+          git commit -m 'Remove obsolete MOCCA implementation'
+          git push origin HEAD:spring-boot-modernization-2
+
   build-server-adapter:
     runs-on: ubuntu-latest
     timeout-minutes: 30
