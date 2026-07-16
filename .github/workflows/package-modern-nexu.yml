@@ -1,6 +1,9 @@
-name: Package modern NexU
+name: Package NexU
 
 on:
+  push:
+    branches:
+      - spring-boot-modernization-2
   pull_request:
     paths:
       - 'pom.xml'
@@ -58,8 +61,7 @@ jobs:
         run: |
           set +e
           mvn --batch-mode --errors -f pom-modernization.xml \
-            -pl nexu-modern-app -am \
-            -Dnexu.app.shade.phase=none \
+            -pl nexu-app -am \
             -Dmaven.test.skip=true package > linux-build.log 2>&1
           status=$?
           if [ "$status" -ne 0 ]; then tail -n 200 linux-build.log; fi
@@ -68,29 +70,29 @@ jobs:
       - name: Verify Linux JavaFX runtime
         shell: bash
         run: |
-          JAR=nexu-modern-app/target/nexu-modern.jar
+          JAR=nexu-app/target/nexu-app.jar
           jar tf "$JAR" | grep -q 'BOOT-INF/lib/javafx-graphics-11.0.2-linux.jar'
           ! jar tf "$JAR" | grep -q 'BOOT-INF/lib/javafx-graphics-11.0.2-win.jar'
 
       - name: Build Linux portable application image
         shell: bash
         run: |
-          bash nexu-modern-app/src/jpackage/package-linux.sh \
-            nexu-modern-app/target/nexu-modern.jar \
-            nexu-modern-app/target/jpackage \
+          bash nexu-app/src/jpackage/package-linux.sh \
+            nexu-app/target/nexu-app.jar \
+            nexu-app/target/jpackage \
             1.24.0
 
       - name: Smoke test packaged application
         shell: bash
         run: |
-          CONFIG=nexu-modern-app/target/jpackage/NexU/nexu-config.properties
+          CONFIG=nexu-app/target/jpackage/NexU/nexu-config.properties
           sed -i 's/binding_ports=9795/binding_ports=19795/' "$CONFIG"
           sed -i 's#cors_allowed_origin=\*#cors_allowed_origin=http://localhost:8080#' "$CONFIG"
 
-          LOG=nexu-modern-app/target/jpackage/nexu-smoke.log
-          STATUS_FILE=nexu-modern-app/target/jpackage/status.json
-          CLIENT_FILE=nexu-modern-app/target/jpackage/nexu-v2.js
-          xvfb-run -a nexu-modern-app/target/jpackage/NexU/bin/NexU >"$LOG" 2>&1 &
+          LOG=nexu-app/target/jpackage/nexu-smoke.log
+          STATUS_FILE=nexu-app/target/jpackage/status.json
+          CLIENT_FILE=nexu-app/target/jpackage/nexu-v2.js
+          xvfb-run -a nexu-app/target/jpackage/NexU/bin/NexU >"$LOG" 2>&1 &
           PID=$!
           trap 'kill "$PID" 2>/dev/null || true; pkill -f "target/jpackage/NexU" 2>/dev/null || true' EXIT
 
@@ -122,12 +124,12 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: nexu-modern-linux-portable
+          name: nexu-linux-portable
           path: |
-            nexu-modern-app/target/jpackage/*.tar.gz
-            nexu-modern-app/target/jpackage/status.json
-            nexu-modern-app/target/jpackage/nexu-v2.js
-            nexu-modern-app/target/jpackage/nexu-smoke.log
+            nexu-app/target/jpackage/*.tar.gz
+            nexu-app/target/jpackage/status.json
+            nexu-app/target/jpackage/nexu-v2.js
+            nexu-app/target/jpackage/nexu-smoke.log
             linux-parent.log
             linux-build.log
           if-no-files-found: warn
@@ -162,13 +164,13 @@ jobs:
       - name: Build Windows application
         shell: cmd
         run: |
-          mvn --batch-mode --errors -f pom-modernization.xml -pl nexu-modern-app -am -Dnexu.app.shade.phase=none -Dmaven.test.skip=true package > windows-build.log 2>&1
+          mvn --batch-mode --errors -f pom-modernization.xml -pl nexu-app -am -Dmaven.test.skip=true package > windows-build.log 2>&1
           if errorlevel 1 (type windows-build.log & exit /b 1)
 
       - name: Verify Windows JavaFX runtime
         shell: pwsh
         run: |
-          $entries = & jar tf nexu-modern-app/target/nexu-modern.jar
+          $entries = & jar tf nexu-app/target/nexu-app.jar
           if (-not ($entries -match 'BOOT-INF/lib/javafx-graphics-11.0.2-win.jar')) {
             throw 'Windows JavaFX native JAR is missing'
           }
@@ -195,22 +197,22 @@ jobs:
       - name: Build Windows portable package and EXE installer
         shell: pwsh
         run: |
-          ./nexu-modern-app/src/jpackage/package-windows.ps1 `
-            -JarPath nexu-modern-app/target/nexu-modern.jar `
-            -Destination nexu-modern-app/target/jpackage `
+          ./nexu-app/src/jpackage/package-windows.ps1 `
+            -JarPath nexu-app/target/nexu-app.jar `
+            -Destination nexu-app/target/jpackage `
             -AppVersion 1.24.0
 
       - name: Verify Windows packages
         shell: pwsh
         run: |
-          $zip = Get-ChildItem nexu-modern-app/target/jpackage -Filter '*-portable.zip'
-          $exe = Get-ChildItem nexu-modern-app/target/jpackage -Filter '*.exe'
+          $zip = Get-ChildItem nexu-app/target/jpackage -Filter '*-portable.zip'
+          $exe = Get-ChildItem nexu-app/target/jpackage -Filter '*.exe'
           if (-not $zip) { throw 'Portable ZIP was not generated' }
           if (-not $exe) { throw 'EXE installer was not generated' }
-          if (-not (Test-Path nexu-modern-app/target/jpackage/NexU/nexu-config.properties)) {
+          if (-not (Test-Path nexu-app/target/jpackage/NexU/nexu-config.properties)) {
             throw 'External configuration template is missing from the app image'
           }
-          if (-not (Test-Path nexu-modern-app/target/jpackage/NexU/THIRD_PARTY_NOTICES.md)) {
+          if (-not (Test-Path nexu-app/target/jpackage/NexU/THIRD_PARTY_NOTICES.md)) {
             throw 'Third-party notices are missing from the app image'
           }
 
@@ -218,10 +220,10 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: nexu-modern-windows-packages
+          name: nexu-windows-packages
           path: |
-            nexu-modern-app/target/jpackage/*-portable.zip
-            nexu-modern-app/target/jpackage/*.exe
+            nexu-app/target/jpackage/*-portable.zip
+            nexu-app/target/jpackage/*.exe
             windows-parent.log
             windows-build.log
           if-no-files-found: warn
