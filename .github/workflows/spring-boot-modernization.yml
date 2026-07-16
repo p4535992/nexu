@@ -9,8 +9,10 @@ on:
       - 'pom.xml'
       - 'pom-modernization.xml'
       - 'nexu-api/**'
+      - 'nexu-model/**'
       - 'nexu-core/**'
       - 'nexu-standalone/**'
+      - 'nexu-rest-plugin/**'
       - 'nexu-spring-boot-server/**'
       - '.github/workflows/spring-boot-modernization.yml'
   workflow_dispatch:
@@ -62,6 +64,15 @@ jobs:
           mvn --version
           cat "$HOME/.m2/toolchains.xml"
 
+      - name: Install legacy parent POM
+        shell: bash
+        run: |
+          mvn --batch-mode --errors \
+            -N \
+            -f pom.xml \
+            -Dmaven.test.skip=true \
+            install > maven-parent-install.log 2>&1
+
       - name: Build modernization reactor
         shell: bash
         run: |
@@ -100,6 +111,7 @@ jobs:
         with:
           name: spring-boot-maven-logs
           path: |
+            maven-parent-install.log
             maven-build.log
             maven-test.log
           if-no-files-found: warn
