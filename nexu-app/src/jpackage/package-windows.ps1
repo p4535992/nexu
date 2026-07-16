@@ -24,6 +24,7 @@ $InputDirectory = Join-Path $Destination "input"
 $AppImage = Join-Path $Destination $AppName
 $Architecture = $env:PROCESSOR_ARCHITECTURE.ToLowerInvariant()
 $PortableArchive = Join-Path $Destination "nexu-$AppVersion-windows-$Architecture-portable.zip"
+$UpgradeUuid = "5d8fbe17-6f31-4a42-9b87-6b7d3c2f4e10"
 
 if (-not (Test-Path -LiteralPath $Jpackage -PathType Leaf)) {
     throw "jpackage.exe not found under JAVA_HOME: $Jpackage"
@@ -78,8 +79,11 @@ $InstallerArguments = @(
     "--app-image", $AppImage,
     "--license-file", (Join-Path $ProjectRoot "LICENSE"),
     "--win-menu",
+    "--win-menu-group", "NexU",
     "--win-shortcut",
-    "--win-dir-chooser"
+    "--win-dir-chooser",
+    "--win-per-user-install",
+    "--win-upgrade-uuid", $UpgradeUuid
 )
 
 & $Jpackage @InstallerArguments
