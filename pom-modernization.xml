@@ -19,11 +19,12 @@
       This reactor contains only modules that contribute to the modern local
       agent. The executable module keeps the historical name nexu-app.
 
-      Historical HTTPS assembly and the unused public object model remain in
-      the repository temporarily, but are intentionally outside this build.
+      Legacy REST compatibility is part of nexu-spring-boot-server. The old
+      Jetty multi-user request processor is not part of the Spring Boot runtime.
 
-      The next consolidation phase will reduce these transitional modules to:
-      core, card-drivers, local-server, nexu-app and distribution.
+      The target layout is four Maven modules:
+      core, card-drivers, local-server and nexu-app. Packaging remains build
+      infrastructure under nexu-app rather than a separate Java module.
     -->
     <modules>
         <module>nexu-api</module>
@@ -31,8 +32,6 @@
         <module>nexu-util</module>
         <module>nexu-core</module>
         <module>nexu-standalone</module>
-        <module>nexu-rest-plugin</module>
-        <module>nexu-multi-user-support</module>
         <module>nexu-windows-keystore-plugin</module>
         <module>nexu-spring-boot-server</module>
         <module>nexu-app</module>
