@@ -1,13 +1,6 @@
 package lu.nowina.nexu.springboot.server;
 
-import static lu.nowina.nexu.springboot.server.NexuModernDtos.ApiResponse;
-import static lu.nowina.nexu.springboot.server.NexuModernDtos.KeyHandle;
-import static lu.nowina.nexu.springboot.server.NexuModernDtos.SignHashRequest;
-import static lu.nowina.nexu.springboot.server.NexuModernDtos.SignHashResponse;
-import static lu.nowina.nexu.springboot.server.NexuModernDtos.SigningCertificateRequest;
-import static lu.nowina.nexu.springboot.server.NexuModernDtos.SigningCertificateResponse;
-import static lu.nowina.nexu.springboot.server.NexuModernDtos.StatusResponse;
-
+import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
@@ -36,6 +29,13 @@ import lu.nowina.nexu.api.Purpose;
 import lu.nowina.nexu.api.SignatureRequest;
 import lu.nowina.nexu.api.SignatureResponse;
 import lu.nowina.nexu.api.TokenId;
+import lu.nowina.nexu.springboot.server.NexuModernDtos.ApiResponse;
+import lu.nowina.nexu.springboot.server.NexuModernDtos.KeyHandle;
+import lu.nowina.nexu.springboot.server.NexuModernDtos.SignHashRequest;
+import lu.nowina.nexu.springboot.server.NexuModernDtos.SignHashResponse;
+import lu.nowina.nexu.springboot.server.NexuModernDtos.SigningCertificateRequest;
+import lu.nowina.nexu.springboot.server.NexuModernDtos.SigningCertificateResponse;
+import lu.nowina.nexu.springboot.server.NexuModernDtos.StatusResponse;
 
 /**
  * Modern local signing API. It follows the Web eID separation of certificate
@@ -184,7 +184,14 @@ final class NexuModernController {
     }
 
     private static void validateDigestLength(final DigestAlgorithm algorithm, final byte[] digest) {
-        final int expectedLength = algorithm.getMessageDigest().getDigestLength();
+        final int expectedLength;
+        try {
+            expectedLength = algorithm.getMessageDigest().getDigestLength();
+        } catch (final NoSuchAlgorithmException e) {
+            throw new ResponseStatusException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Hash function is not available in the current Java runtime: " + javaDigestName(algorithm), e);
+        }
         if (expectedLength > 0 && digest.length != expectedLength) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
