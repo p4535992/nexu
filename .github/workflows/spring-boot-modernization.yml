@@ -62,7 +62,7 @@ jobs:
           mvn --version
           cat "$HOME/.m2/toolchains.xml"
 
-      - name: Build Spring Boot server adapter
+      - name: Build modernization reactor
         shell: bash
         run: |
           set +e
@@ -70,20 +70,37 @@ jobs:
             -f pom-modernization.xml \
             -pl nexu-spring-boot-server \
             -am \
-            -DskipTests \
-            package > maven-build.log 2>&1
+            -Dmaven.test.skip=true \
+            install > maven-build.log 2>&1
           status=$?
           if [ "$status" -ne 0 ]; then
-            echo "Maven build failed with exit code $status"
+            echo "Maven reactor build failed with exit code $status"
             tail -n 120 maven-build.log
           fi
           exit "$status"
 
-      - name: Upload Maven log
+      - name: Test Spring Boot adapter
+        shell: bash
+        run: |
+          set +e
+          mvn --batch-mode --errors \
+            -f pom-modernization.xml \
+            -pl nexu-spring-boot-server \
+            test > maven-test.log 2>&1
+          status=$?
+          if [ "$status" -ne 0 ]; then
+            echo "Spring Boot adapter tests failed with exit code $status"
+            tail -n 120 maven-test.log
+          fi
+          exit "$status"
+
+      - name: Upload Maven logs
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: spring-boot-maven-log
-          path: maven-build.log
-          if-no-files-found: error
+          name: spring-boot-maven-logs
+          path: |
+            maven-build.log
+            maven-test.log
+          if-no-files-found: warn
           retention-days: 7
