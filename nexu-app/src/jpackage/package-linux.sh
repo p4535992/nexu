@@ -41,7 +41,27 @@ cp "$PROJECT_ROOT/nexu-app/src/main/resources/nexu-config.properties" \
   "$APP_IMAGE/nexu-config.properties"
 cp -R "$PROJECT_ROOT/licenses" "$APP_IMAGE/licenses"
 
-rm -rf "$INPUT_DIR"
 tar -C "$DESTINATION" -czf "$ARCHIVE" "$APP_NAME"
 
+# Build an operator-friendly Debian package from the already verified app image.
+# The package contains the application and its private Java runtime; PC/SC and
+# reader middleware remain operating-system dependencies.
+jpackage \
+  --type deb \
+  --name "$APP_NAME" \
+  --app-version "$APP_VERSION" \
+  --vendor "NexU Community" \
+  --description "Local smart-card signing agent" \
+  --dest "$DESTINATION" \
+  --app-image "$APP_IMAGE" \
+  --license-file "$PROJECT_ROOT/LICENSE" \
+  --linux-package-name nexu \
+  --linux-deb-maintainer "NexU Community" \
+  --linux-menu-group "Utility" \
+  --linux-app-category "Utility" \
+  --linux-shortcut
+
+rm -rf "$INPUT_DIR"
+
 printf 'Application image: %s\nPortable archive: %s\n' "$APP_IMAGE" "$ARCHIVE"
+find "$DESTINATION" -maxdepth 1 -type f -name '*.deb' -printf 'Debian installer: %p\n'
