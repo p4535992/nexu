@@ -31,10 +31,27 @@ jobs:
           cache: maven
 
       - name: Build Spring Boot server adapter
-        run: >-
-          mvn --batch-mode --errors
-          -f pom-modernization.xml
-          -pl nexu-spring-boot-server
-          -am
-          -DskipTests
-          package
+        shell: bash
+        run: |
+          set +e
+          mvn --batch-mode --errors \
+            -f pom-modernization.xml \
+            -pl nexu-spring-boot-server \
+            -am \
+            -DskipTests \
+            package > maven-build.log 2>&1
+          status=$?
+          if [ "$status" -ne 0 ]; then
+            echo "Maven build failed with exit code $status"
+            tail -n 80 maven-build.log
+          fi
+          exit "$status"
+
+      - name: Upload Maven log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: spring-boot-maven-log
+          path: maven-build.log
+          if-no-files-found: error
+          retention-days: 7
