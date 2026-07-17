@@ -9,20 +9,20 @@ on:
       - 'pom.xml'
       - 'nexu-core/**'
       - 'nexu-app/**'
-      - 'nexu-api/**'
-      - 'nexu-model/**'
-      - 'nexu-util/**'
-      - 'nexu-standalone/**'
-      - 'nexu-spring-boot-server/**'
-      - 'nexu-windows-keystore-plugin/**'
+      - 'README.md'
+      - 'docs/**'
       - '.github/workflows/spring-boot-modernization.yml'
   workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: nexu-build-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  build-application:
+  verify:
     runs-on: ubuntu-latest
     timeout-minutes: 40
 
@@ -37,39 +37,32 @@ jobs:
           java-version: '17'
           cache: maven
 
-      - name: Show Java and Maven versions
-        run: |
-          java -version
-          mvn --version
-
-      - name: Compile consolidated reactor
+      - name: Build and test the two-module reactor
         shell: bash
         run: |
-          set +e
-          mvn --batch-mode --errors clean install \
-            -Dmaven.test.skip=true > maven-build.log 2>&1
-          status=$?
-          if [ "$status" -ne 0 ]; then
-            tail -n 220 maven-build.log
-          fi
-          exit "$status"
+          set -o pipefail
+          mvn --batch-mode --errors clean verify 2>&1 | tee maven-verify.log
 
-      - name: Test modern application protocol
+      - name: Verify the headless core boundary
         shell: bash
         run: |
-          set +e
-          # nexu-core is already installed by the preceding step. Running only
-          # nexu-app tests avoids reactivating legacy DSS 5-era core tests while
-          # still executing the aggregated Spring Boot protocol test suite.
-          mvn --batch-mode --errors \
-            -pl nexu-app test > maven-test.log 2>&1
-          status=$?
-          if [ "$status" -ne 0 ]; then
-            tail -n 220 maven-test.log
+          if grep -RInE '(^|[[:space:]])import[[:space:]]+javafx\.|javafx\.' \
+              nexu-core/src/main/java --include='*.java'; then
+            echo 'JavaFX source reference found in nexu-core'
+            exit 1
           fi
-          exit "$status"
 
-      - name: Verify two-module executable JAR
+          mvn --batch-mode -pl nexu-core dependency:tree \
+            > nexu-core-dependencies.log 2>&1
+
+          if grep -Eq 'org\.openjfx|org\.springframework|org\.eclipse\.jetty|jakarta\.servlet|javax\.servlet' \
+              nexu-core-dependencies.log; then
+            cat nexu-core-dependencies.log
+            echo 'Desktop or server dependency found in nexu-core'
+            exit 1
+          fi
+
+      - name: Verify executable application
         shell: bash
         run: |
           JAR=nexu-app/target/nexu-app.jar
@@ -88,11 +81,6 @@ jobs:
           ! jar tf "$JAR" | grep -q 'BOOT-INF/lib/nexu-windows-keystore-plugin-'
           ! jar tf "$JAR" | grep -q 'BOOT-INF/lib/javafx-.*-11.0.2'
 
-      - name: Record dependency graph
-        run: |
-          mvn --batch-mode -pl nexu-app dependency:tree \
-            > maven-dependency-tree.log 2>&1
-
       - name: Upload executable application
         uses: actions/upload-artifact@v4
         with:
@@ -107,9 +95,8 @@ jobs:
         with:
           name: nexu-build-logs
           path: |
-            maven-build.log
-            maven-test.log
-            maven-dependency-tree.log
+            maven-verify.log
+            nexu-core-dependencies.log
             nexu-app-manifest.txt
           if-no-files-found: warn
           retention-days: 7
