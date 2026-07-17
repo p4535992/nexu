@@ -32,7 +32,7 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import lu.nowina.nexu.api.ConfiguredKeystore;
 import lu.nowina.nexu.api.KeystoreType;
 import lu.nowina.nexu.keystore.KeystoreDatabase;
-import lu.nowina.nexu.view.core.AbstractUIOperationController;
+import lu.nowina.nexu.view.ui.support.AbstractUIOperationController;
 
 /**
  * Allow to manage saved keystores.

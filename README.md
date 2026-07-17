@@ -11,7 +11,7 @@ The Maven reactor contains exactly two modules:
 - **`nexu-core`** — headless API, models, utilities, DSS signing, PC/SC, PKCS#11 and Windows keystore support;
 - **`nexu-app`** — Spring Boot loopback server, JavaFX operator UI, compatibility endpoints and native packaging.
 
-The former API, model, utility, standalone, server-plugin, bundle and keystore modules were physically merged into these two directories. Obsolete Jetty, MOCCA and manual Java-runtime assembly trees were removed.
+The former API, model, utility, standalone, server-plugin, bundle and keystore modules were physically merged into these two directories. `nexu-core` has no JavaFX, Spring, Servlet or Jetty dependency. Obsolete Jetty, MOCCA and manual Java-runtime assembly trees were removed.
 
 Build the complete application with:
 

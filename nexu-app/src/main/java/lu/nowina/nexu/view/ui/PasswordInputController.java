@@ -26,7 +26,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import lu.nowina.nexu.flow.StageHelper;
-import lu.nowina.nexu.view.core.AbstractUIOperationController;
+import lu.nowina.nexu.view.ui.support.AbstractUIOperationController;
 
 public class PasswordInputController extends AbstractUIOperationController<char[]> implements Initializable {
 

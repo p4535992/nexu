@@ -31,7 +31,7 @@ import lu.nowina.nexu.ProxyConfigurer;
 import lu.nowina.nexu.UserPreferences;
 import lu.nowina.nexu.api.EnvironmentInfo;
 import lu.nowina.nexu.api.OS;
-import lu.nowina.nexu.view.core.AbstractUIOperationController;
+import lu.nowina.nexu.view.ui.support.AbstractUIOperationController;
 
 public class PreferencesController extends AbstractUIOperationController<Void> implements Initializable {
 

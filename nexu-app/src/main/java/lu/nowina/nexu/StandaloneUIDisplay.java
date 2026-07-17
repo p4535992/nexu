@@ -39,7 +39,7 @@ import lu.nowina.nexu.view.core.ExtensionFilter;
 import lu.nowina.nexu.view.core.NonBlockingUIOperation;
 import lu.nowina.nexu.view.core.UIDisplay;
 import lu.nowina.nexu.view.core.UIOperation;
-import lu.nowina.nexu.view.core.UIOperationController;
+import lu.nowina.nexu.view.ui.support.UIOperationController;
 
 // Unisystems change: added cachedPassword + logic
 /**

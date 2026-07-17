@@ -27,7 +27,7 @@ import lu.nowina.nexu.api.EnvironmentInfo;
 import lu.nowina.nexu.api.OS;
 import lu.nowina.nexu.flow.StageHelper;
 import lu.nowina.nexu.model.Pkcs11Params;
-import lu.nowina.nexu.view.core.AbstractUIOperationController;
+import lu.nowina.nexu.view.ui.support.AbstractUIOperationController;
 import lu.nowina.nexu.view.core.ExtensionFilter;
 
 public class Pkcs11ParamsController extends AbstractUIOperationController<Pkcs11Params> implements Initializable {

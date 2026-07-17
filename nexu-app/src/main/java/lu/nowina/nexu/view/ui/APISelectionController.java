@@ -28,7 +28,7 @@ import lu.nowina.nexu.api.EnvironmentInfo;
 import lu.nowina.nexu.api.OS;
 import lu.nowina.nexu.api.ScAPI;
 import lu.nowina.nexu.flow.StageHelper;
-import lu.nowina.nexu.view.core.AbstractUIOperationController;
+import lu.nowina.nexu.view.ui.support.AbstractUIOperationController;
 
 public class APISelectionController extends AbstractUIOperationController<ScAPI> implements Initializable {
 

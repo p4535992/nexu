@@ -20,8 +20,8 @@ import org.slf4j.LoggerFactory;
 
 import lu.nowina.nexu.api.AppConfig;
 import lu.nowina.nexu.api.Feedback;
-import lu.nowina.nexu.view.core.AbstractUIOperationController;
-import lu.nowina.nexu.view.core.UIOperationController;
+import lu.nowina.nexu.view.ui.support.AbstractUIOperationController;
+import lu.nowina.nexu.view.ui.support.UIOperationController;
 
 /**
  * Convenient base class for {@link UIOperationController} whose result is a feedback that can be provided to {@link FeedbackClient}. 

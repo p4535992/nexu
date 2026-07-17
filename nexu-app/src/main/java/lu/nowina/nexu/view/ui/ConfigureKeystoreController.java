@@ -28,7 +28,7 @@ import lu.nowina.nexu.NexuException;
 import lu.nowina.nexu.api.ConfiguredKeystore;
 import lu.nowina.nexu.api.KeystoreType;
 import lu.nowina.nexu.flow.StageHelper;
-import lu.nowina.nexu.view.core.AbstractUIOperationController;
+import lu.nowina.nexu.view.ui.support.AbstractUIOperationController;
 import lu.nowina.nexu.view.core.ExtensionFilter;
 
 public class ConfigureKeystoreController extends AbstractUIOperationController<ConfiguredKeystore> implements Initializable {

@@ -24,7 +24,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import lu.nowina.nexu.api.ConfiguredKeystore;
 import lu.nowina.nexu.keystore.KeystoreProductAdapter;
-import lu.nowina.nexu.view.core.AbstractUIOperationController;
+import lu.nowina.nexu.view.ui.support.AbstractUIOperationController;
 
 public class SaveKeystoreController extends AbstractUIOperationController<Boolean> implements Initializable {
 

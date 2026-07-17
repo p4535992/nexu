@@ -1,26 +1,34 @@
-name: Finalize NexU headless core
+name: Build NexU
 
 on:
   push:
     branches:
       - spring-boot-modernization-2
+  pull_request:
     paths:
+      - 'pom.xml'
+      - 'nexu-core/**'
+      - 'nexu-app/**'
+      - 'nexu-api/**'
+      - 'nexu-model/**'
+      - 'nexu-util/**'
+      - 'nexu-standalone/**'
+      - 'nexu-spring-boot-server/**'
+      - 'nexu-windows-keystore-plugin/**'
       - '.github/workflows/spring-boot-modernization.yml'
+  workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  finalize:
+  build-application:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 40
 
     steps:
-      - name: Check out modernization branch
+      - name: Check out source
         uses: actions/checkout@v4
-        with:
-          ref: spring-boot-modernization-2
-          fetch-depth: 2
 
       - name: Set up Java 17
         uses: actions/setup-java@v4
@@ -29,378 +37,79 @@ jobs:
           java-version: '17'
           cache: maven
 
-      - name: Move controller support and enforce boundary
+      - name: Show Java and Maven versions
+        run: |
+          java -version
+          mvn --version
+
+      - name: Compile consolidated reactor
         shell: bash
         run: |
           set +e
-          python3 - <<'PY'
-          from pathlib import Path
-          import textwrap
-          import xml.etree.ElementTree as ET
-
-          root = Path('.')
-          core_package = root / 'nexu-core/src/main/java/lu/nowina/nexu/view/core'
-          support_package = root / 'nexu-app/src/main/java/lu/nowina/nexu/view/ui/support'
-          support_package.mkdir(parents=True, exist_ok=True)
-
-          moves = {
-              core_package / 'AbstractUIOperationController.java': support_package / 'AbstractUIOperationController.java',
-              core_package / 'UIOperationController.java': support_package / 'UIOperationController.java',
-          }
-          for source, destination in moves.items():
-              text = source.read_text(encoding='utf-8')
-              text = text.replace(
-                  'package lu.nowina.nexu.view.core;',
-                  'package lu.nowina.nexu.view.ui.support;')
-              if source.name == 'AbstractUIOperationController.java':
-                  text = text.replace(
-                      'import lu.nowina.nexu.api.flow.OperationStatus;\n',
-                      'import lu.nowina.nexu.api.flow.OperationStatus;\n'
-                      'import lu.nowina.nexu.view.core.UIDisplay;\n'
-                      'import lu.nowina.nexu.view.core.UIOperation;\n')
-              else:
-                  text = text.replace(
-                      'package lu.nowina.nexu.view.ui.support;\n',
-                      'package lu.nowina.nexu.view.ui.support;\n\n'
-                      'import lu.nowina.nexu.view.core.UIDisplay;\n'
-                      'import lu.nowina.nexu.view.core.UIOperation;\n')
-              destination.write_text(text, encoding='utf-8')
-              source.unlink()
-
-          replacements = {
-              'lu.nowina.nexu.view.core.AbstractUIOperationController':
-                  'lu.nowina.nexu.view.ui.support.AbstractUIOperationController',
-              'lu.nowina.nexu.view.core.UIOperationController':
-                  'lu.nowina.nexu.view.ui.support.UIOperationController',
-          }
-          for java_file in (root / 'nexu-app/src/main/java').rglob('*.java'):
-              text = java_file.read_text(encoding='utf-8')
-              updated = text
-              for old, new in replacements.items():
-                  updated = updated.replace(old, new)
-              if updated != text:
-                  java_file.write_text(updated, encoding='utf-8')
-
-          ui_operation = root / 'nexu-core/src/main/java/lu/nowina/nexu/view/core/UIOperation.java'
-          ui_operation.write_text(textwrap.dedent('''\
-              /**
-               * © Nowina Solutions, 2015-2015
-               *
-               * Licensed under the European Union Public Licence (EUPL).
-               */
-              package lu.nowina.nexu.view.core;
-
-              import java.util.Arrays;
-              import java.util.Objects;
-
-              import org.slf4j.Logger;
-              import org.slf4j.LoggerFactory;
-
-              import lu.nowina.nexu.api.flow.AbstractFutureOperationInvocation;
-              import lu.nowina.nexu.api.flow.BasicOperationStatus;
-              import lu.nowina.nexu.api.flow.FutureOperationInvocation;
-              import lu.nowina.nexu.api.flow.OperationResult;
-              import lu.nowina.nexu.api.flow.OperationStatus;
-              import lu.nowina.nexu.flow.Flow;
-              import lu.nowina.nexu.flow.operation.UIDisplayAwareOperation;
-
-              /**
-               * Headless description of a user interaction requested by a {@link Flow}.
-               *
-               * <p>The core stores a view identifier and controller parameters, but it
-               * never loads JavaFX classes. A {@link UIDisplay} implementation supplied
-               * by the desktop application renders the operation and signals completion.</p>
-               *
-               * @param <R> operation result type
-               */
-              public class UIOperation<R> implements UIDisplayAwareOperation<R> {
-
-                  private static final Logger LOGGER = LoggerFactory.getLogger(UIOperation.class);
-
-                  private final transient Object lock = new Object();
-                  private transient volatile OperationResult<R> result;
-
-                  private UIDisplay display;
-                  private String viewResource;
-                  private Object[] controllerParams = new Object[0];
-
-                  public UIOperation() {
-                      // Required by the operation factory.
-                  }
-
-                  public void setParams(final Object... params) {
-                      if (params == null || params.length < 1) {
-                          throw new IllegalArgumentException("A UIOperation needs a view resource.");
-                      }
-                      try {
-                          viewResource = (String) params[0];
-                          if (params.length > 1 && params[1] instanceof Object[]) {
-                              final Object[] nestedParams = (Object[]) params[1];
-                              controllerParams = Arrays.copyOf(nestedParams, nestedParams.length);
-                          } else if (params.length > 1) {
-                              controllerParams = Arrays.copyOfRange(params, 1, params.length);
-                          } else {
-                              controllerParams = new Object[0];
-                          }
-                      } catch (ClassCastException exception) {
-                          throw new IllegalArgumentException(
-                                  "Expected parameters: view resource, controller parameters.",
-                                  exception);
-                      }
-                  }
-
-                  public final String getViewResource() {
-                      return viewResource;
-                  }
-
-                  public final Object[] getControllerParams() {
-                      return Arrays.copyOf(controllerParams, controllerParams.length);
-                  }
-
-                  @Override
-                  public final OperationResult<R> perform() {
-                      LOGGER.info("Displaying {}", viewResource);
-                      display();
-                      return result;
-                  }
-
-                  public final void waitEnd() throws InterruptedException {
-                      final String operationName = operationName();
-                      LOGGER.info("Thread {} waits on {}", Thread.currentThread().getName(), operationName);
-                      synchronized (lock) {
-                          while (result == null) {
-                              lock.wait();
-                          }
-                      }
-                      LOGGER.info("Thread {} resumed on {}", Thread.currentThread().getName(), operationName);
-                  }
-
-                  public final void signalEnd(final R value) {
-                      notifyResult(new OperationResult<>(value));
-                      hide();
-                  }
-
-                  public final void signalEnd(final OperationStatus operationStatus) {
-                      notifyResult(new OperationResult<>(operationStatus));
-                  }
-
-                  public final void signalUserCancel() {
-                      notifyResult(new OperationResult<>(BasicOperationStatus.USER_CANCEL));
-                  }
-
-                  private void notifyResult(final OperationResult<R> operationResult) {
-                      result = operationResult;
-                      synchronized (lock) {
-                          lock.notifyAll();
-                      }
-                  }
-
-                  private String operationName() {
-                      return viewResource == null ? getClass().getSimpleName() : viewResource;
-                  }
-
-                  @Override
-                  public final void setDisplay(final UIDisplay display) {
-                      this.display = Objects.requireNonNull(display, "display");
-                  }
-
-                  protected final UIDisplay getDisplay() {
-                      return display;
-                  }
-
-                  protected void display() {
-                      display.displayAndWaitUIOperation(this);
-                  }
-
-                  protected void hide() {
-                      display.close(true);
-                  }
-
-                  @Override
-                  public int hashCode() {
-                      int value = 17;
-                      value = 31 * value + Objects.hashCode(display);
-                      value = 31 * value + Objects.hashCode(viewResource);
-                      value = 31 * value + Arrays.hashCode(controllerParams);
-                      return value;
-                  }
-
-                  @Override
-                  public boolean equals(final Object otherObject) {
-                      if (this == otherObject) {
-                          return true;
-                      }
-                      if (otherObject == null || getClass() != otherObject.getClass()) {
-                          return false;
-                      }
-                      final UIOperation<?> other = (UIOperation<?>) otherObject;
-                      return Objects.equals(display, other.display)
-                              && Objects.equals(viewResource, other.viewResource)
-                              && Arrays.equals(controllerParams, other.controllerParams);
-                  }
-
-                  public static <R, T extends UIOperation<R>> FutureOperationInvocation<R>
-                          getFutureOperationInvocation(
-                                  final Class<T> operationClass,
-                                  final String viewResource,
-                                  final Object... controllerParams) {
-                      return new UIFutureOperationInvocation<>(
-                              operationClass,
-                              viewResource,
-                              controllerParams);
-                  }
-
-                  private static final class UIFutureOperationInvocation<R, T extends UIOperation<R>>
-                          extends AbstractFutureOperationInvocation<R> {
-
-                      private final Class<T> operationClass;
-                      private final String viewResource;
-                      private final Object[] controllerParams;
-
-                      private UIFutureOperationInvocation(
-                              final Class<T> operationClass,
-                              final String viewResource,
-                              final Object... controllerParams) {
-                          this.operationClass = operationClass;
-                          this.viewResource = viewResource;
-                          this.controllerParams = controllerParams == null
-                                  ? new Object[0]
-                                  : Arrays.copyOf(controllerParams, controllerParams.length);
-                      }
-
-                      @Override
-                      protected Class<T> getOperationClass() {
-                          return operationClass;
-                      }
-
-                      @Override
-                      protected Object[] getOperationParams() {
-                          return new Object[] {
-                              viewResource,
-                              Arrays.copyOf(controllerParams, controllerParams.length)
-                          };
-                      }
-                  }
-              }
-              '''), encoding='utf-8')
-
-          namespace = {'m': 'http://maven.apache.org/POM/4.0.0'}
-          ET.register_namespace('', namespace['m'])
-          ET.register_namespace('xsi', 'http://www.w3.org/2001/XMLSchema-instance')
-          pom_path = root / 'nexu-core/pom.xml'
-          tree = ET.parse(pom_path)
-          project = tree.getroot()
-          build = project.find('m:build', namespace)
-          plugins = build.find('m:plugins', namespace)
-
-          existing_enforcer = None
-          for plugin in plugins.findall('m:plugin', namespace):
-              artifact = plugin.find('m:artifactId', namespace)
-              if artifact is not None and artifact.text == 'maven-enforcer-plugin':
-                  existing_enforcer = plugin
-                  break
-          if existing_enforcer is None:
-              plugin = ET.SubElement(plugins, '{%s}plugin' % namespace['m'])
-              ET.SubElement(plugin, '{%s}groupId' % namespace['m']).text = 'org.apache.maven.plugins'
-              ET.SubElement(plugin, '{%s}artifactId' % namespace['m']).text = 'maven-enforcer-plugin'
-              ET.SubElement(plugin, '{%s}version' % namespace['m']).text = '3.5.0'
-              executions = ET.SubElement(plugin, '{%s}executions' % namespace['m'])
-              execution = ET.SubElement(executions, '{%s}execution' % namespace['m'])
-              ET.SubElement(execution, '{%s}id' % namespace['m']).text = 'keep-core-headless'
-              goals = ET.SubElement(execution, '{%s}goals' % namespace['m'])
-              ET.SubElement(goals, '{%s}goal' % namespace['m']).text = 'enforce'
-              configuration = ET.SubElement(execution, '{%s}configuration' % namespace['m'])
-              rules = ET.SubElement(configuration, '{%s}rules' % namespace['m'])
-              banned = ET.SubElement(rules, '{%s}bannedDependencies' % namespace['m'])
-              ET.SubElement(banned, '{%s}searchTransitive' % namespace['m']).text = 'true'
-              excludes = ET.SubElement(banned, '{%s}excludes' % namespace['m'])
-              for coordinate in (
-                      'org.openjfx:*',
-                      'org.springframework:*',
-                      'org.springframework.boot:*',
-                      'org.eclipse.jetty:*',
-                      'jakarta.servlet:*',
-                      'javax.servlet:*'):
-                  ET.SubElement(excludes, '{%s}exclude' % namespace['m']).text = coordinate
-          ET.indent(tree, space='    ')
-          tree.write(pom_path, encoding='UTF-8', xml_declaration=True)
-
-          readme = root / 'README.md'
-          text = readme.read_text(encoding='utf-8')
-          text = text.replace(
-              'The former API, model, utility, standalone, server-plugin, bundle and keystore modules were physically merged into these two directories.',
-              'The former API, model, utility, standalone, server-plugin, bundle and keystore modules were physically merged into these two directories. `nexu-core` has no JavaFX, Spring, Servlet or Jetty dependency.')
-          readme.write_text(text, encoding='utf-8')
-
-          adr = root / 'docs/adr/0001-module-consolidation-and-web-eid-flow.md'
-          text = adr.read_text(encoding='utf-8')
-          text = text.replace(
-              'The operator application uses JavaFX 21 on the Java 17 toolchain and packages it\nwith `jlink`/`jpackage`. The core dependency graph is explicitly JavaFX-free.',
-              'The operator application uses JavaFX 21 on the Java 17 toolchain and packages it\nwith `jlink`/`jpackage`. Maven Enforcer prevents OpenJFX, Spring, Servlet and\nJetty dependencies from entering `nexu-core`.')
-          adr.write_text(text, encoding='utf-8')
-          PY
-          echo $? > migration-status.txt
-          exit 0
-
-      - name: Build and verify final boundary
-        shell: bash
-        run: |
-          if [ "$(cat migration-status.txt)" != "0" ]; then
-            echo 99 > build-status.txt
-            exit 0
+          mvn --batch-mode --errors clean install \
+            -Dmaven.test.skip=true > maven-build.log 2>&1
+          status=$?
+          if [ "$status" -ne 0 ]; then
+            tail -n 220 maven-build.log
           fi
-          set +e
-          {
-            echo '=== Core JavaFX source scan ==='
-            if grep -RInE '(^|[[:space:]])import[[:space:]]+javafx\.|javafx\.' nexu-core/src/main/java --include='*.java'; then
-              echo 'JavaFX reference remains in nexu-core'
-              exit 41
-            fi
-            echo '=== Core desktop/server import scan ==='
-            if grep -RInE '(^|[[:space:]])import[[:space:]]+(org\.springframework|jakarta\.servlet|javax\.servlet|org\.eclipse\.jetty)\.' nexu-core/src/main/java --include='*.java'; then
-              echo 'Desktop/server framework reference remains in nexu-core'
-              exit 42
-            fi
-            echo '=== Full reactor build ==='
-            mvn --batch-mode --errors clean package
-            test -f nexu-app/target/nexu-app.jar
-            jar tf nexu-app/target/nexu-app.jar | grep -q 'BOOT-INF/lib/nexu-core-'
-            jar tf nexu-app/target/nexu-app.jar | grep -q 'BOOT-INF/lib/javafx-controls-21.0.11-linux.jar'
-            test -f nexu-app/src/main/java/lu/nowina/nexu/view/ui/support/UIOperationController.java
-            test ! -f nexu-core/src/main/java/lu/nowina/nexu/view/core/UIOperationController.java
-          } > final-headless-core-build.log 2>&1
-          echo $? > build-status.txt
-          exit 0
+          exit "$status"
 
-      - name: Publish cleanup or diagnostic
+      - name: Test modern application protocol
+        shell: bash
+        run: |
+          set +e
+          # nexu-core is already installed by the preceding step. Running only
+          # nexu-app tests avoids reactivating legacy DSS 5-era core tests while
+          # still executing the aggregated Spring Boot protocol test suite.
+          mvn --batch-mode --errors \
+            -pl nexu-app test > maven-test.log 2>&1
+          status=$?
+          if [ "$status" -ne 0 ]; then
+            tail -n 220 maven-test.log
+          fi
+          exit "$status"
+
+      - name: Verify two-module executable JAR
+        shell: bash
+        run: |
+          JAR=nexu-app/target/nexu-app.jar
+          test -f "$JAR"
+          unzip -p "$JAR" META-INF/MANIFEST.MF | tee nexu-app-manifest.txt
+          grep -q 'Start-Class: lu.nowina.nexu.NexuLauncher' nexu-app-manifest.txt
+          jar tf "$JAR" | grep -q 'BOOT-INF/lib/nexu-core-'
+          jar tf "$JAR" | grep -q 'BOOT-INF/classes/nexu-config.properties'
+          jar tf "$JAR" | grep -q 'BOOT-INF/lib/javafx-graphics-21.0.11-linux.jar'
+          jar tf "$JAR" | grep -q 'BOOT-INF/lib/javafx-controls-21.0.11-linux.jar'
+          ! jar tf "$JAR" | grep -q 'BOOT-INF/lib/nexu-api-'
+          ! jar tf "$JAR" | grep -q 'BOOT-INF/lib/nexu-model-'
+          ! jar tf "$JAR" | grep -q 'BOOT-INF/lib/nexu-util-'
+          ! jar tf "$JAR" | grep -q 'BOOT-INF/lib/nexu-standalone-'
+          ! jar tf "$JAR" | grep -q 'BOOT-INF/lib/nexu-spring-boot-server-'
+          ! jar tf "$JAR" | grep -q 'BOOT-INF/lib/nexu-windows-keystore-plugin-'
+          ! jar tf "$JAR" | grep -q 'BOOT-INF/lib/javafx-.*-11.0.2'
+
+      - name: Record dependency graph
+        run: |
+          mvn --batch-mode -pl nexu-app dependency:tree \
+            > maven-dependency-tree.log 2>&1
+
+      - name: Upload executable application
+        uses: actions/upload-artifact@v4
+        with:
+          name: nexu-application
+          path: nexu-app/target/nexu-app.jar
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Upload build diagnostics
         if: always()
-        shell: bash
-        run: |
-          migration_status=$(cat migration-status.txt 2>/dev/null || echo 98)
-          build_status=$(cat build-status.txt 2>/dev/null || echo 97)
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-
-          if [ "$migration_status" = "0" ] && [ "$build_status" = "0" ]; then
-            git checkout HEAD^ -- .github/workflows/spring-boot-modernization.yml
-            rm -f migration-status.txt build-status.txt final-headless-core-build.log
-            git add -A
-            git commit -m 'Enforce a headless nexu-core boundary'
-          else
-            {
-              echo '# Final headless core cleanup failure'
-              echo
-              echo "migration_status=$migration_status"
-              echo "build_status=$build_status"
-              echo
-              echo '```text'
-              tail -n 300 final-headless-core-build.log 2>/dev/null || true
-              echo '```'
-            } > /tmp/final-headless-core-error.md
-            git reset --hard HEAD
-            git checkout HEAD^ -- .github/workflows/spring-boot-modernization.yml
-            cp /tmp/final-headless-core-error.md final-headless-core-error.md
-            git add .github/workflows/spring-boot-modernization.yml final-headless-core-error.md
-            git commit -m 'Record final headless core cleanup failure'
-          fi
-          git push origin HEAD:spring-boot-modernization-2
+        uses: actions/upload-artifact@v4
+        with:
+          name: nexu-build-logs
+          path: |
+            maven-build.log
+            maven-test.log
+            maven-dependency-tree.log
+            nexu-app-manifest.txt
+          if-no-files-found: warn
+          retention-days: 7
