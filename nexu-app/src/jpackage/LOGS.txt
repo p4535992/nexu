@@ -1,0 +1,38 @@
+NexU diagnostic logs
+====================
+
+NexU writes diagnostic logs through SLF4J and the Logback implementation
+included by Spring Boot.
+
+Default location
+----------------
+Windows: %USERPROFILE%\.nexu\logs\nexu.log
+Linux:   $HOME/.nexu/logs/nexu.log
+
+The actual platform-specific NexU user-data directory may be used when it is
+available. The exact active path is printed in the first startup log entry.
+
+Overrides
+---------
+Environment variable: NEXU_LOG_DIR
+Java system property: -Dnexu.log.dir=/custom/path
+Configuration property: log_directory=/custom/path
+
+Rotation
+--------
+Current file: nexu.log
+Archives: archive/nexu.YYYY-MM-DD.N.log.gz
+Default maximum file size: 10 MB
+Default retained periods: 14
+Default total archive cap: 200 MB
+
+These values can be changed in nexu-config.properties:
+
+log_level=DEBUG
+rolling_log_file_size=10MB
+rolling_log_file_number=14
+rolling_log_total_size_cap=200MB
+
+When reporting a problem, include nexu.log and the relevant compressed files
+from the archive directory. Review logs before sharing them. NexU must not log
+PINs, private keys, prepared hashes, key handles or signature values.
