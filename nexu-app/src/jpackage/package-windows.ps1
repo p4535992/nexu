@@ -62,6 +62,7 @@ Copy-Item -LiteralPath (Join-Path $ProjectRoot "LICENSE") -Destination (Join-Pat
 Copy-Item -LiteralPath (Join-Path $ProjectRoot "THIRD_PARTY_NOTICES.md") -Destination (Join-Path $AppImage "THIRD_PARTY_NOTICES.md")
 Copy-Item -LiteralPath (Join-Path $ProjectRoot "nexu-app\src\main\resources\nexu-config.properties") `
     -Destination (Join-Path $AppImage "nexu-config.properties")
+Copy-Item -LiteralPath (Join-Path $ScriptDirectory "LOGS.txt") -Destination (Join-Path $AppImage "LOGS.txt")
 Copy-Item -LiteralPath (Join-Path $ProjectRoot "licenses") -Destination (Join-Path $AppImage "licenses") -Recurse
 
 if (Test-Path -LiteralPath $PortableArchive) {
@@ -95,6 +96,7 @@ Remove-Item -LiteralPath $InputDirectory -Recurse -Force
 
 Write-Host "Application image: $AppImage"
 Write-Host "Portable archive: $PortableArchive"
+Write-Host "Diagnostic log guide: $(Join-Path $AppImage 'LOGS.txt')"
 Get-ChildItem -LiteralPath $Destination -Filter "*.exe" | ForEach-Object {
     Write-Host "Windows installer: $($_.FullName)"
 }

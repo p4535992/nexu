@@ -55,13 +55,16 @@ jobs:
           if [ "$status" -ne 0 ]; then tail -n 240 linux-build.log; fi
           exit "$status"
 
-      - name: Verify Linux JavaFX 21 runtime
+      - name: Verify Linux JavaFX and logging runtime
         shell: bash
         run: |
           JAR=nexu-app/target/nexu-app.jar
           jar tf "$JAR" | grep -q 'BOOT-INF/lib/javafx-graphics-21.0.11-linux.jar'
           jar tf "$JAR" | grep -q 'BOOT-INF/lib/javafx-controls-21.0.11-linux.jar'
           jar tf "$JAR" | grep -q 'BOOT-INF/lib/nexu-core-'
+          jar tf "$JAR" | grep -q '^BOOT-INF/classes/logback.xml$'
+          jar tf "$JAR" | grep -q 'BOOT-INF/lib/logback-classic-'
+          ! jar tf "$JAR" | grep -q 'BOOT-INF/lib/reload4j-'
           ! jar tf "$JAR" | grep -q 'BOOT-INF/lib/nexu-.*-plugin-'
           ! jar tf "$JAR" | grep -q 'BOOT-INF/lib/nexu-standalone-'
           ! jar tf "$JAR" | grep -q 'BOOT-INF/lib/javafx-.*-11.0.2'
@@ -77,25 +80,38 @@ jobs:
       - name: Verify Linux packages
         shell: bash
         run: |
-          test -x nexu-app/target/jpackage/NexU/bin/NexU
-          test -f nexu-app/target/jpackage/NexU/nexu-config.properties
-          test -f nexu-app/target/jpackage/NexU/THIRD_PARTY_NOTICES.md
+          set -euo pipefail
+          IMAGE=nexu-app/target/jpackage/NexU
+          test -x "$IMAGE/bin/NexU"
+          test -f "$IMAGE/nexu-config.properties"
+          test -f "$IMAGE/THIRD_PARTY_NOTICES.md"
+          test -f "$IMAGE/LOGS.txt"
+
           DEB=$(find nexu-app/target/jpackage -maxdepth 1 -type f -name '*.deb' -print -quit)
           test -n "$DEB"
           dpkg-deb --info "$DEB" | tee nexu-app/target/jpackage/deb-info.txt
-          dpkg-deb --contents "$DEB" | grep -q '/opt/nexu/'
+          dpkg-deb --contents "$DEB" | tee nexu-app/target/jpackage/deb-contents.txt
+          grep -q './opt/nexu/' nexu-app/target/jpackage/deb-contents.txt
+          grep -q './opt/nexu/lib/app/nexu-app.jar' nexu-app/target/jpackage/deb-contents.txt
 
-      - name: Smoke test packaged application
+      - name: Smoke test packaged application and rotating diagnostic log
         shell: bash
         run: |
+          set -euo pipefail
           CONFIG=nexu-app/target/jpackage/NexU/nexu-config.properties
           sed -i 's/binding_ports=9795/binding_ports=19795/' "$CONFIG"
           sed -i 's#cors_allowed_origin=\*#cors_allowed_origin=http://localhost:8080#' "$CONFIG"
 
-          LOG=nexu-app/target/jpackage/nexu-smoke.log
+          CONSOLE_LOG=nexu-app/target/jpackage/nexu-smoke.log
           STATUS_FILE=nexu-app/target/jpackage/status.json
           CLIENT_FILE=nexu-app/target/jpackage/nexu-v2.js
-          xvfb-run -a nexu-app/target/jpackage/NexU/bin/NexU >"$LOG" 2>&1 &
+          DIAGNOSTIC_DIR="$RUNNER_TEMP/nexu-diagnostic-logs"
+          rm -rf "$DIAGNOSTIC_DIR"
+          mkdir -p "$DIAGNOSTIC_DIR"
+
+          NEXU_LOG_DIR="$DIAGNOSTIC_DIR" \
+            xvfb-run -a nexu-app/target/jpackage/NexU/bin/NexU \
+            >"$CONSOLE_LOG" 2>&1 &
           PID=$!
           trap 'kill "$PID" 2>/dev/null || true; pkill -f "target/jpackage/NexU" 2>/dev/null || true' EXIT
 
@@ -111,15 +127,26 @@ jobs:
           done
 
           if [ "$started" != true ]; then
-            cat "$LOG"
+            cat "$CONSOLE_LOG"
+            if [ -f "$DIAGNOSTIC_DIR/nexu.log" ]; then cat "$DIAGNOSTIC_DIR/nexu.log"; fi
             exit 1
           fi
 
           grep -q '"protocol":"nexu:2.0"' "$STATUS_FILE"
-          grep -q 'Loaded external NexU properties' "$LOG"
           curl --fail --silent --show-error \
             http://127.0.0.1:19795/nexu-v2.js > "$CLIENT_FILE"
           grep -q 'getSigningCertificate' "$CLIENT_FILE"
+
+          for attempt in $(seq 1 20); do
+            if [ -s "$DIAGNOSTIC_DIR/nexu.log" ]; then break; fi
+            sleep 0.5
+          done
+
+          test -s "$DIAGNOSTIC_DIR/nexu.log"
+          grep -q 'NexU diagnostic logging initialized' "$DIAGNOSTIC_DIR/nexu.log"
+          grep -q 'level=DEBUG' "$DIAGNOSTIC_DIR/nexu.log"
+          grep -q 'Loaded external NexU properties' "$DIAGNOSTIC_DIR/nexu.log"
+          cp "$DIAGNOSTIC_DIR/nexu.log" nexu-app/target/jpackage/nexu-debug.log
 
       - name: Upload Linux packages and diagnostics
         if: always()
@@ -130,9 +157,11 @@ jobs:
             nexu-app/target/jpackage/*.tar.gz
             nexu-app/target/jpackage/*.deb
             nexu-app/target/jpackage/deb-info.txt
+            nexu-app/target/jpackage/deb-contents.txt
             nexu-app/target/jpackage/status.json
             nexu-app/target/jpackage/nexu-v2.js
             nexu-app/target/jpackage/nexu-smoke.log
+            nexu-app/target/jpackage/nexu-debug.log
             linux-build.log
           if-no-files-found: warn
           retention-days: 7
@@ -158,7 +187,7 @@ jobs:
           mvn --batch-mode --errors -pl nexu-app -am -Dmaven.test.skip=true package > windows-build.log 2>&1
           if errorlevel 1 (type windows-build.log & exit /b 1)
 
-      - name: Verify Windows JavaFX 21 runtime
+      - name: Verify Windows JavaFX and logging runtime
         shell: pwsh
         run: |
           $entries = & jar tf nexu-app/target/nexu-app.jar
@@ -170,6 +199,15 @@ jobs:
           }
           if (-not ($entries -match 'BOOT-INF/lib/nexu-core-')) {
             throw 'Consolidated nexu-core JAR is missing'
+          }
+          if (-not ($entries -match '^BOOT-INF/classes/logback.xml$')) {
+            throw 'Logback rotation configuration is missing'
+          }
+          if (-not ($entries -match 'BOOT-INF/lib/logback-classic-')) {
+            throw 'Spring Boot Logback implementation is missing'
+          }
+          if ($entries -match 'BOOT-INF/lib/reload4j-') {
+            throw 'Retired reload4j implementation leaked into the Windows package'
           }
           if ($entries -match 'BOOT-INF/lib/nexu-.*-plugin-') {
             throw 'A retired plugin module leaked into the Windows package'
@@ -221,6 +259,9 @@ jobs:
           }
           if (-not (Test-Path nexu-app/target/jpackage/NexU/THIRD_PARTY_NOTICES.md)) {
             throw 'Third-party notices are missing from the app image'
+          }
+          if (-not (Test-Path nexu-app/target/jpackage/NexU/LOGS.txt)) {
+            throw 'Diagnostic log guide is missing from the portable app image'
           }
 
       - name: Upload Windows packages and diagnostics
