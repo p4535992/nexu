@@ -1,3 +1,4 @@
+# Registered on master; this update intentionally triggers the first release run.
 name: Publish NexU pre-release
 
 on:
