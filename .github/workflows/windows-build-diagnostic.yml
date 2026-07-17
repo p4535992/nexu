@@ -1,4 +1,4 @@
-# Trigger the registered diagnostic after it exists on master.
+# Capture Maven failures without letting PowerShell stop before writing diagnostics.
 name: Diagnose Windows build
 
 on:
@@ -35,9 +35,11 @@ jobs:
         id: maven
         shell: pwsh
         run: |
-          $output = & mvn --batch-mode --errors -pl nexu-app -am -Dmaven.test.skip=true package 2>&1
+          $ErrorActionPreference = 'Continue'
+          $PSNativeCommandUseErrorActionPreference = $false
+          cmd.exe /d /s /c "mvn --batch-mode --errors -pl nexu-app -am -Dmaven.test.skip=true package > windows-build.log 2>&1"
           $status = $LASTEXITCODE
-          $output | Set-Content -Path windows-build.log -Encoding utf8
+          $output = Get-Content -Path windows-build.log
           $tail = ($output | Select-Object -Last 140) -join "`n"
 
           New-Item -ItemType Directory -Path .github/release-status -Force | Out-Null
@@ -54,6 +56,7 @@ jobs:
           ) | Set-Content -Path .github/release-status/windows-build.md -Encoding utf8
 
           "exit_code=$status" >> $env:GITHUB_OUTPUT
+          exit 0
 
       - name: Commit diagnostic
         shell: pwsh
