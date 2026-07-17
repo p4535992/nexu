@@ -1,115 +1,56 @@
-name: Build NexU
+name: Inventory NexU core UI dependencies
 
 on:
   push:
     branches:
       - spring-boot-modernization-2
-  pull_request:
     paths:
-      - 'pom.xml'
-      - 'nexu-core/**'
-      - 'nexu-app/**'
-      - 'nexu-api/**'
-      - 'nexu-model/**'
-      - 'nexu-util/**'
-      - 'nexu-standalone/**'
-      - 'nexu-spring-boot-server/**'
-      - 'nexu-windows-keystore-plugin/**'
       - '.github/workflows/spring-boot-modernization.yml'
-  workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  build-application:
+  inventory:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
-
     steps:
-      - name: Check out source
+      - name: Check out branch
         uses: actions/checkout@v4
-
-      - name: Set up Java 17
-        uses: actions/setup-java@v4
         with:
-          distribution: temurin
-          java-version: '17'
-          cache: maven
+          ref: spring-boot-modernization-2
+          fetch-depth: 2
 
-      - name: Show Java and Maven versions
-        run: |
-          java -version
-          mvn --version
-
-      - name: Compile consolidated reactor
+      - name: Generate JavaFX boundary report
         shell: bash
         run: |
-          set +e
-          mvn --batch-mode --errors clean install \
-            -Dmaven.test.skip=true > maven-build.log 2>&1
-          status=$?
-          if [ "$status" -ne 0 ]; then
-            tail -n 220 maven-build.log
-          fi
-          exit "$status"
+          {
+            echo '# JavaFX boundary inventory'
+            echo
+            echo '## Core Java files importing or referencing JavaFX'
+            grep -RIlE '(^|[[:space:]])import[[:space:]]+javafx\.|javafx\.' nexu-core/src/main/java --include='*.java' | sort || true
+            echo
+            echo '## Core UI/view Java files'
+            find nexu-core/src/main/java/lu/nowina/nexu/view -type f -name '*.java' 2>/dev/null | sort || true
+            echo
+            echo '## Core UI resources'
+            find nexu-core/src/main/resources -type f \( -name '*.fxml' -o -name '*.css' -o -name '*.png' -o -name '*.gif' \) 2>/dev/null | sort || true
+            echo
+            echo '## References to core UI packages from core'
+            grep -RInE 'lu\.nowina\.nexu\.view\.(ui|core)' nexu-core/src/main/java --include='*.java' | sort || true
+            echo
+            echo '## References to core UI packages from app'
+            grep -RInE 'lu\.nowina\.nexu\.view\.(ui|core)' nexu-app/src/main/java --include='*.java' | sort || true
+            echo
+            echo '## JavaFX dependencies in core POM'
+            grep -n -B2 -A4 'javafx-' nexu-core/pom.xml || true
+          } > javafx-boundary-inventory.md
 
-      - name: Test modern application protocol
+      - name: Restore normal workflow and publish report
         shell: bash
         run: |
-          set +e
-          # nexu-core is already installed by the preceding step. Running only
-          # nexu-app tests avoids reactivating legacy DSS 5-era core tests while
-          # still executing the aggregated Spring Boot protocol test suite.
-          mvn --batch-mode --errors \
-            -pl nexu-app test > maven-test.log 2>&1
-          status=$?
-          if [ "$status" -ne 0 ]; then
-            tail -n 220 maven-test.log
-          fi
-          exit "$status"
-
-      - name: Verify two-module executable JAR
-        shell: bash
-        run: |
-          JAR=nexu-app/target/nexu-app.jar
-          test -f "$JAR"
-          unzip -p "$JAR" META-INF/MANIFEST.MF | tee nexu-app-manifest.txt
-          grep -q 'Start-Class: lu.nowina.nexu.NexuLauncher' nexu-app-manifest.txt
-          jar tf "$JAR" | grep -q 'BOOT-INF/lib/nexu-core-'
-          jar tf "$JAR" | grep -q 'BOOT-INF/classes/nexu-config.properties'
-          jar tf "$JAR" | grep -q 'BOOT-INF/lib/javafx-graphics-21.0.11-linux.jar'
-          jar tf "$JAR" | grep -q 'BOOT-INF/lib/javafx-controls-21.0.11-linux.jar'
-          ! jar tf "$JAR" | grep -q 'BOOT-INF/lib/nexu-api-'
-          ! jar tf "$JAR" | grep -q 'BOOT-INF/lib/nexu-model-'
-          ! jar tf "$JAR" | grep -q 'BOOT-INF/lib/nexu-util-'
-          ! jar tf "$JAR" | grep -q 'BOOT-INF/lib/nexu-standalone-'
-          ! jar tf "$JAR" | grep -q 'BOOT-INF/lib/nexu-spring-boot-server-'
-          ! jar tf "$JAR" | grep -q 'BOOT-INF/lib/nexu-windows-keystore-plugin-'
-          ! jar tf "$JAR" | grep -q 'BOOT-INF/lib/javafx-.*-11.0.2'
-
-      - name: Record dependency graph
-        run: |
-          mvn --batch-mode -pl nexu-app dependency:tree \
-            > maven-dependency-tree.log 2>&1
-
-      - name: Upload executable application
-        uses: actions/upload-artifact@v4
-        with:
-          name: nexu-application
-          path: nexu-app/target/nexu-app.jar
-          if-no-files-found: error
-          retention-days: 7
-
-      - name: Upload build diagnostics
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: nexu-build-logs
-          path: |
-            maven-build.log
-            maven-test.log
-            maven-dependency-tree.log
-            nexu-app-manifest.txt
-          if-no-files-found: warn
-          retention-days: 7
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git checkout HEAD^ -- .github/workflows/spring-boot-modernization.yml
+          git add .github/workflows/spring-boot-modernization.yml javafx-boundary-inventory.md
+          git commit -m 'Record JavaFX boundary inventory'
+          git push origin HEAD:spring-boot-modernization-2
