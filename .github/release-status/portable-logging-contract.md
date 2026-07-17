@@ -1,1 +1,0 @@
-Portable packages must write `nexu.log` under a `logs` directory at the application-image root. Installer packages must not contain the portable marker and must continue to use the operator data directory.
