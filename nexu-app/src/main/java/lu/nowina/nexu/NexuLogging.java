@@ -26,6 +26,7 @@ final class NexuLogging {
     static final String LOG_DIRECTORY_ENVIRONMENT = "NEXU_LOG_DIR";
     static final String LOG_DIRECTORY_PROPERTY = "nexu.log.dir";
     static final String LOG_FILE_NAME = "nexu.log";
+    static final String PORTABLE_MARKER_FILE = ".nexu-portable";
 
     private static final String LOG_LEVEL = "log_level";
     private static final String LOG_DIRECTORY = "log_directory";
@@ -87,7 +88,7 @@ final class NexuLogging {
         }
     }
 
-    private static Path resolveLogDirectory(AppConfig config, Properties properties) {
+    static Path resolveLogDirectory(AppConfig config, Properties properties) {
         String configured = System.getProperty(LOG_DIRECTORY_PROPERTY);
         if (isBlank(configured)) {
             configured = System.getenv(LOG_DIRECTORY_ENVIRONMENT);
@@ -99,6 +100,11 @@ final class NexuLogging {
             return Path.of(configured.trim()).toAbsolutePath().normalize();
         }
 
+        final Path portableRoot = findPortableApplicationRoot();
+        if (portableRoot != null) {
+            return portableRoot.resolve("logs").toAbsolutePath().normalize();
+        }
+
         final File nexuHome = config.getNexuHome();
         if (nexuHome != null) {
             return nexuHome.toPath().resolve("logs").toAbsolutePath().normalize();
@@ -106,6 +112,23 @@ final class NexuLogging {
 
         final String userHome = System.getProperty("user.home", System.getProperty("java.io.tmpdir"));
         return Path.of(userHome, ".nexu", "logs").toAbsolutePath().normalize();
+    }
+
+    private static Path findPortableApplicationRoot() {
+        final String applicationPath = System.getProperty("jpackage.app-path");
+        if (isBlank(applicationPath)) {
+            return null;
+        }
+
+        final Path launcher = Path.of(applicationPath.trim()).toAbsolutePath().normalize();
+        Path directory = launcher.getParent();
+        for (int depth = 0; depth < 3 && directory != null; depth++) {
+            if (Files.isRegularFile(directory.resolve(PORTABLE_MARKER_FILE))) {
+                return directory;
+            }
+            directory = directory.getParent();
+        }
+        return null;
     }
 
     private static String normalizeLevel(String value) {
