@@ -24,6 +24,7 @@ $InputDirectory = Join-Path $Destination "input"
 $AppImage = Join-Path $Destination $AppName
 $Architecture = $env:PROCESSOR_ARCHITECTURE.ToLowerInvariant()
 $PortableArchive = Join-Path $Destination "nexu-$AppVersion-windows-$Architecture-portable.zip"
+$PortableMarker = Join-Path $AppImage ".nexu-portable"
 $UpgradeUuid = "5d8fbe17-6f31-4a42-9b87-6b7d3c2f4e10"
 
 if (-not (Test-Path -LiteralPath $Jpackage -PathType Leaf)) {
@@ -68,7 +69,12 @@ Copy-Item -LiteralPath (Join-Path $ProjectRoot "licenses") -Destination (Join-Pa
 if (Test-Path -LiteralPath $PortableArchive) {
     Remove-Item -LiteralPath $PortableArchive -Force
 }
+
+# The marker exists only inside the portable ZIP. NexU detects it at runtime and
+# writes to .\logs beside NexU.exe. It is removed before building the installer.
+New-Item -ItemType File -Path $PortableMarker -Force | Out-Null
 Compress-Archive -Path $AppImage -DestinationPath $PortableArchive -CompressionLevel Optimal
+Remove-Item -LiteralPath $PortableMarker -Force
 
 $InstallerArguments = @(
     "--type", "exe",
