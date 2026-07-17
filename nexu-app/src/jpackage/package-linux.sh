@@ -18,6 +18,7 @@ INPUT_DIR="$DESTINATION/input"
 APP_IMAGE="$DESTINATION/$APP_NAME"
 ARCHIVE="$DESTINATION/nexu-${APP_VERSION}-linux-$(uname -m)-portable.tar.gz"
 PORTABLE_MARKER="$APP_IMAGE/.nexu-portable"
+PORTABLE_CONTENTS="$DESTINATION/portable-contents.txt"
 
 rm -rf "$DESTINATION"
 mkdir -p "$INPUT_DIR"
@@ -47,7 +48,11 @@ cp -R "$PROJECT_ROOT/licenses" "$APP_IMAGE/licenses"
 # to create ./logs beside the application image instead of using user data.
 touch "$PORTABLE_MARKER"
 tar -C "$DESTINATION" -czf "$ARCHIVE" "$APP_NAME"
+tar -tzf "$ARCHIVE" > "$PORTABLE_CONTENTS"
+grep -Fxq "$APP_NAME/.nexu-portable" "$PORTABLE_CONTENTS"
+rm -f "$PORTABLE_CONTENTS"
 rm -f "$PORTABLE_MARKER"
+test ! -e "$PORTABLE_MARKER"
 
 # Build an operator-friendly Debian package from the unmarked app image. The
 # installed application therefore keeps using the user-writable data directory.
