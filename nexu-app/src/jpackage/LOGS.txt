@@ -19,6 +19,9 @@ Linux portable archive:
 The logs directory is at the root of the extracted NexU application image,
 beside LOGS.txt and nexu-config.properties.
 
+Extract portable packages to a writable directory. When the extracted folder
+must remain read-only, set NEXU_LOG_DIR to another writable location.
+
 Installed packages and direct JAR execution
 -------------------------------------------
 Windows: %USERPROFILE%\.nexu\logs\nexu.log
