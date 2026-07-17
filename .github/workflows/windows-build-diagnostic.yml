@@ -1,3 +1,4 @@
+# Trigger the registered diagnostic after it exists on master.
 name: Diagnose Windows build
 
 on:
