@@ -7,6 +7,12 @@ on:
       - master
     paths:
       - '.github/workflows/prerelease-master.yml'
+      - 'pom.xml'
+      - 'nexu-core/**'
+      - 'nexu-app/**'
+      - 'LICENSE'
+      - 'THIRD_PARTY_NOTICES.md'
+      - 'licenses/**'
   workflow_dispatch:
 
 permissions:
@@ -65,6 +71,8 @@ jobs:
             --app-image "$OUT/NexU" \
             --dest "$OUT"
 
+          test -f "$OUT/NexU/LOGS.txt"
+
           mkdir -p release-assets
           cp nexu-app/target/nexu-app.jar \
             "release-assets/nexu-app-${RELEASE_VERSION}-linux.jar"
@@ -76,7 +84,7 @@ jobs:
           test -n "$(find release-assets -maxdepth 1 -name '*.deb' -print -quit)"
           test -n "$(find release-assets -maxdepth 1 -name '*.rpm' -print -quit)"
 
-      - name: Smoke test packaged Linux application
+      - name: Smoke test packaged Linux application and diagnostic log
         shell: bash
         run: |
           set -euo pipefail
@@ -84,25 +92,46 @@ jobs:
           sed -i 's/binding_ports=9795/binding_ports=19795/' "$CONFIG"
           sed -i 's#cors_allowed_origin=\*#cors_allowed_origin=http://localhost:8080#' "$CONFIG"
 
-          LOG=nexu-app/target/jpackage/nexu-prerelease-smoke.log
-          xvfb-run -a nexu-app/target/jpackage/NexU/bin/NexU >"$LOG" 2>&1 &
+          CONSOLE_LOG=nexu-app/target/jpackage/nexu-prerelease-smoke.log
+          DIAGNOSTIC_DIR="$RUNNER_TEMP/nexu-diagnostic-logs"
+          rm -rf "$DIAGNOSTIC_DIR"
+          mkdir -p "$DIAGNOSTIC_DIR"
+
+          NEXU_LOG_DIR="$DIAGNOSTIC_DIR" \
+            xvfb-run -a nexu-app/target/jpackage/NexU/bin/NexU \
+            >"$CONSOLE_LOG" 2>&1 &
           PID=$!
           trap 'kill "$PID" 2>/dev/null || true' EXIT
 
+          READY=false
           for attempt in $(seq 1 60); do
             if curl --fail --silent http://127.0.0.1:19795/v1/status \
                 | grep -q '"protocol":"nexu:2.0"'; then
-              exit 0
+              READY=true
+              break
             fi
             if ! kill -0 "$PID" 2>/dev/null; then
-              cat "$LOG"
+              cat "$CONSOLE_LOG"
               exit 1
             fi
             sleep 1
           done
 
-          cat "$LOG"
-          exit 1
+          if [ "$READY" != true ]; then
+            cat "$CONSOLE_LOG"
+            exit 1
+          fi
+
+          for attempt in $(seq 1 20); do
+            if [ -s "$DIAGNOSTIC_DIR/nexu.log" ]; then
+              break
+            fi
+            sleep 0.5
+          done
+
+          test -s "$DIAGNOSTIC_DIR/nexu.log"
+          grep -q 'NexU diagnostic logging initialized' "$DIAGNOSTIC_DIR/nexu.log"
+          grep -q 'level=DEBUG' "$DIAGNOSTIC_DIR/nexu.log"
 
       - name: Upload Linux release assets
         uses: actions/upload-artifact@v4
@@ -172,6 +201,10 @@ jobs:
             -JarPath nexu-app/target/nexu-app.jar `
             -Destination $out `
             -AppVersion $env:BASE_VERSION
+
+          if (-not (Test-Path "$out/NexU/LOGS.txt" -PathType Leaf)) {
+            throw 'Portable diagnostic log guide missing'
+          }
 
           jpackage `
             --type msi `
@@ -246,6 +279,12 @@ jobs:
           - Linux portable archive
           - platform-specific executable Spring Boot JARs
           - SHA-256 checksums
+
+          ### Diagnostics
+          - rotating DEBUG log file through Spring Boot Logback
+          - daily and size-based compressed archives
+          - `LOGS.txt` included in portable packages
+          - portable Linux smoke test verifies that `nexu.log` is created
 
           ### Runtime
           - Java 17 runtime included in native packages
