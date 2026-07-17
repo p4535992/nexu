@@ -1,0 +1,277 @@
+name: Publish NexU pre-release
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - '.github/workflows/prerelease-master.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: nexu-prerelease-master
+  cancel-in-progress: false
+
+env:
+  BASE_VERSION: 1.24.0
+
+jobs:
+  linux:
+    name: Linux packages
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+
+    steps:
+      - name: Check out master
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      - name: Install packaging and smoke-test dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            fakeroot rpm libpcsclite1 pcscd xvfb
+
+      - name: Build and test
+        shell: bash
+        run: |
+          set -o pipefail
+          mvn --batch-mode --errors clean verify 2>&1 | tee linux-verify.log
+
+      - name: Build portable, DEB and RPM packages
+        shell: bash
+        run: |
+          set -euo pipefail
+          RELEASE_VERSION="${BASE_VERSION}-rc.${GITHUB_RUN_NUMBER}"
+          OUT="nexu-app/target/jpackage"
+
+          bash nexu-app/src/jpackage/package-linux.sh \
+            nexu-app/target/nexu-app.jar \
+            "$OUT" \
+            "$BASE_VERSION"
+
+          jpackage \
+            --type rpm \
+            --app-image "$OUT/NexU" \
+            --dest "$OUT"
+
+          mkdir -p release-assets
+          cp nexu-app/target/nexu-app.jar \
+            "release-assets/nexu-app-${RELEASE_VERSION}-linux.jar"
+          find "$OUT" -maxdepth 1 -type f \
+            \( -name '*.tar.gz' -o -name '*.deb' -o -name '*.rpm' \) \
+            -exec cp {} release-assets/ \;
+
+          test -n "$(find release-assets -maxdepth 1 -name '*.tar.gz' -print -quit)"
+          test -n "$(find release-assets -maxdepth 1 -name '*.deb' -print -quit)"
+          test -n "$(find release-assets -maxdepth 1 -name '*.rpm' -print -quit)"
+
+      - name: Smoke test packaged Linux application
+        shell: bash
+        run: |
+          set -euo pipefail
+          CONFIG=nexu-app/target/jpackage/NexU/nexu-config.properties
+          sed -i 's/binding_ports=9795/binding_ports=19795/' "$CONFIG"
+          sed -i 's#cors_allowed_origin=\*#cors_allowed_origin=http://localhost:8080#' "$CONFIG"
+
+          LOG=nexu-app/target/jpackage/nexu-prerelease-smoke.log
+          xvfb-run -a nexu-app/target/jpackage/NexU/bin/NexU >"$LOG" 2>&1 &
+          PID=$!
+          trap 'kill "$PID" 2>/dev/null || true' EXIT
+
+          for attempt in $(seq 1 60); do
+            if curl --fail --silent http://127.0.0.1:19795/v1/status \
+                | grep -q '"protocol":"nexu:2.0"'; then
+              exit 0
+            fi
+            if ! kill -0 "$PID" 2>/dev/null; then
+              cat "$LOG"
+              exit 1
+            fi
+            sleep 1
+          done
+
+          cat "$LOG"
+          exit 1
+
+      - name: Upload Linux release assets
+        uses: actions/upload-artifact@v4
+        with:
+          name: nexu-linux-prerelease
+          path: release-assets/*
+          if-no-files-found: error
+          retention-days: 14
+
+  windows:
+    name: Windows packages
+    runs-on: windows-latest
+    timeout-minutes: 75
+
+    steps:
+      - name: Check out master
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      - name: Build Windows application
+        shell: pwsh
+        run: |
+          mvn --batch-mode --errors -pl nexu-app -am -Dmaven.test.skip=true package 2>&1 |
+            Tee-Object -FilePath windows-build.log
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Ensure WiX Toolset is available
+        shell: pwsh
+        run: |
+          if (-not (Get-Command candle.exe -ErrorAction SilentlyContinue)) {
+            choco install wixtoolset --yes --no-progress
+            $programFilesX86 = [Environment]::GetFolderPath('ProgramFilesX86')
+            $wixBin = Get-ChildItem -Path (Join-Path $programFilesX86 'WiX Toolset v3.*\bin') `
+              -Directory -ErrorAction SilentlyContinue | Select-Object -First 1
+            if (-not $wixBin) { throw 'WiX Toolset installation directory was not found' }
+            $wixBin.FullName | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+            $env:PATH = "$($wixBin.FullName);$env:PATH"
+          }
+
+      - name: Build portable ZIP, EXE and MSI
+        shell: pwsh
+        run: |
+          $releaseVersion = "$env:BASE_VERSION-rc.$env:GITHUB_RUN_NUMBER"
+          $out = 'nexu-app/target/jpackage'
+
+          ./nexu-app/src/jpackage/package-windows.ps1 `
+            -JarPath nexu-app/target/nexu-app.jar `
+            -Destination $out `
+            -AppVersion $env:BASE_VERSION
+
+          jpackage `
+            --type msi `
+            --app-image "$out/NexU" `
+            --dest $out
+
+          New-Item -ItemType Directory -Path release-assets -Force | Out-Null
+          Copy-Item nexu-app/target/nexu-app.jar `
+            "release-assets/nexu-app-$releaseVersion-windows.jar"
+          Get-ChildItem $out -File | Where-Object {
+            $_.Extension -in '.zip', '.exe', '.msi'
+          } | Copy-Item -Destination release-assets
+
+          if (-not (Get-ChildItem release-assets -Filter '*.zip')) { throw 'Portable ZIP missing' }
+          if (-not (Get-ChildItem release-assets -Filter '*.exe')) { throw 'EXE installer missing' }
+          if (-not (Get-ChildItem release-assets -Filter '*.msi')) { throw 'MSI installer missing' }
+
+      - name: Upload Windows release assets
+        uses: actions/upload-artifact@v4
+        with:
+          name: nexu-windows-prerelease
+          path: release-assets/*
+          if-no-files-found: error
+          retention-days: 14
+
+  release:
+    name: Publish GitHub pre-release
+    needs:
+      - linux
+      - windows
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out master
+        uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
+
+      - name: Download release assets
+        uses: actions/download-artifact@v4
+        with:
+          pattern: nexu-*-prerelease
+          path: release-assets
+          merge-multiple: true
+
+      - name: Create checksums and release notes
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG="v${BASE_VERSION}-rc.${GITHUB_RUN_NUMBER}"
+          echo "TAG=$TAG" >> "$GITHUB_ENV"
+
+          cd release-assets
+          find . -maxdepth 1 -type f ! -name SHA256SUMS.txt -printf '%f\0' \
+            | sort -z \
+            | xargs -0 sha256sum > SHA256SUMS.txt
+          cd ..
+
+          cat > release-notes.md <<EOF
+          ## NexU ${BASE_VERSION} release candidate ${GITHUB_RUN_NUMBER}
+
+          Pre-release generated from the `master` branch.
+
+          ### Operator packages
+          - Windows portable ZIP
+          - Windows EXE installer
+          - Windows MSI installer
+          - Debian/Ubuntu DEB package
+          - RPM package
+          - Linux portable archive
+          - platform-specific executable Spring Boot JARs
+          - SHA-256 checksums
+
+          ### Runtime
+          - Java 17 runtime included in native packages
+          - Spring Boot 3.5.16
+          - DSS 6.4
+          - JavaFX 21.0.11
+
+          ### Important
+          These packages are currently unsigned release-candidate artifacts. Windows SmartScreen and Linux package tools may display an unknown-publisher warning. Vendor-specific smart-card middleware is not bundled.
+
+          A WAR is intentionally not produced because NexU is a local desktop smart-card agent with JavaFX and system-tray lifecycle, not a servlet-container application.
+          EOF
+
+      - name: Publish pre-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          gh release create "$TAG" release-assets/* \
+            --target "$GITHUB_SHA" \
+            --title "NexU ${BASE_VERSION} RC ${GITHUB_RUN_NUMBER}" \
+            --notes-file release-notes.md \
+            --prerelease
+
+      - name: Record published release
+        shell: bash
+        run: |
+          mkdir -p .github/release-status
+          cat > .github/release-status/latest.md <<EOF
+          # Latest NexU pre-release
+
+          - Tag: \`${TAG}\`
+          - Source branch: \`master\`
+          - Source commit: \`${GITHUB_SHA}\`
+          - Workflow run: \`${GITHUB_RUN_ID}\`
+          - Release: https://github.com/${GITHUB_REPOSITORY}/releases/tag/${TAG}
+          - Status: published
+          EOF
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add .github/release-status/latest.md
+          git commit -m "Record ${TAG} pre-release"
+          git push origin HEAD:master
