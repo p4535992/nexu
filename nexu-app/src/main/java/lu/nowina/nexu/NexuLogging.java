@@ -89,9 +89,24 @@ final class NexuLogging {
     }
 
     static Path resolveLogDirectory(AppConfig config, Properties properties) {
-        String configured = System.getProperty(LOG_DIRECTORY_PROPERTY);
+        return resolveLogDirectory(
+                config,
+                properties,
+                System.getProperty(LOG_DIRECTORY_PROPERTY),
+                System.getenv(LOG_DIRECTORY_ENVIRONMENT),
+                System.getProperty("jpackage.app-path"));
+    }
+
+    static Path resolveLogDirectory(
+            AppConfig config,
+            Properties properties,
+            String systemLogDirectory,
+            String environmentLogDirectory,
+            String jpackageApplicationPath) {
+
+        String configured = systemLogDirectory;
         if (isBlank(configured)) {
-            configured = System.getenv(LOG_DIRECTORY_ENVIRONMENT);
+            configured = environmentLogDirectory;
         }
         if (isBlank(configured)) {
             configured = properties.getProperty(LOG_DIRECTORY);
@@ -100,7 +115,7 @@ final class NexuLogging {
             return Path.of(configured.trim()).toAbsolutePath().normalize();
         }
 
-        final Path portableRoot = findPortableApplicationRoot();
+        final Path portableRoot = findPortableApplicationRoot(jpackageApplicationPath);
         if (portableRoot != null) {
             return portableRoot.resolve("logs").toAbsolutePath().normalize();
         }
@@ -114,13 +129,12 @@ final class NexuLogging {
         return Path.of(userHome, ".nexu", "logs").toAbsolutePath().normalize();
     }
 
-    private static Path findPortableApplicationRoot() {
-        final String applicationPath = System.getProperty("jpackage.app-path");
-        if (isBlank(applicationPath)) {
+    private static Path findPortableApplicationRoot(String jpackageApplicationPath) {
+        if (isBlank(jpackageApplicationPath)) {
             return null;
         }
 
-        final Path launcher = Path.of(applicationPath.trim()).toAbsolutePath().normalize();
+        final Path launcher = Path.of(jpackageApplicationPath.trim()).toAbsolutePath().normalize();
         Path directory = launcher.getParent();
         for (int depth = 0; depth < 3 && directory != null; depth++) {
             if (Files.isRegularFile(directory.resolve(PORTABLE_MARKER_FILE))) {
