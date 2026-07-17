@@ -9,12 +9,6 @@ on:
       - 'pom.xml'
       - 'nexu-core/**'
       - 'nexu-app/**'
-      - 'nexu-api/**'
-      - 'nexu-model/**'
-      - 'nexu-util/**'
-      - 'nexu-standalone/**'
-      - 'nexu-spring-boot-server/**'
-      - 'nexu-windows-keystore-plugin/**'
       - 'LICENSE'
       - 'THIRD_PARTY_NOTICES.md'
       - 'licenses/**'
@@ -23,6 +17,10 @@ on:
 
 permissions:
   contents: read
+
+concurrency:
+  group: nexu-packages-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   linux-packages:
