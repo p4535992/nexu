@@ -42,8 +42,8 @@ final class NexuLogging {
         Files.createDirectories(logDirectory);
 
         System.setProperty("NEXU_LOG_DIR", logDirectory.toAbsolutePath().normalize().toString());
-        System.setProperty("NEXU_LOG_LEVEL", normalizeLevel(
-                properties.getProperty(LOG_LEVEL, config.isDebug() ? "DEBUG" : "DEBUG")));
+        System.setProperty("NEXU_LOG_LEVEL",
+                normalizeLevel(properties.getProperty(LOG_LEVEL, "DEBUG")));
         System.setProperty("NEXU_LOG_MAX_FILE_SIZE",
                 properties.getProperty(ROLLING_LOG_FILE_SIZE, "10MB").trim());
         System.setProperty("NEXU_LOG_MAX_HISTORY",
