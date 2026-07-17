@@ -3,8 +3,10 @@ package lu.nowina.nexu;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Properties;
 
@@ -31,6 +33,10 @@ class SystemTrayContractTest {
                 "The operator system tray must be explicitly enabled");
         assertNotNull(NexUApp.class.getResource("/tray-icon.png"),
                 "The Windows notification-area icon is missing");
+
+        final String runtimeModules = Files.readString(Path.of("src", "jpackage", "modules.txt"));
+        assertTrue(runtimeModules.contains("java.desktop"),
+                "The jpackage runtime must include java.desktop for AWT SystemTray support");
 
         final SystrayMenuItem manageKeystores = new KeystoreProductAdapter(temporaryDirectory.toFile())
                 .getExtensionSystrayMenuItem();
