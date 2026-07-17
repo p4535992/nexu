@@ -92,13 +92,41 @@ cors_allowed_origin=https://sign.example.org
 
 The local service must remain bound to loopback addresses.
 
+## Diagnostic logs
+
+NexU uses the Logback implementation supplied by Spring Boot and creates a
+rotating DEBUG log named `nexu.log`.
+
+For portable packages, logs remain with the extracted application:
+
+```text
+Windows portable: <extracted directory>\NexU\logs\nexu.log
+Linux portable:   <extracted directory>/NexU/logs/nexu.log
+```
+
+On Windows the `logs` directory is therefore at the same level as `NexU.exe`.
+Move or copy the whole `NexU` directory when relocating the portable package.
+
+Installed packages and direct JAR execution use the operator data directory:
+
+```text
+Windows installed: %USERPROFILE%\.nexu\logs\nexu.log
+Linux installed:   $HOME/.nexu/logs/nexu.log
+```
+
+Explicit `NEXU_LOG_DIR`, `-Dnexu.log.dir=...` or `log_directory=...` settings
+override these defaults. See the `LOGS.txt` file included in portable packages
+for rotation and support details.
+
 ## Troubleshooting checklist
 
 1. Confirm that NexU is running.
-2. Confirm that the reader is visible to the operating system.
-3. Confirm that the PC/SC service is running.
-4. Confirm that the card is visible in the Windows certificate store or through
+2. Open `logs/nexu.log` in the portable `NexU` directory, or the user-data log
+   for an installed package.
+3. Confirm that the reader is visible to the operating system.
+4. Confirm that the PC/SC service is running.
+5. Confirm that the card is visible in the Windows certificate store or through
    the configured PKCS#11 provider.
-5. Confirm that the signing website origin is present in the NexU allowlist.
-6. Do not include PINs, certificate private data, document hashes or signatures
+6. Confirm that the signing website origin is present in the NexU allowlist.
+7. Do not include PINs, certificate private data, document hashes or signatures
    in support logs or tickets.

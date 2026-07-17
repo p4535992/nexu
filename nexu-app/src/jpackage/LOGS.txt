@@ -4,8 +4,23 @@ NexU diagnostic logs
 NexU writes diagnostic logs through SLF4J and the Logback implementation
 included by Spring Boot.
 
-Default location
-----------------
+Portable packages
+-----------------
+Windows portable ZIP:
+  <portable folder>\NexU\logs\nexu.log
+
+The logs directory is therefore beside NexU.exe inside the extracted NexU
+folder. Move the whole NexU folder together; logs and archived logs remain with
+the portable application.
+
+Linux portable archive:
+  <portable folder>/NexU/logs/nexu.log
+
+The logs directory is at the root of the extracted NexU application image,
+beside LOGS.txt and nexu-config.properties.
+
+Installed packages and direct JAR execution
+-------------------------------------------
 Windows: %USERPROFILE%\.nexu\logs\nexu.log
 Linux:   $HOME/.nexu/logs/nexu.log
 
@@ -17,6 +32,9 @@ Overrides
 Environment variable: NEXU_LOG_DIR
 Java system property: -Dnexu.log.dir=/custom/path
 Configuration property: log_directory=/custom/path
+
+Explicit overrides take precedence over both portable-local and user-data
+locations.
 
 Rotation
 --------

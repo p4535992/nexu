@@ -26,6 +26,7 @@ final class NexuLogging {
     static final String LOG_DIRECTORY_ENVIRONMENT = "NEXU_LOG_DIR";
     static final String LOG_DIRECTORY_PROPERTY = "nexu.log.dir";
     static final String LOG_FILE_NAME = "nexu.log";
+    static final String PORTABLE_MARKER_FILE = ".nexu-portable";
 
     private static final String LOG_LEVEL = "log_level";
     private static final String LOG_DIRECTORY = "log_directory";
@@ -87,16 +88,36 @@ final class NexuLogging {
         }
     }
 
-    private static Path resolveLogDirectory(AppConfig config, Properties properties) {
-        String configured = System.getProperty(LOG_DIRECTORY_PROPERTY);
+    static Path resolveLogDirectory(AppConfig config, Properties properties) {
+        return resolveLogDirectory(
+                config,
+                properties,
+                System.getProperty(LOG_DIRECTORY_PROPERTY),
+                System.getenv(LOG_DIRECTORY_ENVIRONMENT),
+                System.getProperty("jpackage.app-path"));
+    }
+
+    static Path resolveLogDirectory(
+            AppConfig config,
+            Properties properties,
+            String systemLogDirectory,
+            String environmentLogDirectory,
+            String jpackageApplicationPath) {
+
+        String configured = systemLogDirectory;
         if (isBlank(configured)) {
-            configured = System.getenv(LOG_DIRECTORY_ENVIRONMENT);
+            configured = environmentLogDirectory;
         }
         if (isBlank(configured)) {
             configured = properties.getProperty(LOG_DIRECTORY);
         }
         if (!isBlank(configured)) {
             return Path.of(configured.trim()).toAbsolutePath().normalize();
+        }
+
+        final Path portableRoot = findPortableApplicationRoot(jpackageApplicationPath);
+        if (portableRoot != null) {
+            return portableRoot.resolve("logs").toAbsolutePath().normalize();
         }
 
         final File nexuHome = config.getNexuHome();
@@ -106,6 +127,22 @@ final class NexuLogging {
 
         final String userHome = System.getProperty("user.home", System.getProperty("java.io.tmpdir"));
         return Path.of(userHome, ".nexu", "logs").toAbsolutePath().normalize();
+    }
+
+    private static Path findPortableApplicationRoot(String jpackageApplicationPath) {
+        if (isBlank(jpackageApplicationPath)) {
+            return null;
+        }
+
+        final Path launcher = Path.of(jpackageApplicationPath.trim()).toAbsolutePath().normalize();
+        Path directory = launcher.getParent();
+        for (int depth = 0; depth < 3 && directory != null; depth++) {
+            if (Files.isRegularFile(directory.resolve(PORTABLE_MARKER_FILE))) {
+                return directory;
+            }
+            directory = directory.getParent();
+        }
+        return null;
     }
 
     private static String normalizeLevel(String value) {
