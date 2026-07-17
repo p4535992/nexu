@@ -14,6 +14,7 @@
 package lu.nowina.nexu;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ResourceBundle;
 
 import org.slf4j.Logger;
@@ -22,6 +23,7 @@ import org.slf4j.LoggerFactory;
 import eu.europa.esig.dss.token.PasswordInputCallback;
 import java.util.Date;
 import javafx.application.Platform;
+import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.FileChooser;
@@ -37,6 +39,7 @@ import lu.nowina.nexu.view.core.ExtensionFilter;
 import lu.nowina.nexu.view.core.NonBlockingUIOperation;
 import lu.nowina.nexu.view.core.UIDisplay;
 import lu.nowina.nexu.view.core.UIOperation;
+import lu.nowina.nexu.view.core.UIOperationController;
 
 // Unisystems change: added cachedPassword + logic
 /**
@@ -122,9 +125,30 @@ public class StandaloneUIDisplay implements UIDisplay {
 		});
 	}
 
+	@Override
 	public <T> void displayAndWaitUIOperation(final UIOperation<T> operation) {
-		display(operation.getRoot(), true);
+		display(loadView(operation), true);
 		waitForUser(operation);
+	}
+
+	private <T> Parent loadView(final UIOperation<T> operation) {
+		final FXMLLoader loader = new FXMLLoader();
+		loader.setResources(ResourceBundle.getBundle("bundles/nexu"));
+		try {
+			loader.load(getClass().getResourceAsStream(operation.getViewResource()));
+		} catch (IOException exception) {
+			throw new IllegalStateException("Cannot load UI resource " + operation.getViewResource(), exception);
+		}
+
+		@SuppressWarnings("unchecked")
+		final UIOperationController<T> controller = loader.getController();
+		if (controller == null) {
+			throw new IllegalStateException("No controller declared for " + operation.getViewResource());
+		}
+		controller.init(operation.getControllerParams());
+		controller.setUIOperation(operation);
+		controller.setDisplay(this);
+		return loader.getRoot();
 	}
 
 	private <T> void waitForUser(UIOperation<T> operation) {
@@ -249,8 +273,8 @@ public class StandaloneUIDisplay implements UIDisplay {
 	}
 
 	@Override
-	public void display(NonBlockingUIOperation operation) {
-		display(operation.getRoot(), false);
+	public void display(final NonBlockingUIOperation operation) {
+		display(loadView(operation), false);
 	}
 
     @Override

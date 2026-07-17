@@ -1,20 +1,15 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<?xml version='1.0' encoding='UTF-8'?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-
     <parent>
         <groupId>lu.nowina.apps</groupId>
         <artifactId>nexu</artifactId>
         <version>1.24-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
-
     <artifactId>nexu-core</artifactId>
     <name>NexU core</name>
     <description>Consolidated NexU API, model, utilities and smart-card engine.</description>
-
     <dependencies>
         <dependency>
             <groupId>eu.europa.ec.joinup.sd-dss</groupId>
@@ -32,7 +27,6 @@
             <version>${dss.version}</version>
             <scope>runtime</scope>
         </dependency>
-
         <dependency>
             <groupId>io.github.jnasmartcardio</groupId>
             <artifactId>jnasmartcardio</artifactId>
@@ -49,7 +43,6 @@
             <groupId>net.java.dev.jna</groupId>
             <artifactId>jna-platform</artifactId>
         </dependency>
-
         <dependency>
             <groupId>commons-codec</groupId>
             <artifactId>commons-codec</artifactId>
@@ -72,8 +65,6 @@
             <artifactId>gson</artifactId>
             <version>2.5</version>
         </dependency>
-
-        <!-- Transitional Java EE APIs used by the historical configuration/model code. -->
         <dependency>
             <groupId>com.sun.xml.bind</groupId>
             <artifactId>jaxb-xjc</artifactId>
@@ -122,20 +113,7 @@
             <groupId>javax.annotation</groupId>
             <artifactId>javax.annotation-api</artifactId>
         </dependency>
-
-        <!-- UI classes still in the historical core package will move to nexu-app. -->
-        <dependency>
-            <groupId>org.openjfx</groupId>
-            <artifactId>javafx-controls</artifactId>
-            <version>${javafx.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.openjfx</groupId>
-            <artifactId>javafx-fxml</artifactId>
-            <version>${javafx.version}</version>
-        </dependency>
     </dependencies>
-
     <build>
         <plugins>
             <plugin>
