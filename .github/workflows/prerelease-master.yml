@@ -14,7 +14,7 @@ permissions:
 
 concurrency:
   group: nexu-prerelease-master
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 env:
   BASE_VERSION: 1.24.0
@@ -256,9 +256,32 @@ jobs:
             --notes-file release-notes.md \
             --prerelease
 
-      - name: Record published release
+  report:
+    name: Record pre-release result
+    if: always()
+    needs:
+      - linux
+      - windows
+      - release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out current master
+        uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
+
+      - name: Write release result
         shell: bash
         run: |
+          TAG="v${BASE_VERSION}-rc.${GITHUB_RUN_NUMBER}"
+          if [ "${{ needs.release.result }}" = "success" ]; then
+            STATUS=published
+          else
+            STATUS=failed
+          fi
+
           mkdir -p .github/release-status
           cat > .github/release-status/latest.md <<EOF
           # Latest NexU pre-release
@@ -267,12 +290,19 @@ jobs:
           - Source branch: \`master\`
           - Source commit: \`${GITHUB_SHA}\`
           - Workflow run: \`${GITHUB_RUN_ID}\`
+          - Linux job: \`${{ needs.linux.result }}\`
+          - Windows job: \`${{ needs.windows.result }}\`
+          - Release job: \`${{ needs.release.result }}\`
           - Release: https://github.com/${GITHUB_REPOSITORY}/releases/tag/${TAG}
-          - Status: published
+          - Status: \`${STATUS}\`
           EOF
 
+      - name: Commit release result
+        shell: bash
+        run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add .github/release-status/latest.md
-          git commit -m "Record ${TAG} pre-release"
+          git diff --cached --quiet && exit 0
+          git commit -m "Record pre-release workflow ${GITHUB_RUN_ID} result"
           git push origin HEAD:master
