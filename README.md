@@ -164,10 +164,11 @@ Any future assisted installer must require explicit consent, an official allowli
 
 ### Windows
 
-The Windows build produces:
+The Windows release build produces:
 
-- a portable ZIP containing `NexU.exe` and a private Java runtime;
-- a per-user EXE installer with Start menu and desktop shortcuts.
+- a portable ZIP containing `NexU.exe`, a private Java runtime and `LOGS.txt`;
+- a per-user EXE installer with Start menu and desktop shortcuts;
+- an MSI installer for managed deployments.
 
 ```powershell
 ./nexu-app/src/jpackage/package-windows.ps1 `
@@ -178,10 +179,11 @@ The Windows build produces:
 
 ### Linux
 
-The Linux build produces:
+The Linux release build produces:
 
-- a portable `tar.gz` application image;
-- a Debian/Ubuntu `.deb` package.
+- a portable `tar.gz` application image containing `LOGS.txt`;
+- a Debian/Ubuntu `.deb` package;
+- an `.rpm` package.
 
 ```bash
 bash nexu-app/src/jpackage/package-linux.sh \
@@ -202,6 +204,29 @@ Configuration is searched in this order:
 4. the current working directory;
 5. the directory of a directly executed JAR;
 6. embedded defaults.
+
+## Diagnostic logs
+
+NexU uses SLF4J and the Logback implementation supplied by Spring Boot. Diagnostic application logging defaults to `DEBUG`, while Spring and third-party framework logging remains at `INFO`.
+
+The default current log is:
+
+```text
+Windows: %USERPROFILE%\.nexu\logs\nexu.log
+Linux:   $HOME/.nexu/logs/nexu.log
+```
+
+When the platform-specific NexU user-data directory is available, its `logs` subdirectory is used instead. The exact active path is written in the first startup entry and documented by `LOGS.txt` inside each portable package.
+
+Logback rotates the file by date and size:
+
+- current file: `nexu.log`;
+- compressed archives: `archive/nexu.YYYY-MM-DD.N.log.gz`;
+- maximum file size: 10 MB;
+- retained periods: 14;
+- total archive cap: 200 MB.
+
+Override the directory through `NEXU_LOG_DIR`, `-Dnexu.log.dir=/path` or `log_directory` in `nexu-config.properties`. Rotation and level can be changed with `log_level`, `rolling_log_file_size`, `rolling_log_file_number` and `rolling_log_total_size_cap`.
 
 ## Security principles
 
