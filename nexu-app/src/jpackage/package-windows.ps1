@@ -74,7 +74,25 @@ if (Test-Path -LiteralPath $PortableArchive) {
 # writes to .\logs beside NexU.exe. It is removed before building the installer.
 New-Item -ItemType File -Path $PortableMarker -Force | Out-Null
 Compress-Archive -Path $AppImage -DestinationPath $PortableArchive -CompressionLevel Optimal
+
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+$zip = [System.IO.Compression.ZipFile]::OpenRead($PortableArchive)
+try {
+    $markerEntry = $zip.Entries | Where-Object {
+        ($_.FullName -replace '\\', '/') -eq "$AppName/.nexu-portable"
+    } | Select-Object -First 1
+    if (-not $markerEntry) {
+        throw "Portable marker is missing from $PortableArchive"
+    }
+}
+finally {
+    $zip.Dispose()
+}
+
 Remove-Item -LiteralPath $PortableMarker -Force
+if (Test-Path -LiteralPath $PortableMarker) {
+    throw "Portable marker leaked into the installer app image"
+}
 
 $InstallerArguments = @(
     "--type", "exe",
