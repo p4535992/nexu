@@ -39,6 +39,7 @@ cp "$PROJECT_ROOT/LICENSE" "$APP_IMAGE/LICENSE"
 cp "$PROJECT_ROOT/THIRD_PARTY_NOTICES.md" "$APP_IMAGE/THIRD_PARTY_NOTICES.md"
 cp "$PROJECT_ROOT/nexu-app/src/main/resources/nexu-config.properties" \
   "$APP_IMAGE/nexu-config.properties"
+cp "$SCRIPT_DIR/LOGS.txt" "$APP_IMAGE/LOGS.txt"
 cp -R "$PROJECT_ROOT/licenses" "$APP_IMAGE/licenses"
 
 tar -C "$DESTINATION" -czf "$ARCHIVE" "$APP_NAME"
