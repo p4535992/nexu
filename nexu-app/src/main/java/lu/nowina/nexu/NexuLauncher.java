@@ -23,6 +23,7 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.nio.file.Path;
 import java.util.LinkedHashSet;
+import java.util.Locale;
 import java.util.Properties;
 import java.util.Set;
 
@@ -47,6 +48,8 @@ public class NexuLauncher {
 
     private static ProxyConfigurer proxyConfigurer;
 
+    private static UserPreferences userPreferences;
+
     public static void main(String[] args) throws Exception {
         NexuLauncher launcher = new NexuLauncher();
         launcher.launch(args);
@@ -56,12 +59,15 @@ public class NexuLauncher {
         props = loadProperties();
         loadAppConfig(props);
 
+        userPreferences = new UserPreferences(config.getApplicationName());
+        Locale.setDefault(userPreferences.getLanguage().getLocale());
+
         configureLogger(config);
 
         // Perform this work in a separate method to have the logger well configured.
         config.initDefaultProduct(props);
 
-        proxyConfigurer = new ProxyConfigurer(config, new UserPreferences(config.getApplicationName()));
+        proxyConfigurer = new ProxyConfigurer(config, userPreferences);
 
         beforeLaunch();
 
@@ -95,6 +101,10 @@ public class NexuLauncher {
 
     public static ProxyConfigurer getProxyConfigurer() {
         return proxyConfigurer;
+    }
+
+    public static UserPreferences getUserPreferences() {
+        return userPreferences;
     }
 
     private static boolean checkAlreadyStarted() throws MalformedURLException {

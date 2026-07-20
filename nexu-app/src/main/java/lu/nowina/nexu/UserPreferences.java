@@ -18,148 +18,162 @@ import java.util.prefs.Preferences;
 
 public class UserPreferences {
 
-	private static final String USE_SYSTEM_PROXY = "nowina.nexu.useSystemProxy";
-	private static final String PROXY_SERVER = "nowina.nexu.proxyServer";
-	private static final String PROXY_PORT = "nowina.nexu.proxyPort";
-	private static final String PROXY_AUTHENTICATION = "nowina.nexu.proxyAuthentication";
-	private static final String PROXY_USERNAME = "nowina.nexu.proxyUsername";
-	private static final String PROXY_PASSWORD = "nowina.nexu.proxyPassword";
-	private static final String PROXY_USE_HTTPS = "nowina.nexu.proxyHttps";
+    private static final String USE_SYSTEM_PROXY = "nowina.nexu.useSystemProxy";
+    private static final String PROXY_SERVER = "nowina.nexu.proxyServer";
+    private static final String PROXY_PORT = "nowina.nexu.proxyPort";
+    private static final String PROXY_AUTHENTICATION = "nowina.nexu.proxyAuthentication";
+    private static final String PROXY_USERNAME = "nowina.nexu.proxyUsername";
+    private static final String PROXY_PASSWORD = "nowina.nexu.proxyPassword";
+    private static final String PROXY_USE_HTTPS = "nowina.nexu.proxyHttps";
+    private static final String LANGUAGE = "nowina.nexu.language";
 
-	private final Preferences prefs;
+    private final Preferences prefs;
 
-	private Boolean useSystemProxy;
-	private String proxyServer;
-	private Integer proxyPort;
-	private Boolean proxyUseHttps;
-	private Boolean proxyAuthentication;
-	private String proxyUsername;
-	private String proxyPassword;
+    private Boolean useSystemProxy;
+    private String proxyServer;
+    private Integer proxyPort;
+    private Boolean proxyUseHttps;
+    private Boolean proxyAuthentication;
+    private String proxyUsername;
+    private String proxyPassword;
+    private ApplicationLanguage language;
 
-	public UserPreferences(final String applicationName) {
-		prefs = Preferences.userRoot().node(applicationName);
-		
-		final String useSystemProxyStr = prefs.get(USE_SYSTEM_PROXY, null);
-		useSystemProxy = (useSystemProxyStr != null) ? Boolean.valueOf(useSystemProxyStr) : null;
-		
-		proxyServer = prefs.get(PROXY_SERVER, null);
-		
-		final String proxyPortStr = prefs.get(PROXY_PORT, null);
-		proxyPort = (proxyPortStr != null) ? Integer.valueOf(proxyPortStr) : null;
-		
-		final String proxyHttps = prefs.get(PROXY_USE_HTTPS, null);
-		proxyUseHttps = (proxyHttps != null) ? Boolean.valueOf(proxyHttps) : null;
-		
-		final String proxyAuthenticationStr = prefs.get(PROXY_AUTHENTICATION, null);
-		proxyAuthentication = (proxyAuthenticationStr != null) ? Boolean.valueOf(proxyAuthenticationStr) : null;
-		
-		proxyUsername = prefs.get(PROXY_USERNAME, null);
-		proxyPassword = prefs.get(PROXY_PASSWORD, null);
-	}
+    public UserPreferences(final String applicationName) {
+        prefs = Preferences.userRoot().node(applicationName);
 
-	public void setUseSystemProxy(Boolean useSystemProxy) {
-		if(useSystemProxy != null) {
-			prefs.putBoolean(USE_SYSTEM_PROXY, useSystemProxy);
-		} else {
-			prefs.remove(USE_SYSTEM_PROXY);
-		}
-		this.useSystemProxy = useSystemProxy;
-	}
+        final String useSystemProxyStr = prefs.get(USE_SYSTEM_PROXY, null);
+        useSystemProxy = (useSystemProxyStr != null) ? Boolean.valueOf(useSystemProxyStr) : null;
 
-	public void setProxyServer(String proxyServer) {
-		if(proxyServer != null) {
-			prefs.put(PROXY_SERVER, proxyServer);
-		} else {
-			prefs.remove(PROXY_SERVER);
-		}
-		this.proxyServer = proxyServer;
-	}
+        proxyServer = prefs.get(PROXY_SERVER, null);
 
-	public void setProxyPort(Integer proxyPort) {
-		if(proxyPort != null) {
-			prefs.putInt(PROXY_PORT, proxyPort);
-		} else {
-			prefs.remove(PROXY_PORT);
-		}
-		this.proxyPort = proxyPort;
-	}
-	
-	public void setProxyUseHttps(Boolean proxyUseHttps) {
-		if(proxyUseHttps != null) {
-			prefs.putBoolean(PROXY_USE_HTTPS, proxyUseHttps);
-		} else {
-			prefs.remove(PROXY_USE_HTTPS);
-		}
-		this.proxyUseHttps = proxyUseHttps;
-	}
+        final String proxyPortStr = prefs.get(PROXY_PORT, null);
+        proxyPort = (proxyPortStr != null) ? Integer.valueOf(proxyPortStr) : null;
 
-	public void setProxyAuthentication(Boolean proxyAuthentication) {
-		if(proxyAuthentication != null) {
-			prefs.putBoolean(PROXY_AUTHENTICATION, proxyAuthentication);
-		} else {
-			prefs.remove(PROXY_AUTHENTICATION);
-		}
-		this.proxyAuthentication = proxyAuthentication;
-	}
+        final String proxyHttps = prefs.get(PROXY_USE_HTTPS, null);
+        proxyUseHttps = (proxyHttps != null) ? Boolean.valueOf(proxyHttps) : null;
 
-	public void setProxyUsername(String proxyUsername) {
-		if(proxyUsername != null) {
-			prefs.put(PROXY_USERNAME, proxyUsername);
-		} else {
-			prefs.remove(PROXY_USERNAME);
-		}
-		this.proxyUsername = proxyUsername;
-	}
+        final String proxyAuthenticationStr = prefs.get(PROXY_AUTHENTICATION, null);
+        proxyAuthentication = (proxyAuthenticationStr != null) ? Boolean.valueOf(proxyAuthenticationStr) : null;
 
-	public void setProxyPassword(String proxyPassword) {
-		if(proxyPassword != null) {
-			prefs.put(PROXY_PASSWORD, proxyPassword);
-		} else {
-			prefs.remove(PROXY_PASSWORD);
-		}
-		this.proxyPassword = proxyPassword;
-	}
-	
-	public Boolean isUseSystemProxy() {
-		return useSystemProxy;
-	}
+        proxyUsername = prefs.get(PROXY_USERNAME, null);
+        proxyPassword = prefs.get(PROXY_PASSWORD, null);
+        language = ApplicationLanguage.fromCode(prefs.get(LANGUAGE, ApplicationLanguage.ENGLISH.getCode()));
+    }
 
-	public String getProxyServer() {
-		return proxyServer;
-	}
+    public void setUseSystemProxy(Boolean useSystemProxy) {
+        if (useSystemProxy != null) {
+            prefs.putBoolean(USE_SYSTEM_PROXY, useSystemProxy);
+        } else {
+            prefs.remove(USE_SYSTEM_PROXY);
+        }
+        this.useSystemProxy = useSystemProxy;
+    }
 
-	public Integer getProxyPort() {
-		return proxyPort;
-	}
-	
-	public Boolean isProxyUseHttps() {
-		return proxyUseHttps;
-	}
+    public void setProxyServer(String proxyServer) {
+        if (proxyServer != null) {
+            prefs.put(PROXY_SERVER, proxyServer);
+        } else {
+            prefs.remove(PROXY_SERVER);
+        }
+        this.proxyServer = proxyServer;
+    }
 
-	public Boolean isProxyAuthentication() {
-		return proxyAuthentication;
-	}
+    public void setProxyPort(Integer proxyPort) {
+        if (proxyPort != null) {
+            prefs.putInt(PROXY_PORT, proxyPort);
+        } else {
+            prefs.remove(PROXY_PORT);
+        }
+        this.proxyPort = proxyPort;
+    }
 
-	public String getProxyUsername() {
-		return proxyUsername;
-	}
+    public void setProxyUseHttps(Boolean proxyUseHttps) {
+        if (proxyUseHttps != null) {
+            prefs.putBoolean(PROXY_USE_HTTPS, proxyUseHttps);
+        } else {
+            prefs.remove(PROXY_USE_HTTPS);
+        }
+        this.proxyUseHttps = proxyUseHttps;
+    }
 
-	public String getProxyPassword() {
-		return proxyPassword;
-	}
+    public void setProxyAuthentication(Boolean proxyAuthentication) {
+        if (proxyAuthentication != null) {
+            prefs.putBoolean(PROXY_AUTHENTICATION, proxyAuthentication);
+        } else {
+            prefs.remove(PROXY_AUTHENTICATION);
+        }
+        this.proxyAuthentication = proxyAuthentication;
+    }
 
-	public void clear() {
-		try {
-			this.prefs.clear();
-		} catch (BackingStoreException e) {
-			throw new IllegalStateException(e);
-		}
-		useSystemProxy = null;
-		proxyUseHttps = null;
-		proxyServer = null;
-		proxyPort = null;
-		proxyAuthentication = null;
-		proxyUsername = null;
-		proxyPassword = null;
-	}
+    public void setProxyUsername(String proxyUsername) {
+        if (proxyUsername != null) {
+            prefs.put(PROXY_USERNAME, proxyUsername);
+        } else {
+            prefs.remove(PROXY_USERNAME);
+        }
+        this.proxyUsername = proxyUsername;
+    }
+
+    public void setProxyPassword(String proxyPassword) {
+        if (proxyPassword != null) {
+            prefs.put(PROXY_PASSWORD, proxyPassword);
+        } else {
+            prefs.remove(PROXY_PASSWORD);
+        }
+        this.proxyPassword = proxyPassword;
+    }
+
+    public void setLanguage(ApplicationLanguage language) {
+        final ApplicationLanguage selected = language != null ? language : ApplicationLanguage.ENGLISH;
+        prefs.put(LANGUAGE, selected.getCode());
+        this.language = selected;
+    }
+
+    public Boolean isUseSystemProxy() {
+        return useSystemProxy;
+    }
+
+    public String getProxyServer() {
+        return proxyServer;
+    }
+
+    public Integer getProxyPort() {
+        return proxyPort;
+    }
+
+    public Boolean isProxyUseHttps() {
+        return proxyUseHttps;
+    }
+
+    public Boolean isProxyAuthentication() {
+        return proxyAuthentication;
+    }
+
+    public String getProxyUsername() {
+        return proxyUsername;
+    }
+
+    public String getProxyPassword() {
+        return proxyPassword;
+    }
+
+    public ApplicationLanguage getLanguage() {
+        return language;
+    }
+
+    public void clear() {
+        try {
+            this.prefs.clear();
+        } catch (BackingStoreException e) {
+            throw new IllegalStateException(e);
+        }
+        useSystemProxy = null;
+        proxyUseHttps = null;
+        proxyServer = null;
+        proxyPort = null;
+        proxyAuthentication = null;
+        proxyUsername = null;
+        proxyPassword = null;
+        language = ApplicationLanguage.ENGLISH;
+    }
 }

@@ -70,7 +70,7 @@ public class NexUApp extends Application {
 		server = startHttpServer(api);
 
 		if(api.getAppConfig().isEnableSystrayMenu()) {
-			new SystrayMenu(operationFactory, api, new UserPreferences(getConfig().getApplicationName()));
+			new SystrayMenu(operationFactory, api, NexuLauncher.getUserPreferences());
 		} else {
 			logger.info("Systray menu is disabled.");
 		}
