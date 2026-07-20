@@ -61,14 +61,22 @@ final class NexuLogging {
         Thread.setDefaultUncaughtExceptionHandler((thread, throwable) ->
                 logger.error("Uncaught exception on thread '{}'", thread.getName(), throwable));
 
-        final Path logFile = logDirectory.resolve(LOG_FILE_NAME);
+        final Path logFile = currentLogFile();
         logger.info("NexU diagnostic logging initialized: file={}, level={}, maxFileSize={}, maxHistory={}, totalSizeCap={}",
-                logFile.toAbsolutePath().normalize(),
+                logFile,
                 System.getProperty("NEXU_LOG_LEVEL"),
                 System.getProperty("NEXU_LOG_MAX_FILE_SIZE"),
                 System.getProperty("NEXU_LOG_MAX_HISTORY"),
                 System.getProperty("NEXU_LOG_TOTAL_SIZE_CAP"));
         return logFile;
+    }
+
+    static Path currentLogFile() {
+        final String logDirectory = System.getProperty(LOG_DIRECTORY_ENVIRONMENT);
+        if (isBlank(logDirectory)) {
+            return null;
+        }
+        return Path.of(logDirectory.trim()).resolve(LOG_FILE_NAME).toAbsolutePath().normalize();
     }
 
     private static void configureLogback() throws IOException {
