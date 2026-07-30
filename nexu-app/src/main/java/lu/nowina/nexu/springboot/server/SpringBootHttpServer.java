@@ -55,6 +55,12 @@ public final class SpringBootHttpServer implements HttpServer {
 
         final SpringApplication application = new SpringApplication(NexuSpringBootConfiguration.class);
         application.setWebApplicationType(WebApplicationType.SERVLET);
+
+        // SpringApplication defaults to headless=true. NexU is a desktop agent and
+        // initializes its notification-area icon after the HTTP server starts, so
+        // leaving that default enabled makes both Dorkbox and AWT reject the tray.
+        application.setHeadless(false);
+
         application.setRegisterShutdownHook(false);
         application.setDefaultProperties(defaults);
         application.addInitializers(context ->
