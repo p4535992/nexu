@@ -1,0 +1,34 @@
+NexU localhost HTTPS
+=====================
+
+NexU keeps HTTP available on port 9795 and starts an additional HTTPS endpoint
+on the first port configured by binding_ports_https (default 9895).
+
+Place these two PEM files in this directory:
+
+- localhost.cer  X.509 certificate for localhost
+- localhost.key  unencrypted private key matching the certificate
+
+The certificate may be self-signed. Browsers will show a trust warning until it
+is accepted or installed in the local trust store. NexU logs an error and keeps
+HTTPS disabled when either file is missing or cannot be loaded.
+
+Example OpenSSL command (run from this directory):
+
+openssl req -x509 -newkey rsa:2048 -sha256 -nodes -days 3650 \
+  -keyout localhost.key -out localhost.cer \
+  -subj "/CN=localhost" \
+  -addext "subjectAltName=DNS:localhost,IP:127.0.0.1"
+
+Optional PKCS#12 export (not required by NexU, which reads the PEM files):
+
+openssl pkcs12 -export -out localhost.p12 \
+  -inkey localhost.key -in localhost.cer -passout pass:
+
+Test endpoint:
+
+https://localhost:9895/nexu-info
+
+European Commission DSS signing demo:
+
+https://ec.europa.eu/digital-building-blocks/DSS/webapp-demo/sign-a-document
