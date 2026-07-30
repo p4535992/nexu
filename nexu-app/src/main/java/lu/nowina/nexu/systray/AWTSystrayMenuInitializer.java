@@ -23,6 +23,7 @@ import java.awt.TrayIcon;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.imageio.ImageIO;
 
@@ -34,12 +35,6 @@ import lu.nowina.nexu.api.flow.OperationFactory;
 
 /**
  * Implementation of {@link SystrayMenuInitializer} using AWT.
- *
- * <p>The tray is deliberately initialized on the AWT event-dispatch thread.
- * This keeps the original NexU notification-area workflow reliable when the
- * application lifecycle itself is driven by JavaFX and Spring Boot.</p>
- *
- * @author Jean Lepropre (jean.lepropre@nowina.lu)
  */
 public class AWTSystrayMenuInitializer implements SystrayMenuInitializer {
 
@@ -47,24 +42,21 @@ public class AWTSystrayMenuInitializer implements SystrayMenuInitializer {
 
     private volatile TrayIcon trayIcon;
 
-    public AWTSystrayMenuInitializer() {
-        super();
-    }
-
     @Override
-    public void init(
+    public boolean init(
             final String tooltip,
             final URL trayIconURL,
             final OperationFactory operationFactory,
             final SystrayMenuItem exitMenuItem,
             final SystrayMenuItem... systrayMenuItems) {
 
-        final Runnable initialization = () -> initializeOnAwtThread(
-                tooltip, trayIconURL, operationFactory, exitMenuItem, systrayMenuItems);
+        final AtomicBoolean initialized = new AtomicBoolean(false);
+        final Runnable initialization = () -> initialized.set(initializeOnAwtThread(
+                tooltip, trayIconURL, operationFactory, exitMenuItem, systrayMenuItems));
 
         if (EventQueue.isDispatchThread()) {
             initialization.run();
-            return;
+            return initialized.get();
         }
 
         try {
@@ -72,32 +64,40 @@ public class AWTSystrayMenuInitializer implements SystrayMenuInitializer {
         } catch (final InterruptedException e) {
             Thread.currentThread().interrupt();
             LOGGER.error("Interrupted while initializing the NexU system tray", e);
+            return false;
         } catch (final InvocationTargetException e) {
             LOGGER.error("Cannot initialize the NexU system tray", e.getCause());
+            return false;
         }
+        return initialized.get();
     }
 
-    private void initializeOnAwtThread(
+    private boolean initializeOnAwtThread(
             final String tooltip,
             final URL trayIconURL,
             final OperationFactory operationFactory,
             final SystrayMenuItem exitMenuItem,
             final SystrayMenuItem... systrayMenuItems) {
 
+        LOGGER.info("Attempting AWT system-tray initialization: supported={}, headless={}, icon={}",
+                SystemTray.isSupported(),
+                java.awt.GraphicsEnvironment.isHeadless(),
+                trayIconURL);
+
         if (!SystemTray.isSupported()) {
             LOGGER.error("System tray is not supported by the current desktop session");
-            return;
+            return false;
         }
         if (trayIconURL == null) {
             LOGGER.error("Cannot initialize the NexU system tray: /tray-icon.png is missing");
-            return;
+            return false;
         }
 
         try {
             final Image image = ImageIO.read(trayIconURL);
             if (image == null) {
                 LOGGER.error("Cannot decode the NexU system tray icon from {}", trayIconURL);
-                return;
+                return false;
             }
 
             final PopupMenu popup = new PopupMenu();
@@ -120,10 +120,16 @@ public class AWTSystrayMenuInitializer implements SystrayMenuInitializer {
             systemTray.add(createdTrayIcon);
             trayIcon = createdTrayIcon;
 
-            LOGGER.info("NexU system tray initialized: tooltip='{}', menuItems={}, trayIcons={}",
-                    tooltip, systrayMenuItems.length + 1, systemTray.getTrayIcons().length);
+            LOGGER.info("NexU AWT system tray initialized: tooltip='{}', menuItems={}, trayIcons={}, image={}x{}",
+                    tooltip,
+                    systrayMenuItems.length + 1,
+                    systemTray.getTrayIcons().length,
+                    image.getWidth(null),
+                    image.getHeight(null));
+            return true;
         } catch (final AWTException | IOException | RuntimeException e) {
-            LOGGER.error("Cannot add the NexU icon to the system tray", e);
+            LOGGER.error("Cannot add the NexU icon to the AWT system tray", e);
+            return false;
         }
     }
 
@@ -146,7 +152,6 @@ public class AWTSystrayMenuInitializer implements SystrayMenuInitializer {
             final OperationFactory operationFactory,
             final SystrayMenuItem exitMenuItem,
             final TrayIcon iconToRemove) {
-
         SystemTray.getSystemTray().remove(iconToRemove);
         trayIcon = null;
         exitMenuItem.getFutureOperationInvocation().call(operationFactory);
