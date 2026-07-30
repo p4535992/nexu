@@ -21,6 +21,7 @@ PORTABLE_MARKER="$APP_IMAGE/.nexu-portable"
 PORTABLE_CONTENTS="$DESTINATION/portable-contents.txt"
 FORCE_STOP_SOURCE="$PROJECT_ROOT/scripts/nexu-force-stop.sh"
 FORCE_STOP_TARGET="$APP_IMAGE/nexu-force-stop.sh"
+DEB_REPACK_DIR="$DESTINATION/deb-repack"
 DEB_CHECK_DIR="$DESTINATION/deb-check"
 
 if [[ ! -f "$FORCE_STOP_SOURCE" ]]; then
@@ -66,8 +67,9 @@ rm -f "$PORTABLE_CONTENTS"
 rm -f "$PORTABLE_MARKER"
 test ! -e "$PORTABLE_MARKER"
 
-# Build an operator-friendly Debian package from the unmarked app image. The
-# installed application therefore keeps using the user-writable data directory.
+# jpackage deliberately selects the known application-image layout when it builds
+# a DEB and omits extra files placed at the image root. Repack the generated DEB
+# to add the verified helper to the installed NexU application directory.
 jpackage \
   --type deb \
   --name "$APP_NAME" \
@@ -88,6 +90,31 @@ if [[ -z "$DEB_PACKAGE" ]]; then
   echo "Debian installer was not generated" >&2
   exit 1
 fi
+
+rm -rf "$DEB_REPACK_DIR"
+mkdir -p "$DEB_REPACK_DIR"
+dpkg-deb --raw-extract "$DEB_PACKAGE" "$DEB_REPACK_DIR"
+
+DEB_JAR=$(find "$DEB_REPACK_DIR" -type f -name 'nexu-app.jar' -print -quit)
+if [[ -z "$DEB_JAR" ]]; then
+  echo "Unable to locate the NexU application directory in $DEB_PACKAGE" >&2
+  exit 1
+fi
+
+DEB_APP_DIRECTORY=$(dirname "$(dirname "$(dirname "$DEB_JAR")")")
+install -m 0755 "$FORCE_STOP_SOURCE" "$DEB_APP_DIRECTORY/nexu-force-stop.sh"
+
+(
+  cd "$DEB_REPACK_DIR"
+  find . -type f ! -path './DEBIAN/*' -printf '%P\0' \
+    | sort -z \
+    | xargs -0 md5sum > DEBIAN/md5sums
+)
+
+DEB_REBUILT="${DEB_PACKAGE%.deb}.rebuilt.deb"
+dpkg-deb --root-owner-group --build "$DEB_REPACK_DIR" "$DEB_REBUILT"
+mv -f "$DEB_REBUILT" "$DEB_PACKAGE"
+rm -rf "$DEB_REPACK_DIR"
 
 rm -rf "$DEB_CHECK_DIR"
 mkdir -p "$DEB_CHECK_DIR"
