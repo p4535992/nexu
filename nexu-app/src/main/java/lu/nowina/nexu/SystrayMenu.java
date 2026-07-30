@@ -31,7 +31,12 @@ import org.slf4j.LoggerFactory;
 import javafx.application.Platform;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
+import javafx.scene.control.ButtonBar.ButtonData;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.ChoiceDialog;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
+import javafx.scene.layout.VBox;
 import lu.nowina.nexu.api.NexuAPI;
 import lu.nowina.nexu.api.SystrayMenuItem;
 import lu.nowina.nexu.api.flow.FutureOperationInvocation;
@@ -228,7 +233,7 @@ public class SystrayMenu {
             @Override
             public FutureOperationInvocation<Void> getFutureOperationInvocation() {
                 return operationFactory -> {
-                    openLogFile(resources);
+                    Platform.runLater(() -> showLogFileDialog(resources));
                     return new OperationResult<Void>((Void) null);
                 };
             }
@@ -254,16 +259,60 @@ public class SystrayMenu {
         };
     }
 
-    private void openLogFile(ResourceBundle resources) {
-        final Path logFile = NexuLogging.currentLogFile();
+    private void showLogFileDialog(ResourceBundle resources) {
+        final Path logFile;
         try {
-            if (logFile == null) {
-                throw new IOException("NexU logging has not been configured");
-            }
-            Files.createDirectories(logFile.getParent());
-            if (Files.notExists(logFile)) {
-                Files.createFile(logFile);
-            }
+            logFile = prepareLogFile(NexuLogging.currentLogFile());
+        } catch (IOException | RuntimeException e) {
+            LOGGER.error("Cannot prepare the NexU diagnostic log file", e);
+            showLogOpenError(resources, NexuLogging.currentLogFile());
+            return;
+        }
+
+        final TextField pathField = new TextField(logFile.toString());
+        pathField.setEditable(false);
+        pathField.setPrefColumnCount(70);
+
+        final VBox content = new VBox(
+                8,
+                new Label(resources.getString("systray.logs.dialog.path")),
+                pathField);
+
+        final ButtonType openButton = new ButtonType(
+                resources.getString("systray.logs.open.button"),
+                ButtonData.OK_DONE);
+        final ButtonType closeButton = new ButtonType(
+                resources.getString("systray.logs.close.button"),
+                ButtonData.CANCEL_CLOSE);
+
+        final Alert alert = new Alert(AlertType.INFORMATION);
+        alert.setTitle(resources.getString("systray.logs.dialog.title"));
+        alert.setHeaderText(resources.getString("systray.logs.dialog.header"));
+        alert.getDialogPane().setContent(content);
+        alert.getButtonTypes().setAll(openButton, closeButton);
+        alert.showAndWait()
+                .filter(openButton::equals)
+                .ifPresent(ignored -> openLogFile(logFile, resources));
+    }
+
+    static Path prepareLogFile(Path logFile) throws IOException {
+        if (logFile == null) {
+            throw new IOException("NexU logging has not been configured");
+        }
+
+        final Path normalizedLogFile = logFile.toAbsolutePath().normalize();
+        final Path parent = normalizedLogFile.getParent();
+        if (parent != null) {
+            Files.createDirectories(parent);
+        }
+        if (Files.notExists(normalizedLogFile)) {
+            Files.createFile(normalizedLogFile);
+        }
+        return normalizedLogFile;
+    }
+
+    private void openLogFile(Path logFile, ResourceBundle resources) {
+        try {
             if (!Desktop.isDesktopSupported()) {
                 throw new IOException("Desktop integration is not supported");
             }
@@ -272,10 +321,10 @@ public class SystrayMenu {
                 throw new IOException("Desktop open action is not supported");
             }
             desktop.open(logFile.toFile());
-            LOGGER.info("Opened NexU diagnostic log file {}", logFile);
+            LOGGER.info("Opened NexU diagnostic log file {} with the operating-system default application", logFile);
         } catch (IOException | RuntimeException e) {
             LOGGER.error("Cannot open the NexU diagnostic log file {}", logFile, e);
-            Platform.runLater(() -> showLogOpenError(resources, logFile));
+            showLogOpenError(resources, logFile);
         }
     }
 
