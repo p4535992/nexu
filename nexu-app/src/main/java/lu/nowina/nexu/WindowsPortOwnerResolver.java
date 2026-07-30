@@ -2,19 +2,22 @@ package lu.nowina.nexu;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Best-effort diagnostics for identifying the Windows process that already owns
- * a NexU listening port. Failure to resolve the process must never prevent NexU
- * startup or duplicate-instance detection.
+ * Windows process diagnostics and replacement support for the NexU listening
+ * port. A process is terminated only after the launcher has independently
+ * confirmed the NexU HTTP endpoint on that port.
  */
 final class WindowsPortOwnerResolver {
 
     private static final long COMMAND_TIMEOUT_SECONDS = 4;
+    private static final Duration PROCESS_EXIT_TIMEOUT = Duration.ofSeconds(10);
 
     private WindowsPortOwnerResolver() {
         // Utility class
@@ -38,6 +41,32 @@ final class WindowsPortOwnerResolver {
                 .flatMap(process -> process.info().command())
                 .orElse("unknown");
         return Optional.of(new PortOwner(processId, command));
+    }
+
+    static boolean forceTerminate(PortOwner owner) {
+        if (!isWindows() || owner == null || owner.pid() <= 0 || owner.pid() == ProcessHandle.current().pid()) {
+            return false;
+        }
+
+        final Optional<ProcessHandle> processHandle = ProcessHandle.of(owner.pid());
+        if (processHandle.isEmpty()) {
+            return true;
+        }
+
+        final ProcessHandle process = processHandle.get();
+        if (!process.isAlive()) {
+            return true;
+        }
+
+        process.destroyForcibly();
+        if (waitUntilStopped(process, PROCESS_EXIT_TIMEOUT)) {
+            return true;
+        }
+
+        if (!runTaskkill(owner.pid())) {
+            return false;
+        }
+        return waitUntilStopped(process, PROCESS_EXIT_TIMEOUT);
     }
 
     static OptionalLong parsePowerShellPid(String output) {
@@ -91,6 +120,43 @@ final class WindowsPortOwnerResolver {
     private static OptionalLong resolveWithNetstat(int port) {
         return executeAndParse(new String[] { "netstat.exe", "-ano", "-p", "TCP" },
                 output -> parseNetstat(output, port));
+    }
+
+    private static boolean runTaskkill(long pid) {
+        Process process = null;
+        try {
+            process = new ProcessBuilder(
+                    "taskkill.exe", "/PID", Long.toString(pid), "/T", "/F")
+                    .redirectErrorStream(true)
+                    .start();
+            if (!process.waitFor(COMMAND_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+                process.destroyForcibly();
+                return false;
+            }
+            return process.exitValue() == 0 || ProcessHandle.of(pid).map(ProcessHandle::isAlive).orElse(false) == false;
+        } catch (IOException e) {
+            return false;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return false;
+        } finally {
+            if (process != null && process.isAlive()) {
+                process.destroyForcibly();
+            }
+        }
+    }
+
+    private static boolean waitUntilStopped(ProcessHandle process, Duration timeout) {
+        final Instant deadline = Instant.now().plus(timeout);
+        while (process.isAlive() && Instant.now().isBefore(deadline)) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return false;
+            }
+        }
+        return !process.isAlive();
     }
 
     private static OptionalLong executeAndParse(String[] command, OutputParser parser) {
