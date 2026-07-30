@@ -25,6 +25,9 @@ $AppImage = Join-Path $Destination $AppName
 $Architecture = $env:PROCESSOR_ARCHITECTURE.ToLowerInvariant()
 $PortableArchive = Join-Path $Destination "nexu-$AppVersion-windows-$Architecture-portable.zip"
 $PortableMarker = Join-Path $AppImage ".nexu-portable"
+$PortableConfig = Join-Path $AppImage "config"
+$HttpsGuideSource = Join-Path $ProjectRoot "nexu-app\src\main\resources\https\HTTPS.txt"
+$HttpsGuideTarget = Join-Path $PortableConfig "HTTPS.txt"
 $ForceStopSource = Join-Path $ProjectRoot "scripts\nexu-force-stop.bat"
 $ForceStopTarget = Join-Path $AppImage "nexu-force-stop.bat"
 $UpgradeUuid = "5d8fbe17-6f31-4a42-9b87-6b7d3c2f4e10"
@@ -37,6 +40,9 @@ if (-not (Test-Path -LiteralPath $JarPath -PathType Leaf)) {
 }
 if (-not (Test-Path -LiteralPath $ForceStopSource -PathType Leaf)) {
     throw "Verified NexU shutdown helper not found: $ForceStopSource"
+}
+if (-not (Test-Path -LiteralPath $HttpsGuideSource -PathType Leaf)) {
+    throw "NexU HTTPS guide not found: $HttpsGuideSource"
 }
 
 if (Test-Path -LiteralPath $Destination) {
@@ -71,17 +77,22 @@ Copy-Item -LiteralPath (Join-Path $ProjectRoot "nexu-app\src\main\resources\nexu
 Copy-Item -LiteralPath (Join-Path $ScriptDirectory "LOGS.txt") -Destination (Join-Path $AppImage "LOGS.txt")
 Copy-Item -LiteralPath $ForceStopSource -Destination $ForceStopTarget
 Copy-Item -LiteralPath (Join-Path $ProjectRoot "licenses") -Destination (Join-Path $AppImage "licenses") -Recurse
+New-Item -ItemType Directory -Path $PortableConfig | Out-Null
+Copy-Item -LiteralPath $HttpsGuideSource -Destination $HttpsGuideTarget
 
 if (-not (Test-Path -LiteralPath $ForceStopTarget -PathType Leaf)) {
     throw "Verified NexU shutdown helper is missing from the Windows app image"
+}
+if (-not (Test-Path -LiteralPath $HttpsGuideTarget -PathType Leaf)) {
+    throw "NexU HTTPS guide is missing from the portable config directory"
 }
 
 if (Test-Path -LiteralPath $PortableArchive) {
     Remove-Item -LiteralPath $PortableArchive -Force
 }
 
-# The marker exists only inside the portable ZIP. NexU detects it at runtime and
-# writes to .\logs beside NexU.exe. It is removed before building the installer.
+# The marker and config guide exist only inside the portable ZIP. NexU detects
+# the marker and uses .\logs and .\config beside NexU.exe.
 New-Item -ItemType File -Path $PortableMarker -Force | Out-Null
 Compress-Archive -Path $AppImage -DestinationPath $PortableArchive -CompressionLevel Optimal
 
@@ -96,14 +107,21 @@ try {
     if ($normalizedEntries -notcontains "$AppName/nexu-force-stop.bat") {
         throw "Verified NexU shutdown helper is missing from $PortableArchive"
     }
+    if ($normalizedEntries -notcontains "$AppName/config/HTTPS.txt") {
+        throw "NexU HTTPS guide is missing from $PortableArchive"
+    }
 }
 finally {
     $zip.Dispose()
 }
 
 Remove-Item -LiteralPath $PortableMarker -Force
+Remove-Item -LiteralPath $PortableConfig -Recurse -Force
 if (Test-Path -LiteralPath $PortableMarker) {
     throw "Portable marker leaked into the installer app image"
+}
+if (Test-Path -LiteralPath $PortableConfig) {
+    throw "Portable HTTPS config directory leaked into the installer app image"
 }
 
 $InstallerArguments = @(
@@ -133,6 +151,7 @@ Remove-Item -LiteralPath $InputDirectory -Recurse -Force
 Write-Host "Application image: $AppImage"
 Write-Host "Portable archive: $PortableArchive"
 Write-Host "Verified shutdown helper: $ForceStopTarget"
+Write-Host "Portable HTTPS guide: $HttpsGuideSource"
 Write-Host "Diagnostic log guide: $(Join-Path $AppImage 'LOGS.txt')"
 Get-ChildItem -LiteralPath $Destination -Filter "*.exe" | ForEach-Object {
     Write-Host "Windows installer: $($_.FullName)"
