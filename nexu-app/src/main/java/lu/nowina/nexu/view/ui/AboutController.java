@@ -1,20 +1,13 @@
-/**
- * © Nowina Solutions, 2015-2015
- *
- * Concédée sous licence EUPL, version 1.1 ou – dès leur approbation par la Commission européenne - versions ultérieures de l’EUPL (la «Licence»).
- * Vous ne pouvez utiliser la présente œuvre que conformément à la Licence.
- * Vous pouvez obtenir une copie de la Licence à l’adresse suivante:
- *
- * http://ec.europa.eu/idabc/eupl5
- *
- * Sauf obligation légale ou contractuelle écrite, le logiciel distribué sous la Licence est distribué «en l’état»,
- * SANS GARANTIES OU CONDITIONS QUELLES QU’ELLES SOIENT, expresses ou implicites.
- * Consultez la Licence pour les autorisations et les restrictions linguistiques spécifiques relevant de la Licence.
- */
 package lu.nowina.nexu.view.ui;
 
+import java.awt.Desktop;
+import java.io.IOException;
+import java.net.URI;
 import java.net.URL;
 import java.util.ResourceBundle;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -24,35 +17,60 @@ import lu.nowina.nexu.view.ui.support.AbstractUIOperationController;
 
 public class AboutController extends AbstractUIOperationController<Void> implements Initializable {
 
-	@FXML
-	private Label aboutTitle;
-	
-	@FXML
-	private Button ok;
+    static final String PROJECT_URL = "https://github.com/p4535992/nexu";
+    static final String LICENSE_URL = "https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12";
 
-	@FXML
-	private Label applicationVersion;
-	
-	@FXML
-	private Label dbVersion;
+    private static final Logger LOGGER = LoggerFactory.getLogger(AboutController.class);
 
-	@FXML
-	private Label dbFile;
+    @FXML
+    private Label aboutTitle;
 
-	@Override
-	public void initialize(URL location, ResourceBundle resources) {
-		ok.setOnAction(e -> signalEnd(null));
-	}
+    @FXML
+    private Button ok;
 
-	@Override
-	public void init(Object... params) {
-		final String applicationName = (String) params[0];
-		this.aboutTitle.setText(aboutTitle.getText() + " " + applicationName);
-		
-		final String applicationVersion = (String) params[1];
-		// NEW Zhukov Andreas
-		//this.applicationVersion.setText(applicationVersion);
-	    final String javaVersion = System.getProperty("java.version");
-	    this.applicationVersion.setText(applicationVersion + ", jvm: " + javaVersion);
-	}
+    @FXML
+    private Label applicationVersion;
+
+    @FXML
+    private Label dbVersion;
+
+    @FXML
+    private Label dbFile;
+
+    @Override
+    public void initialize(URL location, ResourceBundle resources) {
+        ok.setOnAction(e -> signalEnd(null));
+    }
+
+    @Override
+    public void init(Object... params) {
+        final String applicationName = (String) params[0];
+        this.aboutTitle.setText(aboutTitle.getText() + " " + applicationName);
+
+        final String applicationVersion = (String) params[1];
+        final String javaVersion = System.getProperty("java.version");
+        this.applicationVersion.setText(applicationVersion + ", jvm: " + javaVersion);
+    }
+
+    @FXML
+    private void openProject() {
+        browse(PROJECT_URL);
+    }
+
+    @FXML
+    private void openLicense() {
+        browse(LICENSE_URL);
+    }
+
+    private void browse(final String url) {
+        try {
+            if (!Desktop.isDesktopSupported() || !Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
+                throw new IOException("Desktop browser integration is not supported");
+            }
+            Desktop.getDesktop().browse(URI.create(url));
+            LOGGER.info("Opened About link {}", url);
+        } catch (IOException | RuntimeException e) {
+            LOGGER.error("Cannot open About link {}", url, e);
+        }
+    }
 }
