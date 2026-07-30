@@ -25,6 +25,8 @@ $AppImage = Join-Path $Destination $AppName
 $Architecture = $env:PROCESSOR_ARCHITECTURE.ToLowerInvariant()
 $PortableArchive = Join-Path $Destination "nexu-$AppVersion-windows-$Architecture-portable.zip"
 $PortableMarker = Join-Path $AppImage ".nexu-portable"
+$ForceStopSource = Join-Path $ProjectRoot "scripts\nexu-force-stop.bat"
+$ForceStopTarget = Join-Path $AppImage "nexu-force-stop.bat"
 $UpgradeUuid = "5d8fbe17-6f31-4a42-9b87-6b7d3c2f4e10"
 
 if (-not (Test-Path -LiteralPath $Jpackage -PathType Leaf)) {
@@ -32,6 +34,9 @@ if (-not (Test-Path -LiteralPath $Jpackage -PathType Leaf)) {
 }
 if (-not (Test-Path -LiteralPath $JarPath -PathType Leaf)) {
     throw "Executable JAR not found: $JarPath"
+}
+if (-not (Test-Path -LiteralPath $ForceStopSource -PathType Leaf)) {
+    throw "Verified NexU shutdown helper not found: $ForceStopSource"
 }
 
 if (Test-Path -LiteralPath $Destination) {
@@ -64,7 +69,12 @@ Copy-Item -LiteralPath (Join-Path $ProjectRoot "THIRD_PARTY_NOTICES.md") -Destin
 Copy-Item -LiteralPath (Join-Path $ProjectRoot "nexu-app\src\main\resources\nexu-config.properties") `
     -Destination (Join-Path $AppImage "nexu-config.properties")
 Copy-Item -LiteralPath (Join-Path $ScriptDirectory "LOGS.txt") -Destination (Join-Path $AppImage "LOGS.txt")
+Copy-Item -LiteralPath $ForceStopSource -Destination $ForceStopTarget
 Copy-Item -LiteralPath (Join-Path $ProjectRoot "licenses") -Destination (Join-Path $AppImage "licenses") -Recurse
+
+if (-not (Test-Path -LiteralPath $ForceStopTarget -PathType Leaf)) {
+    throw "Verified NexU shutdown helper is missing from the Windows app image"
+}
 
 if (Test-Path -LiteralPath $PortableArchive) {
     Remove-Item -LiteralPath $PortableArchive -Force
@@ -78,11 +88,13 @@ Compress-Archive -Path $AppImage -DestinationPath $PortableArchive -CompressionL
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $zip = [System.IO.Compression.ZipFile]::OpenRead($PortableArchive)
 try {
-    $markerEntry = $zip.Entries | Where-Object {
-        ($_.FullName -replace '\\', '/') -eq "$AppName/.nexu-portable"
-    } | Select-Object -First 1
-    if (-not $markerEntry) {
+    $normalizedEntries = $zip.Entries | ForEach-Object { $_.FullName -replace '\\', '/' }
+
+    if ($normalizedEntries -notcontains "$AppName/.nexu-portable") {
         throw "Portable marker is missing from $PortableArchive"
+    }
+    if ($normalizedEntries -notcontains "$AppName/nexu-force-stop.bat") {
+        throw "Verified NexU shutdown helper is missing from $PortableArchive"
     }
 }
 finally {
@@ -120,6 +132,7 @@ Remove-Item -LiteralPath $InputDirectory -Recurse -Force
 
 Write-Host "Application image: $AppImage"
 Write-Host "Portable archive: $PortableArchive"
+Write-Host "Verified shutdown helper: $ForceStopTarget"
 Write-Host "Diagnostic log guide: $(Join-Path $AppImage 'LOGS.txt')"
 Get-ChildItem -LiteralPath $Destination -Filter "*.exe" | ForEach-Object {
     Write-Host "Windows installer: $($_.FullName)"
