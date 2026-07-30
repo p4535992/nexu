@@ -68,13 +68,13 @@ public final class SpringBootHttpServer implements HttpServer {
         try {
             tlsMaterial = NexuHttpsConfiguration.resolve();
         } catch (IOException | RuntimeException e) {
-            LOGGER.error("Cannot resolve the NexU HTTPS configuration directory; HTTPS remains disabled", e);
+            LOGGER.error("Cannot resolve or generate the NexU HTTPS certificate; HTTPS remains disabled", e);
             return;
         }
 
         if (!tlsMaterial.isComplete()) {
             LOGGER.error(
-                    "NexU HTTPS endpoint is disabled. Place both localhost.cer and localhost.key in {}. Missing files: {}",
+                    "NexU HTTPS endpoint is disabled. Expected localhost.crt (or legacy localhost.cer) and localhost.key in {}. Missing files: {}",
                     tlsMaterial.configDirectory(),
                     tlsMaterial.missingFiles());
             return;
