@@ -1,6 +1,5 @@
 package lu.nowina.nexu;
 
-import java.awt.Desktop;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -237,15 +236,8 @@ public class SystrayMenu {
 
     private void openLogFile(Path logFile, ResourceBundle resources) {
         try {
-            if (!Desktop.isDesktopSupported()) {
-                throw new IOException("Desktop integration is not supported");
-            }
-            final Desktop desktop = Desktop.getDesktop();
-            if (!desktop.isSupported(Desktop.Action.OPEN)) {
-                throw new IOException("Desktop open action is not supported");
-            }
-            desktop.open(logFile.toFile());
-            LOGGER.info("Opened NexU diagnostic log file {} with the operating-system default application", logFile);
+            DesktopFileOpener.openWithDefaultTextEditor(logFile);
+            LOGGER.info("Opened NexU diagnostic log file {}", logFile);
         } catch (IOException | RuntimeException exception) {
             LOGGER.error("Cannot open the NexU diagnostic log file {}", logFile, exception);
             showLogOpenError(resources, logFile);
