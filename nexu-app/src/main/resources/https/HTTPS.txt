@@ -4,26 +4,35 @@ NexU localhost HTTPS
 NexU keeps HTTP available on port 9795 and starts an additional HTTPS endpoint
 on the first port configured by binding_ports_https (default 9895).
 
-Place these two PEM files in this directory:
+On first start, when no certificate or key exists, NexU generates a unique
+per-installation self-signed pair in this directory:
 
-- localhost.cer  X.509 certificate for localhost
-- localhost.key  unencrypted private key matching the certificate
+- localhost.crt  X.509 certificate for localhost in PEM format
+- localhost.key  unencrypted PKCS#8 private key matching the certificate
 
-The certificate may be self-signed. Browsers will show a trust warning until it
-is accepted or installed in the local trust store. NexU logs an error and keeps
-HTTPS disabled when either file is missing or cannot be loaded.
+The generated certificate contains subject alternative names for localhost and
+127.0.0.1. The older localhost.cer certificate name remains supported for
+existing installations.
 
-Example OpenSSL command (run from this directory):
+NexU never overwrites operator-provided TLS material. If only one file exists,
+or either file cannot be loaded, HTTPS remains disabled and the exact problem is
+written to the diagnostic log. HTTP continues running.
+
+Browsers will show a trust warning for the self-signed certificate until it is
+accepted or installed in the local trust store.
+
+To replace the generated pair manually, stop NexU and run this command from this
+directory:
 
 openssl req -x509 -newkey rsa:2048 -sha256 -nodes -days 3650 \
-  -keyout localhost.key -out localhost.cer \
+  -keyout localhost.key -out localhost.crt \
   -subj "/CN=localhost" \
   -addext "subjectAltName=DNS:localhost,IP:127.0.0.1"
 
-Optional PKCS#12 export (not required by NexU, which reads the PEM files):
+Optional PKCS#12 export for trust-store import (not required by NexU):
 
 openssl pkcs12 -export -out localhost.p12 \
-  -inkey localhost.key -in localhost.cer -passout pass:
+  -inkey localhost.key -in localhost.crt -passout pass:
 
 Test endpoint:
 
