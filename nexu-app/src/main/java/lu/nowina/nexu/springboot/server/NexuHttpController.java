@@ -75,7 +75,7 @@ final class NexuHttpController {
 
     @RequestMapping(path = "/{pluginId}/**")
     ResponseEntity<String> plugin(
-            @PathVariable final String pluginId,
+            @PathVariable("pluginId") final String pluginId,
             final HttpServletRequest request) throws Exception {
 
         final HttpPlugin plugin = api.getHttpPlugin(pluginId);

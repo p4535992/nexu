@@ -6,11 +6,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lu.nowina.nexu.api.AppConfig;
@@ -86,5 +91,24 @@ class NexuHttpControllerTest {
         assertEquals("/certificates", requestCaptor.getValue().getTarget());
         assertEquals(200, response.getStatusCode().value());
         assertEquals("{}", response.getBody());
+    }
+
+    @Test
+    void resolvesPluginPathVariableThroughSpringMvcWithoutCompilerParameterMetadata() throws Exception {
+        final HttpPlugin plugin = mock(HttpPlugin.class);
+        when(api.getHttpPlugin("rest")).thenReturn(plugin);
+        when(plugin.process(org.mockito.ArgumentMatchers.eq(api), org.mockito.ArgumentMatchers.any(HttpRequest.class)))
+                .thenReturn(new HttpResponse("{}", "application/json", HttpStatus.OK));
+
+        final MockMvc mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
+
+        mockMvc.perform(get("/rest/certificates"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith("application/json"))
+                .andExpect(content().json("{}"));
+
+        final ArgumentCaptor<HttpRequest> requestCaptor = ArgumentCaptor.forClass(HttpRequest.class);
+        verify(plugin).process(org.mockito.ArgumentMatchers.eq(api), requestCaptor.capture());
+        assertEquals("/certificates", requestCaptor.getValue().getTarget());
     }
 }
