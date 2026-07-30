@@ -161,6 +161,16 @@ class SystemTrayContractTest {
         assertEquals("awt", SystrayMenu.normalizeBackend("AWT"));
     }
 
+    @Test
+    void springBootHttpServerKeepsDesktopModeEnabledForTheTray() throws Exception {
+        final String source = Files.readString(Path.of(
+                "src", "main", "java", "lu", "nowina", "nexu", "springboot", "server",
+                "SpringBootHttpServer.java"));
+
+        assertTrue(source.contains("application.setHeadless(false);"),
+                "Spring Boot defaults to headless=true and would disable both Dorkbox and AWT system trays");
+    }
+
     private static Properties loadProperties(String resourcePath) throws Exception {
         final Properties properties = new Properties();
         try (InputStream input = NexUApp.class.getResourceAsStream(resourcePath)) {
