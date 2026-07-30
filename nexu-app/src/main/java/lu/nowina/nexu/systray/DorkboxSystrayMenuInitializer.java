@@ -47,12 +47,11 @@ public class DorkboxSystrayMenuInitializer implements SystrayMenuInitializer {
         }
 
         SystemTray.DEBUG = Boolean.parseBoolean(System.getProperty("nexu.systray.debug", "false"));
-        SystemTray.APP_NAME = tooltip;
 
         SystemTray systemTray = null;
         try {
-            LOGGER.info("Attempting Dorkbox system-tray initialization: debug={}, appName={}, icon={}",
-                    SystemTray.DEBUG, SystemTray.APP_NAME, trayIconURL);
+            LOGGER.info("Attempting Dorkbox system-tray initialization: debug={}, tooltip='{}', icon={}",
+                    SystemTray.DEBUG, tooltip, trayIconURL);
 
             systemTray = SystemTray.get();
             if (systemTray == null) {
