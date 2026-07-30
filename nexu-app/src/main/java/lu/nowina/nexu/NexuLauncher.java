@@ -3,7 +3,7 @@
  *
  * Concedée sous licence EUPL, version 1.1 ou – dès leur approbation par la Commission européenne - versions ultérieures de l’EUPL (la «Licence»).
  * Vous ne pouvez utiliser la présente œuvre que conformément à la Licence.
- * Vous pouvez obtenir une copie de la Licence à l’adresse suivante:
+ * Vous pouvez obtenir une copia de la Licence à l’adresse suivante:
  *
  * http://ec.europa.eu/idabc/eupl5
  *
@@ -51,7 +51,11 @@ public class NexuLauncher {
 
     static final String SYSTRAY_BACKEND_PROPERTY = "nexu.systray.backend";
     static final String SYSTRAY_DEBUG_PROPERTY = "nexu.systray.debug";
+    static final String REPLACE_EXISTING_NEXU_PROPERTY = "nexu.replace.existing.instance";
     static final String SHOW_ALREADY_RUNNING_DIALOG_PROPERTY = "nexu.show.already.running.dialog";
+
+    private static final int PORT_RELEASE_ATTEMPTS = 40;
+    private static final long PORT_RELEASE_RETRY_MILLIS = 250;
 
     private static final Logger logger = LoggerFactory.getLogger(NexuLauncher.class.getName());
 
@@ -86,12 +90,12 @@ public class NexuLauncher {
         beforeLaunch();
 
         final ExistingInstance existingInstance = findExistingInstance();
-        if (existingInstance != null) {
+        if (existingInstance != null && !replaceExistingInstance(existingInstance)) {
             reportExistingInstance(existingInstance);
             return;
         }
 
-        logger.info("No existing NexU instance detected; launching JavaFX and system-tray lifecycle");
+        logger.info("No existing NexU instance remains; launching JavaFX and system-tray lifecycle");
         NexUApp.launch(getApplicationClass(), args);
     }
 
@@ -100,6 +104,8 @@ public class NexuLauncher {
                 props.getProperty("systray_backend", "auto"));
         setRuntimePropertyIfAbsent(SYSTRAY_DEBUG_PROPERTY,
                 props.getProperty("systray_debug", "false"));
+        setRuntimePropertyIfAbsent(REPLACE_EXISTING_NEXU_PROPERTY,
+                props.getProperty("replace_existing_nexu", "true"));
         setRuntimePropertyIfAbsent(SHOW_ALREADY_RUNNING_DIALOG_PROPERTY,
                 props.getProperty("show_already_running_dialog", "true"));
     }
@@ -112,7 +118,8 @@ public class NexuLauncher {
 
     private void configureLogger(AppConfig config) throws IOException {
         final Path logFile = NexuLogging.configure(config, props);
-        logger.info("Starting NexU version={} java={} vendor={} os={} arch={} pid={} launcher={} logFile={} systrayBackend={} systrayDebug={}",
+        logger.info("Starting NexU version={} java={} vendor={} os={} arch={} pid={} launcher={} logFile={} "
+                        + "systrayBackend={} systrayDebug={} replaceExistingNexU={}",
                 config.getApplicationVersion(),
                 System.getProperty("java.version"),
                 System.getProperty("java.vendor"),
@@ -122,7 +129,8 @@ public class NexuLauncher {
                 ProcessHandle.current().info().command().orElse("unknown"),
                 logFile.toAbsolutePath().normalize(),
                 System.getProperty(SYSTRAY_BACKEND_PROPERTY),
-                System.getProperty(SYSTRAY_DEBUG_PROPERTY));
+                System.getProperty(SYSTRAY_DEBUG_PROPERTY),
+                System.getProperty(REPLACE_EXISTING_NEXU_PROPERTY));
     }
 
     protected void beforeLaunch() {
@@ -167,14 +175,81 @@ public class NexuLauncher {
         return null;
     }
 
+    private static boolean replaceExistingInstance(ExistingInstance existingInstance) {
+        if (!Boolean.parseBoolean(System.getProperty(REPLACE_EXISTING_NEXU_PROPERTY, "true"))) {
+            logger.warn("Automatic replacement of an existing NexU instance is disabled");
+            return false;
+        }
+        if (!isConfirmedNexuResponse(existingInstance.info())) {
+            logger.error("Port {} answered at /nexu-info but the response was not recognized as NexU: {}",
+                    existingInstance.port(), existingInstance.info());
+            return false;
+        }
+        if (existingInstance.owner().isEmpty()) {
+            logger.error("Confirmed NexU on port {} but Windows did not reveal the owning process PID",
+                    existingInstance.port());
+            return false;
+        }
+
+        final PortOwner owner = existingInstance.owner().get();
+        logger.warn("Replacing existing NexU process: endpoint={}, versionResponse={}, ownerPid={}, ownerCommand={}",
+                existingInstance.url(), existingInstance.info(), owner.pid(), owner.command());
+
+        if (!WindowsPortOwnerResolver.forceTerminate(owner)) {
+            logger.error("Unable to force-stop existing NexU process pid={} command={}", owner.pid(), owner.command());
+            return false;
+        }
+
+        for (int attempt = 1; attempt <= PORT_RELEASE_ATTEMPTS; attempt++) {
+            if (!isEndpointAvailable(existingInstance.url())) {
+                logger.info("Existing NexU process pid={} stopped and port {} is free; continuing startup",
+                        owner.pid(), existingInstance.port());
+                return true;
+            }
+            try {
+                Thread.sleep(PORT_RELEASE_RETRY_MILLIS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                logger.error("Interrupted while waiting for NexU port {} to be released", existingInstance.port());
+                return false;
+            }
+        }
+
+        logger.error("Existing NexU process pid={} was terminated but endpoint {} is still responding; "
+                + "another launcher or service may be restarting it", owner.pid(), existingInstance.url());
+        return false;
+    }
+
+    static boolean isConfirmedNexuResponse(String response) {
+        if (response == null) {
+            return false;
+        }
+        final String normalized = response.trim();
+        return normalized.startsWith("{")
+                && normalized.endsWith("}")
+                && normalized.contains("\"version\"");
+    }
+
+    private static boolean isEndpointAvailable(URL url) {
+        try {
+            final URLConnection connection = url.openConnection();
+            connection.setConnectTimeout(250);
+            connection.setReadTimeout(250);
+            try (InputStream input = connection.getInputStream()) {
+                return input.read() >= 0;
+            }
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
     private static void reportExistingInstance(ExistingInstance existingInstance) {
         final long currentPid = ProcessHandle.current().pid();
         final String ownerPid = existingInstance.owner().map(owner -> Long.toString(owner.pid())).orElse("unknown");
         final String ownerCommand = existingInstance.owner().map(PortOwner::command).orElse("unknown");
 
-        logger.error("Existing NexU instance detected: endpoint={}, response={}, ownerPid={}, ownerCommand={}, "
-                        + "currentPid={}. This launcher exits before JavaFX and system-tray initialization. "
-                        + "Stop the existing process or use its notification-area icon, then start NexU again.",
+        logger.error("Existing NexU instance remains: endpoint={}, response={}, ownerPid={}, ownerCommand={}, "
+                        + "currentPid={}. This launcher exits before JavaFX and system-tray initialization.",
                 existingInstance.url(),
                 existingInstance.info(),
                 ownerPid,
