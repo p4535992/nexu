@@ -22,7 +22,7 @@ class NexuHttpsConfigurationTest {
 
     @Test
     void generatesUniqueCompletePemMaterialBesideLogs() throws Exception {
-        withLogDirectory(temporaryDirectory.resolve("generated", "logs"), () -> {
+        withLogDirectory(temporaryDirectory.resolve("generated").resolve("logs"), () -> {
             final NexuHttpsConfiguration.TlsMaterial generated = NexuHttpsConfiguration.resolve();
             assertEquals("localhost.crt", generated.certificate().getFileName().toString());
             assertEquals("localhost.key", generated.privateKey().getFileName().toString());
