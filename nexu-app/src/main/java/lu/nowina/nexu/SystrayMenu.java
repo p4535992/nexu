@@ -280,7 +280,7 @@ public class SystrayMenu {
 
         final ButtonType openButton = new ButtonType(
                 resources.getString("systray.logs.open.button"),
-                ButtonData.OK_DONE);
+                ButtonData.OTHER);
         final ButtonType closeButton = new ButtonType(
                 resources.getString("systray.logs.close.button"),
                 ButtonData.CANCEL_CLOSE);
