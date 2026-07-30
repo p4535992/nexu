@@ -1,6 +1,6 @@
 # NexU
 
-NexU is a local smart-card signing agent that lets a web application request certificates and electronic signatures without exposing the private key to the browser or a remote server.
+NexU is a local signing agent that lets a web application request certificates and electronic signatures without exposing the signing private key to the browser or a remote server.
 
 This repository is a community-friendly fork of [`nowina-solutions/nexu`](https://github.com/nowina-solutions/nexu). The modernized application uses Java 17, Spring Boot 3.5.16, DSS 6.4 and JavaFX 21.0.11 while preserving the existing NexU integration model and legacy browser endpoints.
 
@@ -10,6 +10,7 @@ This repository is a community-friendly fork of [`nowina-solutions/nexu`](https:
 - Spring Boot loopback server with legacy and modern signing APIs.
 - HTTP on port `9795` by default.
 - Optional HTTPS on port `9895` using operator-provided PEM certificate and key files.
+- Signing with smart cards, the Windows certificate store, local JKS files and local PKCS#12 files.
 - Windows and Linux native packages with a private Java runtime.
 - Windows notification-area menu using the native AWT tray backend by default.
 - English and Italian desktop interface, with English as the first-run default.
@@ -25,7 +26,7 @@ This repository is a community-friendly fork of [`nowina-solutions/nexu`](https:
 
 The Maven reactor contains two modules:
 
-- **`nexu-core`** — headless API, models, utilities, DSS signing, PC/SC, PKCS#11 and Windows keystore support.
+- **`nexu-core`** — headless API, models, utilities, DSS signing, PC/SC, PKCS#11, Windows certificate-store and file-keystore support.
 - **`nexu-app`** — Spring Boot loopback server, JavaFX operator UI, compatibility endpoints and native packaging.
 
 The former API, model, utility, standalone, server-plugin, bundle and keystore modules were consolidated into these directories. `nexu-core` has no JavaFX, Spring, Servlet or Jetty dependency.
@@ -46,8 +47,9 @@ nexu-app
       nexu-core
       ├── DSS 6.4 signing
       ├── certificate and key selection
-      ├── PC/SC and PKCS#11
-      └── Windows certificate store
+      ├── PC/SC and PKCS#11 smart cards
+      ├── Windows certificate store
+      └── JKS and PKCS#12 file keystores
 ```
 
 Challenge storage, certificate trust validation, authentication-token validation and document finalization belong to the remote web application, not the local desktop agent.
@@ -115,7 +117,9 @@ The required files are:
 - `config/localhost.cer` — X.509 certificate in PEM format.
 - `config/localhost.key` — matching, unencrypted private key in PEM format.
 
-`localhost.p12` is optional and is not used by the Spring Boot connector. It can be useful for importing the certificate into an operating-system or browser trust store.
+`config/localhost.p12` is optional and is not used by the Spring Boot connector. It can be useful for importing the localhost certificate into an operating-system or browser trust store.
+
+> `config/localhost.p12` is unrelated to a PKCS#12 signing keystore registered through the NexU desktop workflow. The file under `config` belongs to local HTTPS; a signing `.p12` or `.pfx` contains a user signing identity and can be stored anywhere accessible to the user.
 
 NexU creates the `config` directory and copies an `HTTPS.txt` guide into it. Portable Windows and Linux archives already contain `config/HTTPS.txt`.
 
@@ -132,7 +136,7 @@ openssl req -x509 -newkey rsa:2048 -sha256 -nodes -days 3650 \
   -addext "subjectAltName=DNS:localhost,IP:127.0.0.1"
 ```
 
-Optionally create a PKCS#12 file:
+Optionally create a PKCS#12 file for trust-store import:
 
 ```bash
 openssl pkcs12 -export -out localhost.p12 \
@@ -170,18 +174,62 @@ After NexU has started:
    ```
 
 3. When using a self-signed certificate, accept the browser certificate warning for `https://localhost:9895` before opening the demo.
-
 4. Open the European Commission Digital Signature Services WebApp Demo:
 
    <https://ec.europa.eu/digital-building-blocks/DSS/webapp-demo/>
 
-5. Select **Sign a document**, upload a test document and follow the NexU certificate-selection and PIN workflow.
+5. Select **Sign a document** and upload a test document.
+6. In the NexU signing-device selection, choose a detected smart card, a registered local keystore, or **New keystore**.
+7. Complete certificate selection and the PIN or keystore-password prompt.
 
 The direct signing page is also available at:
 
 <https://ec.europa.eu/digital-building-blocks/DSS/webapp-demo/sign-a-document>
 
 The demo page is served over HTTPS, so the local NexU HTTPS endpoint must be running and accepted by the browser.
+
+## Signing key sources
+
+NexU is not limited to certificates stored on smart cards. A signing operation can use any of these supported sources:
+
+- a smart card exposed through PC/SC, a card minidriver/KSP or a vendor PKCS#11 library;
+- the Windows certificate store when the certificate has an accessible private key;
+- a local **JKS** file with extension `.jks`;
+- a local **PKCS#12** file with extension `.p12` or `.pfx`.
+
+A local keystore must contain at least one private-key entry with its corresponding certificate chain and must permit the requested signature algorithm. A certificate-only file cannot produce a signature.
+
+### Register and use a local keystore
+
+Registration happens during a signing operation, not from the **Manage keystores** window:
+
+1. Start NexU.
+2. Start a signing operation, for example from the European Commission DSS demo.
+3. In **Signature Mean Selection**, select **New keystore**.
+4. Select the keystore type:
+   - **JKS** for a `.jks` file;
+   - **PKCS#12** for a `.p12` or `.pfx` file.
+5. Browse to the local keystore file.
+6. Continue the signing flow and enter the keystore password when NexU requests it.
+7. Select the certificate/private-key entry to use.
+8. When NexU asks whether it should remember the keystore, select **Remember** to register it for future signing operations.
+
+NexU stores only the keystore type and file location in its local keystore database. The keystore password is not stored and is requested again when the file must be opened.
+
+After registration, the keystore appears in later **Signature Mean Selection** dialogs alongside detected smart cards and other configured signing sources.
+
+### Manage or remove a registered keystore
+
+Open the NexU notification-area menu and select **Manage keystores** to:
+
+- view saved keystore names, types and full file locations;
+- remove a saved registration.
+
+The current **Manage keystores** dialog does not add a new entry directly. Use **New keystore** during a signing operation to add one.
+
+Removing a registration does not delete or modify the `.jks`, `.p12` or `.pfx` file. If a registered file is moved, renamed or replaced, remove the old registration and register the new path during the next signing operation.
+
+Keep local keystore files in a user-protected directory, restrict file permissions and maintain a secure backup. Anyone who obtains both the keystore file and its password may be able to use the contained private key.
 
 ## Signing flow
 
@@ -190,7 +238,7 @@ The signing flow follows the separation used by Web eID while retaining NexU com
 1. The browser asks the local agent for a signing certificate.
 2. The browser sends the certificate to the remote signing backend.
 3. The backend prepares the document signature structure and returns a digest and digest algorithm.
-4. NexU signs the prepared digest with the card-backed key.
+4. NexU signs the prepared digest with the selected smart-card, operating-system-store or file-keystore key.
 5. The backend validates the response and finalizes the document.
 
 The prepared digest is signed through DSS `SignatureTokenConnection.signDigest(...)`. It must not be passed to the historical raw-data signing method, which would hash it a second time.
@@ -461,7 +509,7 @@ HTTPS startup messages are written to the same log. When certificate files are m
 
 ## Smart-card drivers and middleware
 
-NexU relies on three layers:
+Smart-card use relies on three layers:
 
 1. the operating-system PC/SC service and reader driver;
 2. a card minidriver/KSP or vendor PKCS#11 library when required;
@@ -478,6 +526,8 @@ On Debian or Ubuntu:
 sudo apt install libpcsclite1 pcscd libccid
 ```
 
+Local JKS and PKCS#12 file keystores do not require a smart-card reader or PC/SC middleware.
+
 ## Authentication boundary
 
 Authentication is separate from document signing:
@@ -492,12 +542,15 @@ The Web eID validation library belongs to the remote application or an integrati
 
 ## Security principles
 
-- Private keys never leave the smart card or operating-system key store.
-- PIN entry and certificate selection remain in the trusted local application.
+- Signing private keys are never transmitted to the browser or remote server.
+- Smart-card and operating-system-store keys remain inside their signing provider.
+- File-keystore keys remain in the selected local JKS or PKCS#12 file and are accessed locally by NexU for signing.
+- Keystore passwords are requested when needed and are not stored in the NexU keystore database.
+- PIN entry, keystore-password entry and certificate selection remain in the trusted local application.
 - The local service binds only to loopback interfaces.
 - Browser origins are validated according to the selected API compatibility mode.
 - Signing handles and authentication challenges are short-lived and single-use.
-- PINs, hashes, handles and signature material are not written to logs.
+- PINs, passwords, hashes, handles and signature material are not written to logs.
 - The remote backend independently validates certificate trust, purpose and algorithms.
 - No private TLS key is committed to this repository or bundled in release artifacts.
 
