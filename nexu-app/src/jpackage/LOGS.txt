@@ -4,6 +4,11 @@ NexU diagnostic logs
 NexU writes diagnostic logs through SLF4J and the Logback implementation
 included by Spring Boot.
 
+System tray access
+------------------
+Use Show logs / Mostra log from the NexU notification-area menu to open the
+active nexu.log file with the operating system's default text-file application.
+
 Portable packages
 -----------------
 Windows portable ZIP:
