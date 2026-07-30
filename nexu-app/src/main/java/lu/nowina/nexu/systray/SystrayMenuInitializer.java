@@ -21,20 +21,15 @@ import lu.nowina.nexu.api.flow.OperationFactory;
 
 /**
  * Interface for {@link SystrayMenu} initializers.
- * 
- * @author Jean Lepropre (jean.lepropre@nowina.lu)
  */
 public interface SystrayMenuInitializer {
 
     /**
      * Initializes the systray menu.
-     * @param tooltip The tooltip to show (if supported).
-     * @param trayIconURL The URL for the tray icon.
-     * @param operationFactory The {@link OperationFactory}.
-     * @param exitMenuItem The systray menu item for exit.
-     * @param systrayMenuItems Systray menu items.
+     *
+     * @return {@code true} when the backend registered a visible tray icon;
+     *         {@code false} when the caller should try another backend.
      */
-    void init(final String tooltip, final URL trayIconURL, final OperationFactory operationFactory,
-    		final SystrayMenuItem exitMenuItem, final SystrayMenuItem... systrayMenuItems);
-    
+    boolean init(final String tooltip, final URL trayIconURL, final OperationFactory operationFactory,
+            final SystrayMenuItem exitMenuItem, final SystrayMenuItem... systrayMenuItems);
 }

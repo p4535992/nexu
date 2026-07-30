@@ -3,7 +3,7 @@
  *
  * Concedée sous licence EUPL, version 1.1 ou – dès leur approbation par la Commission européenne - versions ultérieures de l’EUPL (la «Licence»).
  * Vous ne pouvez utiliser la présente œuvre que conformément à la Licence.
- * Vous pouvez obtenir une copie de la Licence à l’adresse suivante:
+ * Vous pouvez obtenir une copia de la Licence à l’adresse suivante:
  *
  * http://ec.europa.eu/idabc/eupl5
  *
@@ -13,6 +13,8 @@
  */
 package lu.nowina.nexu;
 
+import java.awt.EventQueue;
+import java.awt.GraphicsEnvironment;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -21,17 +23,24 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.text.MessageFormat;
 import java.util.LinkedHashSet;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.Properties;
+import java.util.ResourceBundle;
 import java.util.Set;
+
+import javax.swing.JOptionPane;
 
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javafx.application.Application;
+import lu.nowina.nexu.WindowsPortOwnerResolver.PortOwner;
 import lu.nowina.nexu.api.AppConfig;
 
 public class NexuLauncher {
@@ -39,6 +48,14 @@ public class NexuLauncher {
     public static final String CONFIG_FILE_PROPERTY = "nexu.config.file";
     public static final String CONFIG_FILE_ENVIRONMENT = "NEXU_CONFIG_FILE";
     public static final String CONFIG_FILE_NAME = "nexu-config.properties";
+
+    static final String SYSTRAY_BACKEND_PROPERTY = "nexu.systray.backend";
+    static final String SYSTRAY_DEBUG_PROPERTY = "nexu.systray.debug";
+    static final String REPLACE_EXISTING_NEXU_PROPERTY = "nexu.replace.existing.instance";
+    static final String SHOW_ALREADY_RUNNING_DIALOG_PROPERTY = "nexu.show.already.running.dialog";
+
+    private static final int PORT_RELEASE_ATTEMPTS = 40;
+    private static final long PORT_RELEASE_RETRY_MILLIS = 250;
 
     private static final Logger logger = LoggerFactory.getLogger(NexuLauncher.class.getName());
 
@@ -61,6 +78,7 @@ public class NexuLauncher {
 
         userPreferences = new UserPreferences(config.getApplicationName());
         Locale.setDefault(userPreferences.getLanguage().getLocale());
+        configureDesktopRuntimeProperties();
 
         configureLogger(config);
 
@@ -71,20 +89,48 @@ public class NexuLauncher {
 
         beforeLaunch();
 
-        boolean started = checkAlreadyStarted();
-        if (!started) {
-            NexUApp.launch(getApplicationClass(), args);
+        final ExistingInstance existingInstance = findExistingInstance();
+        if (existingInstance != null && !replaceExistingInstance(existingInstance)) {
+            reportExistingInstance(existingInstance);
+            return;
+        }
+
+        logger.info("No existing NexU instance remains; launching JavaFX and system-tray lifecycle");
+        NexUApp.launch(getApplicationClass(), args);
+    }
+
+    private void configureDesktopRuntimeProperties() {
+        setRuntimePropertyIfAbsent(SYSTRAY_BACKEND_PROPERTY,
+                props.getProperty("systray_backend", "auto"));
+        setRuntimePropertyIfAbsent(SYSTRAY_DEBUG_PROPERTY,
+                props.getProperty("systray_debug", "false"));
+        setRuntimePropertyIfAbsent(REPLACE_EXISTING_NEXU_PROPERTY,
+                props.getProperty("replace_existing_nexu", "true"));
+        setRuntimePropertyIfAbsent(SHOW_ALREADY_RUNNING_DIALOG_PROPERTY,
+                props.getProperty("show_already_running_dialog", "true"));
+    }
+
+    private static void setRuntimePropertyIfAbsent(String propertyName, String value) {
+        if (System.getProperty(propertyName) == null) {
+            System.setProperty(propertyName, value != null ? value.trim() : "");
         }
     }
 
     private void configureLogger(AppConfig config) throws IOException {
         final Path logFile = NexuLogging.configure(config, props);
-        logger.info("Starting NexU version={} java={} os={} arch={} logFile={}",
+        logger.info("Starting NexU version={} java={} vendor={} os={} arch={} pid={} launcher={} logFile={} "
+                        + "systrayBackend={} systrayDebug={} replaceExistingNexU={}",
                 config.getApplicationVersion(),
                 System.getProperty("java.version"),
+                System.getProperty("java.vendor"),
                 System.getProperty("os.name"),
                 System.getProperty("os.arch"),
-                logFile.toAbsolutePath().normalize());
+                ProcessHandle.current().pid(),
+                ProcessHandle.current().info().command().orElse("unknown"),
+                logFile.toAbsolutePath().normalize(),
+                System.getProperty(SYSTRAY_BACKEND_PROPERTY),
+                System.getProperty(SYSTRAY_DEBUG_PROPERTY),
+                System.getProperty(REPLACE_EXISTING_NEXU_PROPERTY));
     }
 
     protected void beforeLaunch() {
@@ -107,7 +153,7 @@ public class NexuLauncher {
         return userPreferences;
     }
 
-    private static boolean checkAlreadyStarted() throws MalformedURLException {
+    private static ExistingInstance findExistingInstance() throws MalformedURLException {
         for (int port : config.getBindingPorts()) {
             final URL url = new URL("http://" + config.getBindingIP() + ":" + port + "/nexu-info");
             final URLConnection connection;
@@ -116,18 +162,132 @@ public class NexuLauncher {
                 connection.setConnectTimeout(2000);
                 connection.setReadTimeout(2000);
             } catch (IOException e) {
-                logger.warn("IOException when trying to open a connection to " + url + ": " + e.getMessage(), e);
+                logger.warn("Unable to prepare duplicate-instance probe for {}: {}", url, e.getMessage(), e);
                 continue;
             }
             try (InputStream in = connection.getInputStream()) {
-                final String info = IOUtils.toString(in);
-                logger.error("NexU already started. Version '" + info + "'");
-                return true;
+                final String info = IOUtils.toString(in, StandardCharsets.UTF_8).trim();
+                return new ExistingInstance(url, port, info, WindowsPortOwnerResolver.resolve(port));
             } catch (Exception e) {
-                logger.info("No " + url.toString() + " detected, " + e.getMessage());
+                logger.info("No NexU endpoint detected at {}: {}", url, e.getMessage());
             }
         }
+        return null;
+    }
+
+    private static boolean replaceExistingInstance(ExistingInstance existingInstance) {
+        if (!Boolean.parseBoolean(System.getProperty(REPLACE_EXISTING_NEXU_PROPERTY, "true"))) {
+            logger.warn("Automatic replacement of an existing NexU instance is disabled");
+            return false;
+        }
+        if (!isConfirmedNexuResponse(existingInstance.info())) {
+            logger.error("Port {} answered at /nexu-info but the response was not recognized as NexU: {}",
+                    existingInstance.port(), existingInstance.info());
+            return false;
+        }
+        if (existingInstance.owner().isEmpty()) {
+            logger.error("Confirmed NexU on port {} but Windows did not reveal the owning process PID",
+                    existingInstance.port());
+            return false;
+        }
+
+        final PortOwner owner = existingInstance.owner().get();
+        logger.warn("Replacing existing NexU process: endpoint={}, versionResponse={}, ownerPid={}, ownerCommand={}",
+                existingInstance.url(), existingInstance.info(), owner.pid(), owner.command());
+
+        if (!WindowsPortOwnerResolver.forceTerminate(owner)) {
+            logger.error("Unable to force-stop existing NexU process pid={} command={}", owner.pid(), owner.command());
+            return false;
+        }
+
+        for (int attempt = 1; attempt <= PORT_RELEASE_ATTEMPTS; attempt++) {
+            if (!isEndpointAvailable(existingInstance.url())) {
+                logger.info("Existing NexU process pid={} stopped and port {} is free; continuing startup",
+                        owner.pid(), existingInstance.port());
+                return true;
+            }
+            try {
+                Thread.sleep(PORT_RELEASE_RETRY_MILLIS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                logger.error("Interrupted while waiting for NexU port {} to be released", existingInstance.port());
+                return false;
+            }
+        }
+
+        logger.error("Existing NexU process pid={} was terminated but endpoint {} is still responding; "
+                + "another launcher or service may be restarting it", owner.pid(), existingInstance.url());
         return false;
+    }
+
+    static boolean isConfirmedNexuResponse(String response) {
+        if (response == null) {
+            return false;
+        }
+        final String normalized = response.trim();
+        return normalized.startsWith("{")
+                && normalized.endsWith("}")
+                && normalized.contains("\"version\"");
+    }
+
+    private static boolean isEndpointAvailable(URL url) {
+        try {
+            final URLConnection connection = url.openConnection();
+            connection.setConnectTimeout(250);
+            connection.setReadTimeout(250);
+            try (InputStream input = connection.getInputStream()) {
+                return input.read() >= 0;
+            }
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    private static void reportExistingInstance(ExistingInstance existingInstance) {
+        final long currentPid = ProcessHandle.current().pid();
+        final String ownerPid = existingInstance.owner().map(owner -> Long.toString(owner.pid())).orElse("unknown");
+        final String ownerCommand = existingInstance.owner().map(PortOwner::command).orElse("unknown");
+
+        logger.error("Existing NexU instance remains: endpoint={}, response={}, ownerPid={}, ownerCommand={}, "
+                        + "currentPid={}. This launcher exits before JavaFX and system-tray initialization.",
+                existingInstance.url(),
+                existingInstance.info(),
+                ownerPid,
+                ownerCommand,
+                currentPid);
+
+        showAlreadyRunningDialog(existingInstance, ownerPid);
+    }
+
+    private static void showAlreadyRunningDialog(ExistingInstance existingInstance, String ownerPid) {
+        if (!Boolean.parseBoolean(System.getProperty(SHOW_ALREADY_RUNNING_DIALOG_PROPERTY, "true"))) {
+            return;
+        }
+        if (GraphicsEnvironment.isHeadless()) {
+            logger.warn("Cannot show the duplicate-instance dialog because the desktop session is headless");
+            return;
+        }
+
+        try {
+            final ResourceBundle resources = ResourceBundle.getBundle("bundles/nexu");
+            final String message = MessageFormat.format(
+                    resources.getString("already.running.message"),
+                    existingInstance.url(),
+                    ownerPid);
+            final Runnable showDialog = () -> JOptionPane.showMessageDialog(
+                    null,
+                    message,
+                    resources.getString("already.running.title"),
+                    JOptionPane.WARNING_MESSAGE);
+
+            if (EventQueue.isDispatchThread()) {
+                showDialog.run();
+            } else {
+                EventQueue.invokeAndWait(showDialog);
+            }
+        } catch (Exception e) {
+            logger.warn("Unable to show the duplicate-instance dialog", e);
+        }
     }
 
     private Properties loadProperties() throws IOException {
@@ -235,5 +395,8 @@ public class NexuLauncher {
 
     protected Class<? extends Application> getApplicationClass() {
         return NexUApp.class;
+    }
+
+    private record ExistingInstance(URL url, int port, String info, Optional<PortOwner> owner) {
     }
 }

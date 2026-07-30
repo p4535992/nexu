@@ -18,6 +18,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import lu.nowina.nexu.WindowsPortOwnerResolver.PortOwner;
 import lu.nowina.nexu.api.AppConfig;
 import lu.nowina.nexu.api.SystrayMenuItem;
 import lu.nowina.nexu.keystore.KeystorePlugin;
@@ -33,6 +34,12 @@ class SystemTrayContractTest {
 
         assertEquals("true", properties.getProperty("enable_systray_menu"),
                 "The operator system tray must be explicitly enabled");
+        assertEquals("auto", properties.getProperty("systray_backend"),
+                "Windows must try Dorkbox and retain AWT as a fallback");
+        assertEquals("true", properties.getProperty("systray_debug"),
+                "Pre-release packages must record detailed tray diagnostics");
+        assertEquals("true", properties.getProperty("replace_existing_nexu"),
+                "A verified older NexU process must be replaced before tray startup");
         assertNotNull(NexUApp.class.getResource("/tray-icon.png"),
                 "The Windows notification-area icon is missing");
 
@@ -123,6 +130,35 @@ class SystemTrayContractTest {
                 System.setProperty(NexuLogging.LOG_DIRECTORY_ENVIRONMENT, previousLogDirectory);
             }
         }
+    }
+
+    @Test
+    void onlyAConfirmedNexuEndpointCanTriggerProcessReplacement() {
+        assertTrue(NexuLauncher.isConfirmedNexuResponse("{ \"version\": \"1.24-SNAPSHOT\" }"));
+        assertFalse(NexuLauncher.isConfirmedNexuResponse(null));
+        assertFalse(NexuLauncher.isConfirmedNexuResponse("OK"));
+        assertFalse(NexuLauncher.isConfirmedNexuResponse("{ \"status\": \"running\" }"));
+    }
+
+    @Test
+    void windowsPortOwnerDiagnosticsParsePowerShellAndNetstat() {
+        assertEquals(4321L, WindowsPortOwnerResolver.parsePowerShellPid("\r\n4321\r\n").orElseThrow());
+
+        final String netstat = "TCP    127.0.0.1:9795    0.0.0.0:0    LISTENING    8765\r\n"
+                + "TCP    127.0.0.1:9796    0.0.0.0:0    LISTENING    9999\r\n";
+        assertEquals(8765L, WindowsPortOwnerResolver.parseNetstat(netstat, 9795).orElseThrow());
+
+        assertFalse(WindowsPortOwnerResolver.forceTerminate(
+                new PortOwner(ProcessHandle.current().pid(), "current-test-process")),
+                "NexU must never terminate its own launcher process");
+    }
+
+    @Test
+    void trayBackendConfigurationIsNormalizedSafely() {
+        assertEquals("auto", SystrayMenu.normalizeBackend(null));
+        assertEquals("auto", SystrayMenu.normalizeBackend("unsupported"));
+        assertEquals("dorkbox", SystrayMenu.normalizeBackend(" DORKBOX "));
+        assertEquals("awt", SystrayMenu.normalizeBackend("AWT"));
     }
 
     private static Properties loadProperties(String resourcePath) throws Exception {
