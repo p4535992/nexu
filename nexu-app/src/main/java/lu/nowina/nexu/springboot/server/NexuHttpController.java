@@ -116,10 +116,32 @@ final class NexuHttpController {
 
         String script = readClasspathText(resource);
         script = script.replace("${scheme}", request.getScheme())
-                .replace("${nexu_hostname}", api.getAppConfig().getNexuHostname())
+                .replace("${nexu_hostname}", browserHostname(api.getAppConfig().getNexuHostname()))
                 .replace("${nexu_port}", Integer.toString(request.getLocalPort()))
                 .replace("${close_token}", Boolean.toString(api.getAppConfig().getCloseToken()));
         return script;
+    }
+
+    /**
+     * Browser integrations must use the DNS hostname for loopback HTTPS. Public
+     * signing pages commonly allow {@code https://localhost:<port>} in their
+     * Content-Security-Policy but reject the equivalent numeric loopback URL.
+     * The server may still bind to 127.0.0.1; this method only controls URLs
+     * emitted in nexu.js and nexu-v2.js.
+     */
+    static String browserHostname(final String configuredHostname) {
+        final String hostname = trim(configuredHostname);
+        if (hostname.isEmpty()
+                || "127.0.0.1".equals(hostname)
+                || "0.0.0.0".equals(hostname)
+                || "::1".equals(hostname)
+                || "[::1]".equals(hostname)
+                || "::".equals(hostname)
+                || "[::]".equals(hostname)
+                || "0:0:0:0:0:0:0:1".equals(hostname)) {
+            return "localhost";
+        }
+        return hostname;
     }
 
     private static ResponseEntity<String> javascriptResponse(final String script) {
