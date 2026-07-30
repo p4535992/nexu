@@ -34,8 +34,8 @@ class SystemTrayContractTest {
 
         assertEquals("true", properties.getProperty("enable_systray_menu"),
                 "The operator system tray must be explicitly enabled");
-        assertEquals("auto", properties.getProperty("systray_backend"),
-                "Windows must try Dorkbox and retain AWT as a fallback");
+        assertEquals("awt", properties.getProperty("systray_backend"),
+                "Windows must use the native AWT popup so the menu stays anchored beside the tray icon");
         assertEquals("true", properties.getProperty("systray_debug"),
                 "Pre-release packages must record detailed tray diagnostics");
         assertEquals("true", properties.getProperty("replace_existing_nexu"),
