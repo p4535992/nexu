@@ -19,6 +19,9 @@ APP_IMAGE="$DESTINATION/$APP_NAME"
 ARCHIVE="$DESTINATION/nexu-${APP_VERSION}-linux-$(uname -m)-portable.tar.gz"
 PORTABLE_MARKER="$APP_IMAGE/.nexu-portable"
 PORTABLE_CONTENTS="$DESTINATION/portable-contents.txt"
+PORTABLE_CONFIG="$APP_IMAGE/config"
+HTTPS_GUIDE_SOURCE="$PROJECT_ROOT/nexu-app/src/main/resources/https/HTTPS.txt"
+HTTPS_GUIDE_TARGET="$PORTABLE_CONFIG/HTTPS.txt"
 FORCE_STOP_SOURCE="$PROJECT_ROOT/scripts/nexu-force-stop.sh"
 FORCE_STOP_TARGET="$APP_IMAGE/nexu-force-stop.sh"
 DEB_REPACK_DIR="$DESTINATION/deb-repack"
@@ -26,6 +29,10 @@ DEB_CHECK_DIR="$DESTINATION/deb-check"
 
 if [[ ! -f "$FORCE_STOP_SOURCE" ]]; then
   echo "Verified NexU shutdown helper not found: $FORCE_STOP_SOURCE" >&2
+  exit 1
+fi
+if [[ ! -f "$HTTPS_GUIDE_SOURCE" ]]; then
+  echo "NexU HTTPS guide not found: $HTTPS_GUIDE_SOURCE" >&2
   exit 1
 fi
 
@@ -54,18 +61,24 @@ cp "$SCRIPT_DIR/LOGS.txt" "$APP_IMAGE/LOGS.txt"
 install -m 0755 "$FORCE_STOP_SOURCE" "$FORCE_STOP_TARGET"
 cp -R "$PROJECT_ROOT/licenses" "$APP_IMAGE/licenses"
 
+mkdir -p "$PORTABLE_CONFIG"
+cp "$HTTPS_GUIDE_SOURCE" "$HTTPS_GUIDE_TARGET"
 test -x "$FORCE_STOP_TARGET"
+test -f "$HTTPS_GUIDE_TARGET"
 
-# The marker is included only in the portable archive. At runtime it tells NexU
-# to create ./logs beside the application image instead of using user data.
+# The marker and config guide are included in the portable archive. At runtime
+# NexU creates ./logs and uses ./config beside the application image.
 touch "$PORTABLE_MARKER"
 tar -C "$DESTINATION" -czf "$ARCHIVE" "$APP_NAME"
 tar -tzf "$ARCHIVE" > "$PORTABLE_CONTENTS"
 grep -Fxq "$APP_NAME/.nexu-portable" "$PORTABLE_CONTENTS"
 grep -Fxq "$APP_NAME/nexu-force-stop.sh" "$PORTABLE_CONTENTS"
+grep -Fxq "$APP_NAME/config/HTTPS.txt" "$PORTABLE_CONTENTS"
 rm -f "$PORTABLE_CONTENTS"
 rm -f "$PORTABLE_MARKER"
+rm -rf "$PORTABLE_CONFIG"
 test ! -e "$PORTABLE_MARKER"
+test ! -e "$PORTABLE_CONFIG"
 
 # jpackage deliberately selects the known application-image layout when it builds
 # a DEB and omits extra files placed at the image root. Repack the generated DEB
@@ -128,6 +141,6 @@ rm -rf "$DEB_CHECK_DIR"
 
 rm -rf "$INPUT_DIR"
 
-printf 'Application image: %s\nPortable archive: %s\nVerified shutdown helper: %s\n' \
-  "$APP_IMAGE" "$ARCHIVE" "$FORCE_STOP_TARGET"
+printf 'Application image: %s\nPortable archive: %s\nVerified shutdown helper: %s\nHTTPS guide: %s\n' \
+  "$APP_IMAGE" "$ARCHIVE" "$FORCE_STOP_TARGET" "$HTTPS_GUIDE_SOURCE"
 find "$DESTINATION" -maxdepth 1 -type f -name '*.deb' -printf 'Debian installer: %p\n'
