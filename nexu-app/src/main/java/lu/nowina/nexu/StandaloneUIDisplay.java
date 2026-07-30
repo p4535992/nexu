@@ -1,27 +1,14 @@
-/**
- * © Nowina Solutions, 2015-2016
- *
- * Concédée sous licence EUPL, version 1.1 ou – dès leur approbation par la Commission européenne - versions ultérieures de l’EUPL (la «Licence»).
- * Vous ne pouvez utiliser la présente œuvre que conformément à la Licence.
- * Vous pouvez obtenir une copie de la Licence à l’adresse suivante:
- *
- * http://ec.europa.eu/idabc/eupl5
- *
- * Sauf obligation légale ou contractuelle écrite, le logiciel distribué sous la Licence est distribué «en l’état»,
- * SANS GARANTIES OU CONDITIONS QUELLES QU’ELLES SOIENT, expresses ou implicites.
- * Consultez la Licence pour les autorisations et les restrictions linguistiques spécifiques relevant de la Licence.
- */
 package lu.nowina.nexu;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Date;
 import java.util.ResourceBundle;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import eu.europa.esig.dss.token.PasswordInputCallback;
-import java.util.Date;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -41,241 +28,246 @@ import lu.nowina.nexu.view.core.UIDisplay;
 import lu.nowina.nexu.view.core.UIOperation;
 import lu.nowina.nexu.view.ui.support.UIOperationController;
 
-// Unisystems change: added cachedPassword + logic
-/**
- * Implementation of {@link UIDisplay} used for standalone mode.
- *
- * @author Jean Lepropre (jean.lepropre@nowina.lu)
- */
+/** Implementation of {@link UIDisplay} used for standalone mode. */
 public class StandaloneUIDisplay implements UIDisplay {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(StandaloneUIDisplay.class.getName());
+    private static final Logger LOGGER = LoggerFactory.getLogger(StandaloneUIDisplay.class.getName());
 
-	private Stage blockingStage;
-	private Stage nonBlockingStage;
-	private UIOperation<?> currentBlockingOperation;
-	private OperationFactory operationFactory;
-	private AppConfig appConfig;
-    private char[] cachedPassword = null;
+    private Stage blockingStage;
+    private Stage nonBlockingStage;
+    private UIOperation<?> currentBlockingOperation;
+    private OperationFactory operationFactory;
+    private AppConfig appConfig;
+    private char[] cachedPassword;
     private Date cacheLastAccessTime = new Date();
-    private static final long CACHE_TIME_TO_LIVE_MS = 5000;
-	
-	public StandaloneUIDisplay() {
-		this.blockingStage = createStage(true, null);
-		this.nonBlockingStage = createStage(false, null);
-	}
-    
+
+    public StandaloneUIDisplay() {
+        JavaFxWindowManager.installApplicationIconSupport();
+        this.blockingStage = createStage(true, null);
+        this.nonBlockingStage = createStage(false, null);
+    }
+
     public StandaloneUIDisplay(AppConfig config) {
         this();
         this.appConfig = config;
-        LOGGER.info("Using cache_time_to_live_ms = " + config.getCacheTimeToLiveMs());
+        LOGGER.info("Using cache_time_to_live_ms = {}", config.getCacheTimeToLiveMs());
     }
 
-	private void display(Parent panel, boolean blockingOperation) {
-		LOGGER.info("Display " + panel + " in display " + this + " from Thread " + Thread.currentThread().getName());
-		Platform.runLater(() -> {
-			Stage stage = (blockingOperation) ? blockingStage : nonBlockingStage;
-			LOGGER.info("Display " + panel + " in display " + this + " from Thread " + Thread.currentThread().getName());
-			if (!stage.isShowing()) {
-				if(blockingOperation) {
-					stage = blockingStage = createStage(true, null);
-				} else {
-					stage = nonBlockingStage = createStage(false, null);
-				}
-				LOGGER.info("Loading ui " + panel + " is a new Stage " + stage);
-			} else {
-				LOGGER.info("Stage still showing, display " + panel);
-			}
-			final Scene scene = new Scene(panel);
-			scene.getStylesheets().add(this.getClass().getResource("/styles/nexu.css").toString());
-			stage.setScene(scene);
-			stage.setTitle(StageHelper.getInstance().getTitle());
-			stage.show();
-			StageHelper.getInstance().setTitle("", null);
-		});
-	}
+    private void display(Parent panel, boolean blockingOperation, UIOperation<?> operation) {
+        LOGGER.info("Display {} in display {} from Thread {}", panel, this, Thread.currentThread().getName());
+        Platform.runLater(() -> {
+            if (JavaFxWindowManager.focusExistingWindow()) {
+                LOGGER.info("Skipped JavaFX view {} because another NexU window is already visible",
+                        operation != null ? operation.getViewResource() : panel);
+                if (blockingOperation && operation != null) {
+                    operation.signalUserCancel();
+                }
+                return;
+            }
 
-	private Stage createStage(final boolean blockingStage, String title) {
-		final Stage newStage = new Stage();
-		newStage.setTitle(title);
-		newStage.setAlwaysOnTop(true);
-		newStage.setOnCloseRequest((e) -> {
-			LOGGER.info("Closing stage " + newStage + " from " + Thread.currentThread().getName());
-			newStage.hide();
-			e.consume();
+            Stage stage = blockingOperation ? blockingStage : nonBlockingStage;
+            if (!stage.isShowing()) {
+                if (blockingOperation) {
+                    stage = blockingStage = createStage(true, null);
+                } else {
+                    stage = nonBlockingStage = createStage(false, null);
+                }
+                LOGGER.info("Loading ui {} in new Stage {}", panel, stage);
+            }
 
-			if (blockingStage && (currentBlockingOperation != null)) {
-				currentBlockingOperation.signalUserCancel();
-			}
-		});
-		return newStage;
-	}
+            final Scene scene = new Scene(panel);
+            scene.getStylesheets().add(getClass().getResource("/styles/nexu.css").toString());
+            stage.setScene(scene);
+            stage.setTitle(StageHelper.getInstance().getTitle());
+            stage.show();
+            StageHelper.getInstance().setTitle("", null);
+        });
+    }
 
-	@Override
-	public void close(final boolean blockingOperation) {
-		Platform.runLater(() -> {
-			Stage oldStage = (blockingOperation) ? blockingStage : nonBlockingStage;
-			LOGGER.info("Hide stage " + oldStage + " and create new stage");
-			if(blockingOperation) {
-				blockingStage = createStage(true, null);
-			} else {
-				nonBlockingStage = createStage(false, null);
-			}
-			oldStage.hide();
-		});
-	}
+    private Stage createStage(final boolean blockingStage, String title) {
+        final Stage newStage = new Stage();
+        JavaFxWindowManager.applyApplicationIcon(newStage);
+        newStage.setTitle(title);
+        newStage.setAlwaysOnTop(true);
+        newStage.setOnCloseRequest(event -> {
+            LOGGER.info("Closing stage {} from {}", newStage, Thread.currentThread().getName());
+            newStage.hide();
+            event.consume();
+            if (blockingStage && currentBlockingOperation != null) {
+                currentBlockingOperation.signalUserCancel();
+            }
+        });
+        return newStage;
+    }
 
-	@Override
-	public <T> void displayAndWaitUIOperation(final UIOperation<T> operation) {
-		display(loadView(operation), true);
-		waitForUser(operation);
-	}
+    @Override
+    public void close(final boolean blockingOperation) {
+        Platform.runLater(() -> {
+            final Stage oldStage = blockingOperation ? blockingStage : nonBlockingStage;
+            LOGGER.info("Hide stage {} and create new stage", oldStage);
+            if (blockingOperation) {
+                blockingStage = createStage(true, null);
+            } else {
+                nonBlockingStage = createStage(false, null);
+            }
+            oldStage.hide();
+        });
+    }
 
-	private <T> Parent loadView(final UIOperation<T> operation) {
-		final FXMLLoader loader = new FXMLLoader();
-		loader.setResources(ResourceBundle.getBundle("bundles/nexu"));
-		try {
-			loader.load(getClass().getResourceAsStream(operation.getViewResource()));
-		} catch (IOException exception) {
-			throw new IllegalStateException("Cannot load UI resource " + operation.getViewResource(), exception);
-		}
+    @Override
+    public <T> void displayAndWaitUIOperation(final UIOperation<T> operation) {
+        display(loadView(operation), true, operation);
+        waitForUser(operation);
+    }
 
-		@SuppressWarnings("unchecked")
-		final UIOperationController<T> controller = loader.getController();
-		if (controller == null) {
-			throw new IllegalStateException("No controller declared for " + operation.getViewResource());
-		}
-		controller.init(operation.getControllerParams());
-		controller.setUIOperation(operation);
-		controller.setDisplay(this);
-		return loader.getRoot();
-	}
+    private <T> Parent loadView(final UIOperation<T> operation) {
+        final FXMLLoader loader = new FXMLLoader();
+        loader.setResources(ResourceBundle.getBundle("bundles/nexu"));
+        try {
+            loader.load(getClass().getResourceAsStream(operation.getViewResource()));
+        } catch (IOException exception) {
+            throw new IllegalStateException("Cannot load UI resource " + operation.getViewResource(), exception);
+        }
 
-	private <T> void waitForUser(UIOperation<T> operation) {
-		try {
-			LOGGER.info("Wait on Thread " + Thread.currentThread().getName());
-			currentBlockingOperation = operation;
-			operation.waitEnd();
-			currentBlockingOperation = null;
-		} catch (InterruptedException e) {
-			throw new RuntimeException(e);
-		}
-	}
+        @SuppressWarnings("unchecked")
+        final UIOperationController<T> controller = loader.getController();
+        if (controller == null) {
+            throw new IllegalStateException("No controller declared for " + operation.getViewResource());
+        }
+        controller.init(operation.getControllerParams());
+        controller.setUIOperation(operation);
+        controller.setDisplay(this);
+        return loader.getRoot();
+    }
 
-	private final class FlowPasswordCallback implements NexuPasswordInputCallback {
-		
-		private String passwordPrompt;
-		private char[] cachedPassword = null;
-        private StandaloneUIDisplay parent = null;
-                
-		public FlowPasswordCallback() {
-			this.passwordPrompt = null;
-		}
-                
-        public FlowPasswordCallback(StandaloneUIDisplay parent, char[] cachedPassword) {
+    private <T> void waitForUser(UIOperation<T> operation) {
+        try {
+            LOGGER.info("Wait on Thread {}", Thread.currentThread().getName());
+            currentBlockingOperation = operation;
+            operation.waitEnd();
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(exception);
+        } finally {
+            currentBlockingOperation = null;
+        }
+    }
+
+    private final class FlowPasswordCallback implements NexuPasswordInputCallback {
+
+        private String passwordPrompt;
+        private char[] cachedPassword;
+        private StandaloneUIDisplay parent;
+
+        FlowPasswordCallback() {
+            this.passwordPrompt = null;
+        }
+
+        FlowPasswordCallback(StandaloneUIDisplay parent, char[] cachedPassword) {
             this.parent = parent;
             this.cachedPassword = cachedPassword;
         }
 
-		@Override
-		public char[] getPassword() {
+        @Override
+        public char[] getPassword() {
             if (cachedPassword != null) {
                 LOGGER.info("Returning cached password");
-                char[] clone = cachedPassword.clone();
-                cachedPassword = null; // should need it only once per FlowPasswordCallback object, real cachedPassword saved in StandaloneUIDisplay, but check CACHE_TIME_TO_LIVE_MS
+                final char[] clone = cachedPassword.clone();
+                cachedPassword = null;
                 return clone;
             }
-                    
-			LOGGER.info("Request password");
-			@SuppressWarnings("unchecked")
-			final OperationResult<char[]> passwordResult = StandaloneUIDisplay.this.operationFactory.getOperation(
-					UIOperation.class, "/fxml/password-input.fxml", passwordPrompt, NexuLauncher.getConfig().getApplicationName()).perform();
-			if(passwordResult.getStatus().equals(BasicOperationStatus.SUCCESS)) {
+
+            LOGGER.info("Request password");
+            @SuppressWarnings("unchecked")
+            final OperationResult<char[]> passwordResult = StandaloneUIDisplay.this.operationFactory.getOperation(
+                    UIOperation.class, "/fxml/password-input.fxml", passwordPrompt,
+                    NexuLauncher.getConfig().getApplicationName()).perform();
+            if (passwordResult.getStatus().equals(BasicOperationStatus.SUCCESS)) {
                 parent.setCachedPassword(passwordResult.getResult());
-				return passwordResult.getResult();
-			} 
-            else {
-                parent.setCachedPassword(null);
-                if (passwordResult.getStatus().equals(BasicOperationStatus.USER_CANCEL)) {
-                    throw new CancelledOperationException();
-                } else if (passwordResult.getStatus().equals(BasicOperationStatus.EXCEPTION)) {
-                    final Exception e = passwordResult.getException();
-                    if (e instanceof RuntimeException) {
-                        // Throw exception as is
-                        throw (RuntimeException) e;
-                    } else {
-                        // Wrap in a runtime exception
-                        throw new NexuException(e);
-                    }
-                } else {
-                    throw new IllegalArgumentException("Not managed operation status: " + passwordResult.getStatus().getCode());
-                }
+                return passwordResult.getResult();
             }
-		}
+            parent.setCachedPassword(null);
+            if (passwordResult.getStatus().equals(BasicOperationStatus.USER_CANCEL)) {
+                throw new CancelledOperationException();
+            }
+            if (passwordResult.getStatus().equals(BasicOperationStatus.EXCEPTION)) {
+                final Exception exception = passwordResult.getException();
+                if (exception instanceof RuntimeException runtimeException) {
+                    throw runtimeException;
+                }
+                throw new NexuException(exception);
+            }
+            throw new IllegalArgumentException(
+                    "Not managed operation status: " + passwordResult.getStatus().getCode());
+        }
 
-		@Override
-		public void setPasswordPrompt(String passwordPrompt) {
-			this.passwordPrompt = passwordPrompt;
-		}
-	}
+        @Override
+        public void setPasswordPrompt(String passwordPrompt) {
+            this.passwordPrompt = passwordPrompt;
+        }
+    }
 
-	@Override
-	public PasswordInputCallback getPasswordInputCallback() {
-		return new FlowPasswordCallback(this, getCachedPassword());
-	}
-	
-	private final class FlowMessageDisplayCallback implements MessageDisplayCallback {
-		@Override
-		public void display(Message message) {
-			if(Message.INPUT_PINPAD.equals(message)) {
-				StandaloneUIDisplay.this.operationFactory.getOperation(
-						NonBlockingUIOperation.class, "/fxml/message-no-button.fxml",
-						"message.display.callback." + message.name().toLowerCase().replace('_', '.'),
-						NexuLauncher.getConfig().getApplicationName()).perform();
-			} else {
-				StandaloneUIDisplay.this.operationFactory.getOperation(
-					NonBlockingUIOperation.class, "/fxml/message.fxml",
-					"message.display.callback." + message.name().toLowerCase().replace('_', '.'),
-					NexuLauncher.getConfig().getApplicationName()).perform();
-			}
-		}
+    @Override
+    public PasswordInputCallback getPasswordInputCallback() {
+        return new FlowPasswordCallback(this, getCachedPassword());
+    }
 
-		@Override
-		public void dispose() {
-			StandaloneUIDisplay.this.close(false);
-		}
-	}
-	
-	@Override
-	public MessageDisplayCallback getMessageDisplayCallback() {
-		return new FlowMessageDisplayCallback();
-	}
+    private final class FlowMessageDisplayCallback implements MessageDisplayCallback {
+        @Override
+        public void display(Message message) {
+            if (Message.INPUT_PINPAD.equals(message)) {
+                StandaloneUIDisplay.this.operationFactory.getOperation(
+                        NonBlockingUIOperation.class, "/fxml/message-no-button.fxml",
+                        "message.display.callback." + message.name().toLowerCase().replace('_', '.'),
+                        NexuLauncher.getConfig().getApplicationName()).perform();
+            } else {
+                StandaloneUIDisplay.this.operationFactory.getOperation(
+                        NonBlockingUIOperation.class, "/fxml/message.fxml",
+                        "message.display.callback." + message.name().toLowerCase().replace('_', '.'),
+                        NexuLauncher.getConfig().getApplicationName()).perform();
+            }
+        }
 
-	@Override
-	public File displayFileChooser(ExtensionFilter... extensionFilters) {
-		final FileChooser fileChooser = new FileChooser();
-		fileChooser.setTitle(ResourceBundle.getBundle("bundles/nexu").getString("fileChooser.title.openResourceFile"));
-		fileChooser.getExtensionFilters().addAll(toJavaFXExtensionFilters(extensionFilters));
-		return fileChooser.showOpenDialog(blockingStage);
-	}
-	
-	private javafx.stage.FileChooser.ExtensionFilter[] toJavaFXExtensionFilters(ExtensionFilter... extensionFilters) {
-		final javafx.stage.FileChooser.ExtensionFilter[] result = new javafx.stage.FileChooser.ExtensionFilter[extensionFilters.length];
-		int i = 0;
-		for(final ExtensionFilter extensionFilter : extensionFilters) {
-			result[i++] = new javafx.stage.FileChooser.ExtensionFilter(extensionFilter.getDescription(), extensionFilter.getExtensions());
-		}
-		return result;
-	}
-	
-	public void setOperationFactory(final OperationFactory operationFactory) {
-		this.operationFactory = operationFactory;
-	}
+        @Override
+        public void dispose() {
+            StandaloneUIDisplay.this.close(false);
+        }
+    }
 
-	@Override
-	public void display(final NonBlockingUIOperation operation) {
-		display(loadView(operation), false);
-	}
+    @Override
+    public MessageDisplayCallback getMessageDisplayCallback() {
+        return new FlowMessageDisplayCallback();
+    }
+
+    @Override
+    public File displayFileChooser(ExtensionFilter... extensionFilters) {
+        final FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle(ResourceBundle.getBundle("bundles/nexu")
+                .getString("fileChooser.title.openResourceFile"));
+        fileChooser.getExtensionFilters().addAll(toJavaFXExtensionFilters(extensionFilters));
+        return fileChooser.showOpenDialog(blockingStage);
+    }
+
+    private javafx.stage.FileChooser.ExtensionFilter[] toJavaFXExtensionFilters(
+            ExtensionFilter... extensionFilters) {
+        final javafx.stage.FileChooser.ExtensionFilter[] result =
+                new javafx.stage.FileChooser.ExtensionFilter[extensionFilters.length];
+        int index = 0;
+        for (final ExtensionFilter extensionFilter : extensionFilters) {
+            result[index++] = new javafx.stage.FileChooser.ExtensionFilter(
+                    extensionFilter.getDescription(), extensionFilter.getExtensions());
+        }
+        return result;
+    }
+
+    public void setOperationFactory(final OperationFactory operationFactory) {
+        this.operationFactory = operationFactory;
+    }
+
+    @Override
+    public void display(final NonBlockingUIOperation operation) {
+        display(loadView(operation), false, operation);
+    }
 
     @Override
     public void setCachedPassword(char[] value) {
@@ -284,10 +276,10 @@ public class StandaloneUIDisplay implements UIDisplay {
         }
         this.cachedPassword = value;
     }
-    
+
     private char[] getCachedPassword() {
         if (cachedPassword != null) {
-            Date now = new Date();
+            final Date now = new Date();
             if (now.getTime() - cacheLastAccessTime.getTime() > appConfig.getCacheTimeToLiveMs()) {
                 LOGGER.info("Cache is stale, will request password");
                 cachedPassword = null;
@@ -295,12 +287,6 @@ public class StandaloneUIDisplay implements UIDisplay {
                 cacheLastAccessTime = now;
             }
         }
-        
         return cachedPassword;
-    }
-    
-    private boolean hasCachedPassword() {
-        Date now = new Date();
-        return this.cachedPassword != null && now.getTime() - cacheLastAccessTime.getTime() < appConfig.getCacheTimeToLiveMs();
     }
 }
