@@ -85,6 +85,9 @@ class SystemTrayContractTest {
         assertEquals("Select language", english.getString("systray.menu.select.language"));
         assertEquals("Manage keystores", english.getString("systray.menu.manage.keystores"));
         assertEquals("Exit", english.getString("systray.menu.exit"));
+        assertEquals("Log file:", english.getString("systray.logs.dialog.path"));
+        assertEquals("Open with default text editor", english.getString("systray.logs.open.button"));
+        assertEquals("Close", english.getString("systray.logs.close.button"));
 
         assertEquals("Informazioni", italian.getString("systray.menu.about"));
         assertEquals("Preferenze", italian.getString("systray.menu.preferences"));
@@ -92,6 +95,9 @@ class SystemTrayContractTest {
         assertEquals("Seleziona lingua", italian.getString("systray.menu.select.language"));
         assertEquals("Gestisci keystore", italian.getString("systray.menu.manage.keystores"));
         assertEquals("Esci", italian.getString("systray.menu.exit"));
+        assertEquals("Percorso del file di log:", italian.getString("systray.logs.dialog.path"));
+        assertEquals("Apri con l'editor di testo predefinito", italian.getString("systray.logs.open.button"));
+        assertEquals("Chiudi", italian.getString("systray.logs.close.button"));
 
         final Properties englishProperties = loadProperties("/bundles/nexu.properties");
         final Properties italianProperties = loadProperties("/bundles/nexu_it.properties");
@@ -130,6 +136,17 @@ class SystemTrayContractTest {
                 System.setProperty(NexuLogging.LOG_DIRECTORY_ENVIRONMENT, previousLogDirectory);
             }
         }
+    }
+
+    @Test
+    void showLogsPreparesTheDisplayedFileBeforeTheEditorButtonIsUsed() throws Exception {
+        final Path requestedLogFile = temporaryDirectory.resolve("logs").resolve("nexu.log");
+
+        final Path preparedLogFile = SystrayMenu.prepareLogFile(requestedLogFile);
+
+        assertEquals(requestedLogFile.toAbsolutePath().normalize(), preparedLogFile);
+        assertTrue(Files.isRegularFile(preparedLogFile),
+                "The path displayed by Show logs must point to an existing file");
     }
 
     @Test
