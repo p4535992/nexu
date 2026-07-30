@@ -1,16 +1,3 @@
-/**
- * © Nowina Solutions, 2015-2017
- *
- * Concédée sous licence EUPL, version 1.1 ou – dès leur approbation par la Commission européenne - versions ultérieures de l’EUPL (la «Licence»).
- * Vous ne pouvez utiliser la présente œuvre que conformément à la Licence.
- * Vous pouvez obtenir une copie de la Licence à l’adresse suivante:
- *
- * http://ec.europa.eu/idabc/eupl5
- *
- * Sauf obligation légale ou contractuelle écrite, le logiciel distribué sous la Licence est distribué «en l’état»,
- * SANS GARANTIES OU CONDITIONS QUELLES QU’ELLES SOIENT, expresses ou implicites.
- * Consultez la Licence pour les autorisations et les restrictions linguistiques spécifiques relevant de la Licence.
- */
 package lu.nowina.nexu;
 
 import java.awt.Desktop;
@@ -49,120 +36,77 @@ public class SystrayMenu {
 
     private static final String AWT_BACKEND = "lu.nowina.nexu.systray.AWTSystrayMenuInitializer";
     private static final String DORKBOX_BACKEND = "lu.nowina.nexu.systray.DorkboxSystrayMenuInitializer";
-
     private static final Logger LOGGER = LoggerFactory.getLogger(SystrayMenu.class.getName());
 
     public SystrayMenu(OperationFactory operationFactory, NexuAPI api, UserPreferences prefs) {
         final ResourceBundle resources = ResourceBundle.getBundle("bundles/nexu");
-
-        final List<SystrayMenuItem> extensionSystrayMenuItems = api.getExtensionSystrayMenuItems();
-        final SystrayMenuItem[] systrayMenuItems = new SystrayMenuItem[extensionSystrayMenuItems.size() + 4];
-
-        systrayMenuItems[0] = createAboutSystrayMenuItem(operationFactory, api, resources);
-        systrayMenuItems[1] = createPreferencesSystrayMenuItem(operationFactory, api, prefs, resources);
-        systrayMenuItems[2] = createShowLogsSystrayMenuItem(resources);
-        systrayMenuItems[3] = createLanguageSystrayMenuItem(prefs, resources);
-
-        int i = 4;
-        for (final SystrayMenuItem systrayMenuItem : extensionSystrayMenuItems) {
-            systrayMenuItems[i++] = systrayMenuItem;
+        final List<SystrayMenuItem> extensionItems = api.getExtensionSystrayMenuItems();
+        final SystrayMenuItem[] items = new SystrayMenuItem[extensionItems.size() + 4];
+        items[0] = createAboutSystrayMenuItem(operationFactory, api, resources);
+        items[1] = createPreferencesSystrayMenuItem(operationFactory, api, prefs, resources);
+        items[2] = createShowLogsSystrayMenuItem(resources);
+        items[3] = createLanguageSystrayMenuItem(prefs, resources);
+        int index = 4;
+        for (SystrayMenuItem item : extensionItems) {
+            items[index++] = item;
         }
 
-        final SystrayMenuItem exitMenuItem = createExitSystrayMenuItem(resources);
+        final SystrayMenuItem exitItem = createExitSystrayMenuItem(resources);
         final String tooltip = api.getAppConfig().getApplicationName();
-        final URL trayIconURL = this.getClass().getResource("/tray-icon.png");
-        final String configuredBackend = normalizeBackend(
-                System.getProperty(NexuLauncher.SYSTRAY_BACKEND_PROPERTY, "auto"));
-
+        final URL trayIcon = getClass().getResource("/tray-icon.png");
+        final String backend = normalizeBackend(System.getProperty(NexuLauncher.SYSTRAY_BACKEND_PROPERTY, "auto"));
         LOGGER.info("Preparing NexU system tray: os={}, backend={}, tooltip='{}', icon={}, menuItems={}",
-                api.getEnvironmentInfo().getOs(),
-                configuredBackend,
-                tooltip,
-                trayIconURL,
-                systrayMenuItems.length + 1);
+                api.getEnvironmentInfo().getOs(), backend, tooltip, trayIcon, items.length + 1);
 
-        final boolean initialized;
-        switch (api.getEnvironmentInfo().getOs()) {
-        case WINDOWS:
-            initialized = initializeWindowsTray(
-                    configuredBackend, tooltip, trayIconURL, operationFactory, exitMenuItem, systrayMenuItems);
-            break;
-        case MACOSX:
-            initialized = initializeBackend(
-                    "AWT", AWT_BACKEND, tooltip, trayIconURL, operationFactory, exitMenuItem, systrayMenuItems);
-            break;
-        case LINUX:
-            initialized = initializeBackend(
-                    "Dorkbox", DORKBOX_BACKEND, tooltip, trayIconURL, operationFactory, exitMenuItem, systrayMenuItems);
-            break;
-        case NOT_RECOGNIZED:
+        final boolean initialized = switch (api.getEnvironmentInfo().getOs()) {
+        case WINDOWS -> initializeWindowsTray(backend, tooltip, trayIcon, operationFactory, exitItem, items);
+        case MACOSX -> initializeBackend("AWT", AWT_BACKEND, tooltip, trayIcon, operationFactory, exitItem, items);
+        case LINUX -> initializeBackend("Dorkbox", DORKBOX_BACKEND, tooltip, trayIcon, operationFactory, exitItem, items);
+        case NOT_RECOGNIZED -> {
             LOGGER.error("System tray is not supported for the unrecognized operating system");
-            initialized = false;
-            break;
-        default:
-            throw new IllegalArgumentException("Unhandled value: " + api.getEnvironmentInfo().getOs());
+            yield false;
         }
-
+        };
         if (!initialized) {
             LOGGER.error("All configured NexU system-tray initialization attempts failed: os={}, backend={}",
-                    api.getEnvironmentInfo().getOs(), configuredBackend);
+                    api.getEnvironmentInfo().getOs(), backend);
         }
     }
 
-    private boolean initializeWindowsTray(
-            String configuredBackend,
-            String tooltip,
-            URL trayIconURL,
-            OperationFactory operationFactory,
-            SystrayMenuItem exitMenuItem,
-            SystrayMenuItem[] systrayMenuItems) {
-
-        return switch (configuredBackend) {
-        case "awt" -> initializeBackend(
-                "AWT", AWT_BACKEND, tooltip, trayIconURL, operationFactory, exitMenuItem, systrayMenuItems);
-        case "dorkbox" -> initializeBackend(
-                "Dorkbox WindowsNotifyIcon", DORKBOX_BACKEND,
-                tooltip, trayIconURL, operationFactory, exitMenuItem, systrayMenuItems);
+    private boolean initializeWindowsTray(String backend, String tooltip, URL icon,
+            OperationFactory operationFactory, SystrayMenuItem exitItem, SystrayMenuItem[] items) {
+        return switch (backend) {
+        case "awt" -> initializeBackend("AWT", AWT_BACKEND, tooltip, icon, operationFactory, exitItem, items);
+        case "dorkbox" -> initializeBackend("Dorkbox WindowsNotifyIcon", DORKBOX_BACKEND,
+                tooltip, icon, operationFactory, exitItem, items);
         default -> {
-            final boolean dorkboxInitialized = initializeBackend(
-                    "Dorkbox WindowsNotifyIcon", DORKBOX_BACKEND,
-                    tooltip, trayIconURL, operationFactory, exitMenuItem, systrayMenuItems);
-            if (dorkboxInitialized) {
+            final boolean dorkbox = initializeBackend("Dorkbox WindowsNotifyIcon", DORKBOX_BACKEND,
+                    tooltip, icon, operationFactory, exitItem, items);
+            if (dorkbox) {
                 yield true;
             }
             LOGGER.warn("Dorkbox Windows tray initialization failed; trying the AWT fallback");
-            yield initializeBackend(
-                    "AWT fallback", AWT_BACKEND,
-                    tooltip, trayIconURL, operationFactory, exitMenuItem, systrayMenuItems);
+            yield initializeBackend("AWT fallback", AWT_BACKEND, tooltip, icon,
+                    operationFactory, exitItem, items);
         }
         };
     }
 
-    private boolean initializeBackend(
-            String backendName,
-            String implementationClass,
-            String tooltip,
-            URL trayIconURL,
-            OperationFactory operationFactory,
-            SystrayMenuItem exitMenuItem,
-            SystrayMenuItem[] systrayMenuItems) {
-
+    private boolean initializeBackend(String name, String implementation, String tooltip, URL icon,
+            OperationFactory operationFactory, SystrayMenuItem exitItem, SystrayMenuItem[] items) {
         try {
-            LOGGER.info("Starting NexU tray backend {} ({})", backendName, implementationClass);
-            final SystrayMenuInitializer initializer = Class.forName(implementationClass)
-                    .asSubclass(SystrayMenuInitializer.class)
-                    .getDeclaredConstructor()
-                    .newInstance();
-            final boolean initialized = initializer.init(
-                    tooltip, trayIconURL, operationFactory, exitMenuItem, systrayMenuItems);
+            LOGGER.info("Starting NexU tray backend {} ({})", name, implementation);
+            final SystrayMenuInitializer initializer = Class.forName(implementation)
+                    .asSubclass(SystrayMenuInitializer.class).getDeclaredConstructor().newInstance();
+            final boolean initialized = initializer.init(tooltip, icon, operationFactory, exitItem, items);
             if (initialized) {
-                LOGGER.info("NexU tray backend {} initialized successfully", backendName);
+                LOGGER.info("NexU tray backend {} initialized successfully", name);
             } else {
-                LOGGER.warn("NexU tray backend {} reported initialization failure", backendName);
+                LOGGER.warn("NexU tray backend {} reported initialization failure", name);
             }
             return initialized;
-        } catch (ReflectiveOperationException | RuntimeException | LinkageError e) {
-            LOGGER.error("Cannot initialize NexU tray backend " + backendName, e);
+        } catch (ReflectiveOperationException | RuntimeException | LinkageError exception) {
+            LOGGER.error("Cannot initialize NexU tray backend " + name, exception);
             return false;
         }
     }
@@ -178,8 +122,8 @@ public class SystrayMenu {
         };
     }
 
-    private SystrayMenuItem createAboutSystrayMenuItem(final OperationFactory operationFactory, final NexuAPI api,
-            final ResourceBundle resources) {
+    private SystrayMenuItem createAboutSystrayMenuItem(OperationFactory operationFactory, NexuAPI api,
+            ResourceBundle resources) {
         return new SystrayMenuItem() {
             @Override
             public String getLabel() {
@@ -188,20 +132,15 @@ public class SystrayMenu {
 
             @Override
             public FutureOperationInvocation<Void> getFutureOperationInvocation() {
-                return new FutureOperationInvocation<Void>() {
-                    @Override
-                    public OperationResult<Void> call(OperationFactory operationFactory) {
-                        return operationFactory.getOperation(NonBlockingUIOperation.class, "/fxml/about.fxml",
-                                api.getAppConfig().getApplicationName(), api.getAppConfig().getApplicationVersion(),
-                                resources).perform();
-                    }
-                };
+                return factory -> factory.getOperation(NonBlockingUIOperation.class, "/fxml/about.fxml",
+                        api.getAppConfig().getApplicationName(), api.getAppConfig().getApplicationVersion(),
+                        resources).perform();
             }
         };
     }
 
-    private SystrayMenuItem createPreferencesSystrayMenuItem(final OperationFactory operationFactory,
-            final NexuAPI api, final UserPreferences prefs, final ResourceBundle resources) {
+    private SystrayMenuItem createPreferencesSystrayMenuItem(OperationFactory operationFactory, NexuAPI api,
+            UserPreferences prefs, ResourceBundle resources) {
         return new SystrayMenuItem() {
             @Override
             public String getLabel() {
@@ -210,20 +149,16 @@ public class SystrayMenu {
 
             @Override
             public FutureOperationInvocation<Void> getFutureOperationInvocation() {
-                return new FutureOperationInvocation<Void>() {
-                    @Override
-                    public OperationResult<Void> call(OperationFactory operationFactory) {
-                        final ProxyConfigurer proxyConfigurer = new ProxyConfigurer(api.getAppConfig(), prefs);
-
-                        return operationFactory.getOperation(NonBlockingUIOperation.class, "/fxml/preferences.fxml",
-                                proxyConfigurer, prefs, !api.getAppConfig().isUserPreferencesEditable()).perform();
-                    }
+                return factory -> {
+                    final ProxyConfigurer proxyConfigurer = new ProxyConfigurer(api.getAppConfig(), prefs);
+                    return factory.getOperation(NonBlockingUIOperation.class, "/fxml/preferences.fxml",
+                            proxyConfigurer, prefs, !api.getAppConfig().isUserPreferencesEditable()).perform();
                 };
             }
         };
     }
 
-    private SystrayMenuItem createShowLogsSystrayMenuItem(final ResourceBundle resources) {
+    private SystrayMenuItem createShowLogsSystrayMenuItem(ResourceBundle resources) {
         return new SystrayMenuItem() {
             @Override
             public String getLabel() {
@@ -232,17 +167,15 @@ public class SystrayMenu {
 
             @Override
             public FutureOperationInvocation<Void> getFutureOperationInvocation() {
-                return operationFactory -> {
+                return factory -> {
                     Platform.runLater(() -> showLogFileDialog(resources));
-                    return new OperationResult<Void>((Void) null);
+                    return new OperationResult<>((Void) null);
                 };
             }
         };
     }
 
-    private SystrayMenuItem createLanguageSystrayMenuItem(
-            final UserPreferences prefs,
-            final ResourceBundle resources) {
+    private SystrayMenuItem createLanguageSystrayMenuItem(UserPreferences prefs, ResourceBundle resources) {
         return new SystrayMenuItem() {
             @Override
             public String getLabel() {
@@ -251,9 +184,9 @@ public class SystrayMenu {
 
             @Override
             public FutureOperationInvocation<Void> getFutureOperationInvocation() {
-                return operationFactory -> {
+                return factory -> {
                     Platform.runLater(() -> showLanguageSelectionDialog(prefs, resources));
-                    return new OperationResult<Void>((Void) null);
+                    return new OperationResult<>((Void) null);
                 };
             }
         };
@@ -263,8 +196,8 @@ public class SystrayMenu {
         final Path logFile;
         try {
             logFile = prepareLogFile(NexuLogging.currentLogFile());
-        } catch (IOException | RuntimeException e) {
-            LOGGER.error("Cannot prepare the NexU diagnostic log file", e);
+        } catch (IOException | RuntimeException exception) {
+            LOGGER.error("Cannot prepare the NexU diagnostic log file", exception);
             showLogOpenError(resources, NexuLogging.currentLogFile());
             return;
         }
@@ -272,25 +205,17 @@ public class SystrayMenu {
         final TextField pathField = new TextField(logFile.toString());
         pathField.setEditable(false);
         pathField.setPrefColumnCount(70);
-
-        final VBox content = new VBox(
-                8,
-                new Label(resources.getString("systray.logs.dialog.path")),
-                pathField);
-
-        final ButtonType openButton = new ButtonType(
-                resources.getString("systray.logs.open.button"),
-                ButtonData.OTHER);
-        final ButtonType closeButton = new ButtonType(
-                resources.getString("systray.logs.close.button"),
+        final VBox content = new VBox(8,
+                new Label(resources.getString("systray.logs.dialog.path")), pathField);
+        final ButtonType openButton = new ButtonType(resources.getString("systray.logs.open.button"), ButtonData.OTHER);
+        final ButtonType closeButton = new ButtonType(resources.getString("systray.logs.close.button"),
                 ButtonData.CANCEL_CLOSE);
-
         final Alert alert = new Alert(AlertType.INFORMATION);
         alert.setTitle(resources.getString("systray.logs.dialog.title"));
         alert.setHeaderText(resources.getString("systray.logs.dialog.header"));
         alert.getDialogPane().setContent(content);
         alert.getButtonTypes().setAll(openButton, closeButton);
-        alert.showAndWait()
+        JavaFxWindowManager.showExclusiveAndWait(alert)
                 .filter(openButton::equals)
                 .ifPresent(ignored -> openLogFile(logFile, resources));
     }
@@ -299,16 +224,15 @@ public class SystrayMenu {
         if (logFile == null) {
             throw new IOException("NexU logging has not been configured");
         }
-
-        final Path normalizedLogFile = logFile.toAbsolutePath().normalize();
-        final Path parent = normalizedLogFile.getParent();
+        final Path normalized = logFile.toAbsolutePath().normalize();
+        final Path parent = normalized.getParent();
         if (parent != null) {
             Files.createDirectories(parent);
         }
-        if (Files.notExists(normalizedLogFile)) {
-            Files.createFile(normalizedLogFile);
+        if (Files.notExists(normalized)) {
+            Files.createFile(normalized);
         }
-        return normalizedLogFile;
+        return normalized;
     }
 
     private void openLogFile(Path logFile, ResourceBundle resources) {
@@ -322,8 +246,8 @@ public class SystrayMenu {
             }
             desktop.open(logFile.toFile());
             LOGGER.info("Opened NexU diagnostic log file {} with the operating-system default application", logFile);
-        } catch (IOException | RuntimeException e) {
-            LOGGER.error("Cannot open the NexU diagnostic log file {}", logFile, e);
+        } catch (IOException | RuntimeException exception) {
+            LOGGER.error("Cannot open the NexU diagnostic log file {}", logFile, exception);
             showLogOpenError(resources, logFile);
         }
     }
@@ -332,10 +256,9 @@ public class SystrayMenu {
         final Alert alert = new Alert(AlertType.ERROR);
         alert.setTitle(resources.getString("systray.logs.error.title"));
         alert.setHeaderText(resources.getString("systray.logs.error.header"));
-        alert.setContentText(MessageFormat.format(
-                resources.getString("systray.logs.error.content"),
+        alert.setContentText(MessageFormat.format(resources.getString("systray.logs.error.content"),
                 logFile != null ? logFile.toAbsolutePath().normalize() : "-"));
-        alert.showAndWait();
+        JavaFxWindowManager.showExclusiveAndWait(alert);
     }
 
     private void showLanguageSelectionDialog(UserPreferences prefs, ResourceBundle resources) {
@@ -343,25 +266,24 @@ public class SystrayMenu {
         for (ApplicationLanguage language : ApplicationLanguage.values()) {
             languages.put(resources.getString(language.getLabelKey()), language);
         }
-
-        final String currentLanguageLabel = resources.getString(prefs.getLanguage().getLabelKey());
-        final ChoiceDialog<String> dialog = new ChoiceDialog<>(currentLanguageLabel, languages.keySet());
+        final String current = resources.getString(prefs.getLanguage().getLabelKey());
+        final ChoiceDialog<String> dialog = new ChoiceDialog<>(current, languages.keySet());
         dialog.setTitle(resources.getString("language.selection.title"));
         dialog.setHeaderText(resources.getString("language.selection.header"));
         dialog.setContentText(resources.getString("language.selection.prompt"));
-        dialog.showAndWait().map(languages::get).ifPresent(selectedLanguage -> {
-            if (selectedLanguage != prefs.getLanguage()) {
-                prefs.setLanguage(selectedLanguage);
-                final Alert restartAlert = new Alert(AlertType.INFORMATION);
-                restartAlert.setTitle(resources.getString("language.selection.restart.title"));
-                restartAlert.setHeaderText(resources.getString("language.selection.restart.header"));
-                restartAlert.setContentText(resources.getString("language.selection.restart.content"));
-                restartAlert.showAndWait();
+        JavaFxWindowManager.showExclusiveAndWait(dialog).map(languages::get).ifPresent(selected -> {
+            if (selected != prefs.getLanguage()) {
+                prefs.setLanguage(selected);
+                final Alert restart = new Alert(AlertType.INFORMATION);
+                restart.setTitle(resources.getString("language.selection.restart.title"));
+                restart.setHeaderText(resources.getString("language.selection.restart.header"));
+                restart.setContentText(resources.getString("language.selection.restart.content"));
+                JavaFxWindowManager.showExclusiveAndWait(restart);
             }
         });
     }
 
-    private SystrayMenuItem createExitSystrayMenuItem(final ResourceBundle resources) {
+    private SystrayMenuItem createExitSystrayMenuItem(ResourceBundle resources) {
         return new SystrayMenuItem() {
             @Override
             public String getLabel() {
@@ -370,13 +292,10 @@ public class SystrayMenu {
 
             @Override
             public FutureOperationInvocation<Void> getFutureOperationInvocation() {
-                return new FutureOperationInvocation<Void>() {
-                    @Override
-                    public OperationResult<Void> call(OperationFactory operationFactory) {
-                        LOGGER.info("Exiting...");
-                        Platform.exit();
-                        return new OperationResult<Void>((Void) null);
-                    }
+                return factory -> {
+                    LOGGER.info("Exiting...");
+                    Platform.exit();
+                    return new OperationResult<>((Void) null);
                 };
             }
         };
