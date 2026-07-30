@@ -21,6 +21,7 @@ import java.nio.file.Path;
 import java.text.MessageFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.ResourceBundle;
 
@@ -41,6 +42,9 @@ import lu.nowina.nexu.view.core.NonBlockingUIOperation;
 
 public class SystrayMenu {
 
+    private static final String AWT_BACKEND = "lu.nowina.nexu.systray.AWTSystrayMenuInitializer";
+    private static final String DORKBOX_BACKEND = "lu.nowina.nexu.systray.DorkboxSystrayMenuInitializer";
+
     private static final Logger LOGGER = LoggerFactory.getLogger(SystrayMenu.class.getName());
 
     public SystrayMenu(OperationFactory operationFactory, NexuAPI api, UserPreferences prefs) {
@@ -60,37 +64,113 @@ public class SystrayMenu {
         }
 
         final SystrayMenuItem exitMenuItem = createExitSystrayMenuItem(resources);
-
         final String tooltip = api.getAppConfig().getApplicationName();
         final URL trayIconURL = this.getClass().getResource("/tray-icon.png");
-        try {
-            switch (api.getEnvironmentInfo().getOs()) {
-            case WINDOWS:
-            case MACOSX:
-                // Use reflection to avoid wrong initialization issues
-                Class.forName("lu.nowina.nexu.systray.AWTSystrayMenuInitializer")
-                    .asSubclass(SystrayMenuInitializer.class).newInstance()
-                    .init(tooltip, trayIconURL, operationFactory, exitMenuItem, systrayMenuItems);
-                break;
-            case LINUX:
-                // Use reflection to avoid wrong initialization issues
-                Class.forName("lu.nowina.nexu.systray.DorkboxSystrayMenuInitializer")
-                    .asSubclass(SystrayMenuInitializer.class).newInstance()
-                    .init(tooltip, trayIconURL, operationFactory, exitMenuItem, systrayMenuItems);
-                break;
-            case NOT_RECOGNIZED:
-                LOGGER.warn("System tray is currently not supported for NOT_RECOGNIZED OS.");
-                break;
-            default:
-                throw new IllegalArgumentException("Unhandled value: " + api.getEnvironmentInfo().getOs());
-            }
-        } catch (InstantiationException e) {
-            LOGGER.error("Cannot initialize systray menu", e);
-        } catch (IllegalAccessException e) {
-            LOGGER.error("Cannot initialize systray menu", e);
-        } catch (ClassNotFoundException e) {
-            LOGGER.error("Cannot initialize systray menu", e);
+        final String configuredBackend = normalizeBackend(
+                System.getProperty(NexuLauncher.SYSTRAY_BACKEND_PROPERTY, "auto"));
+
+        LOGGER.info("Preparing NexU system tray: os={}, backend={}, tooltip='{}', icon={}, menuItems={}",
+                api.getEnvironmentInfo().getOs(),
+                configuredBackend,
+                tooltip,
+                trayIconURL,
+                systrayMenuItems.length + 1);
+
+        final boolean initialized;
+        switch (api.getEnvironmentInfo().getOs()) {
+        case WINDOWS:
+            initialized = initializeWindowsTray(
+                    configuredBackend, tooltip, trayIconURL, operationFactory, exitMenuItem, systrayMenuItems);
+            break;
+        case MACOSX:
+            initialized = initializeBackend(
+                    "AWT", AWT_BACKEND, tooltip, trayIconURL, operationFactory, exitMenuItem, systrayMenuItems);
+            break;
+        case LINUX:
+            initialized = initializeBackend(
+                    "Dorkbox", DORKBOX_BACKEND, tooltip, trayIconURL, operationFactory, exitMenuItem, systrayMenuItems);
+            break;
+        case NOT_RECOGNIZED:
+            LOGGER.error("System tray is not supported for the unrecognized operating system");
+            initialized = false;
+            break;
+        default:
+            throw new IllegalArgumentException("Unhandled value: " + api.getEnvironmentInfo().getOs());
         }
+
+        if (!initialized) {
+            LOGGER.error("All configured NexU system-tray initialization attempts failed: os={}, backend={}",
+                    api.getEnvironmentInfo().getOs(), configuredBackend);
+        }
+    }
+
+    private boolean initializeWindowsTray(
+            String configuredBackend,
+            String tooltip,
+            URL trayIconURL,
+            OperationFactory operationFactory,
+            SystrayMenuItem exitMenuItem,
+            SystrayMenuItem[] systrayMenuItems) {
+
+        return switch (configuredBackend) {
+        case "awt" -> initializeBackend(
+                "AWT", AWT_BACKEND, tooltip, trayIconURL, operationFactory, exitMenuItem, systrayMenuItems);
+        case "dorkbox" -> initializeBackend(
+                "Dorkbox WindowsNotifyIcon", DORKBOX_BACKEND,
+                tooltip, trayIconURL, operationFactory, exitMenuItem, systrayMenuItems);
+        default -> {
+            final boolean dorkboxInitialized = initializeBackend(
+                    "Dorkbox WindowsNotifyIcon", DORKBOX_BACKEND,
+                    tooltip, trayIconURL, operationFactory, exitMenuItem, systrayMenuItems);
+            if (dorkboxInitialized) {
+                yield true;
+            }
+            LOGGER.warn("Dorkbox Windows tray initialization failed; trying the AWT fallback");
+            yield initializeBackend(
+                    "AWT fallback", AWT_BACKEND,
+                    tooltip, trayIconURL, operationFactory, exitMenuItem, systrayMenuItems);
+        }
+        };
+    }
+
+    private boolean initializeBackend(
+            String backendName,
+            String implementationClass,
+            String tooltip,
+            URL trayIconURL,
+            OperationFactory operationFactory,
+            SystrayMenuItem exitMenuItem,
+            SystrayMenuItem[] systrayMenuItems) {
+
+        try {
+            LOGGER.info("Starting NexU tray backend {} ({})", backendName, implementationClass);
+            final SystrayMenuInitializer initializer = Class.forName(implementationClass)
+                    .asSubclass(SystrayMenuInitializer.class)
+                    .getDeclaredConstructor()
+                    .newInstance();
+            final boolean initialized = initializer.init(
+                    tooltip, trayIconURL, operationFactory, exitMenuItem, systrayMenuItems);
+            if (initialized) {
+                LOGGER.info("NexU tray backend {} initialized successfully", backendName);
+            } else {
+                LOGGER.warn("NexU tray backend {} reported initialization failure", backendName);
+            }
+            return initialized;
+        } catch (ReflectiveOperationException | RuntimeException | LinkageError e) {
+            LOGGER.error("Cannot initialize NexU tray backend " + backendName, e);
+            return false;
+        }
+    }
+
+    static String normalizeBackend(String backend) {
+        if (backend == null) {
+            return "auto";
+        }
+        final String normalized = backend.trim().toLowerCase(Locale.ROOT);
+        return switch (normalized) {
+        case "awt", "dorkbox", "auto" -> normalized;
+        default -> "auto";
+        };
     }
 
     private SystrayMenuItem createAboutSystrayMenuItem(final OperationFactory operationFactory, final NexuAPI api,
