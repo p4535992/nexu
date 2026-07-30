@@ -1,6 +1,7 @@
 package lu.nowina.nexu;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -15,6 +16,7 @@ public final class NexuHttpsConfiguration {
     public static final String CERTIFICATE_FILE_NAME = "localhost.cer";
     public static final String PRIVATE_KEY_FILE_NAME = "localhost.key";
     public static final String OPTIONAL_PKCS12_FILE_NAME = "localhost.p12";
+    public static final String GUIDE_FILE_NAME = "HTTPS.txt";
 
     private NexuHttpsConfiguration() {
         // Utility class.
@@ -30,12 +32,25 @@ public final class NexuHttpsConfiguration {
         final Path dataRoot = logDirectory.getParent() != null ? logDirectory.getParent() : logDirectory;
         final Path configDirectory = dataRoot.resolve("config").toAbsolutePath().normalize();
         Files.createDirectories(configDirectory);
+        installGuide(configDirectory.resolve(GUIDE_FILE_NAME));
 
         return new TlsMaterial(
                 configDirectory,
                 configDirectory.resolve(CERTIFICATE_FILE_NAME),
                 configDirectory.resolve(PRIVATE_KEY_FILE_NAME),
                 configDirectory.resolve(OPTIONAL_PKCS12_FILE_NAME));
+    }
+
+    private static void installGuide(final Path guideFile) throws IOException {
+        if (Files.exists(guideFile)) {
+            return;
+        }
+        try (InputStream guide = NexuHttpsConfiguration.class.getResourceAsStream("/https/HTTPS.txt")) {
+            if (guide == null) {
+                throw new IOException("Packaged HTTPS guide is missing: /https/HTTPS.txt");
+            }
+            Files.copy(guide, guideFile);
+        }
     }
 
     public record TlsMaterial(
