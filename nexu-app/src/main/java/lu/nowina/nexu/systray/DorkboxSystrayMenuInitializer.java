@@ -25,39 +25,80 @@ import lu.nowina.nexu.api.SystrayMenuItem;
 import lu.nowina.nexu.api.flow.OperationFactory;
 
 /**
- * Implementation of {@link SystrayMenuInitializer} using
- * <a href="https://github.com/dorkbox/SystemTray">SystemTray from Dorkbox</a>.
- * 
- * @author Jean Lepropre (jean.lepropre@nowina.lu)
+ * System tray implementation backed by Dorkbox. On Windows its auto-detection
+ * selects the native WindowsNotifyIcon peer and provides better DPI handling
+ * than the original JDK AWT tray implementation.
  */
 public class DorkboxSystrayMenuInitializer implements SystrayMenuInitializer {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(DorkboxSystrayMenuInitializer.class.getName());
+    private static final Logger LOGGER = LoggerFactory.getLogger(DorkboxSystrayMenuInitializer.class.getName());
 
-	public DorkboxSystrayMenuInitializer() {
-		super();
-	}
+    @Override
+    public boolean init(
+            final String tooltip,
+            final URL trayIconURL,
+            final OperationFactory operationFactory,
+            final SystrayMenuItem exitMenuItem,
+            final SystrayMenuItem... systrayMenuItems) {
 
-	@Override
-	public void init(final String tooltip, final URL trayIconURL, final OperationFactory operationFactory,
-			final SystrayMenuItem exitMenuItem, final SystrayMenuItem... systrayMenuItems) {
-		// MOD p4535992 final SystemTray systemTray = SystemTray.getNative();
-                final SystemTray systemTray = SystemTray.get();
-		if (systemTray == null) {
-			LOGGER.warn("System tray is currently not supported.");
-			return;
-		}
+        if (trayIconURL == null) {
+            LOGGER.error("Cannot initialize the Dorkbox system tray: /tray-icon.png is missing");
+            return false;
+        }
 
-		systemTray.setImage(trayIconURL);
+        SystemTray.DEBUG = Boolean.parseBoolean(System.getProperty("nexu.systray.debug", "false"));
+        SystemTray.APP_NAME = tooltip;
 
-		final Menu menu = systemTray.getMenu();
-		for(final SystrayMenuItem systrayMenuItem : systrayMenuItems) {
-			menu.add(new MenuItem(systrayMenuItem.getLabel(),
-					(e) -> systrayMenuItem.getFutureOperationInvocation().call(operationFactory)));
-		}
-		
-		menu.add(new MenuItem(exitMenuItem.getLabel(),
-				(e) -> exitMenuItem.getFutureOperationInvocation().call(operationFactory)));
-	}
+        SystemTray systemTray = null;
+        try {
+            LOGGER.info("Attempting Dorkbox system-tray initialization: debug={}, appName={}, icon={}",
+                    SystemTray.DEBUG, SystemTray.APP_NAME, trayIconURL);
 
+            systemTray = SystemTray.get();
+            if (systemTray == null) {
+                LOGGER.error("Dorkbox returned no compatible system-tray backend");
+                return false;
+            }
+
+            systemTray.setImage(trayIconURL);
+            final Menu menu = systemTray.getMenu();
+            for (final SystrayMenuItem systrayMenuItem : systrayMenuItems) {
+                menu.add(new MenuItem(systrayMenuItem.getLabel(), event -> invokeMenuAction(
+                        systrayMenuItem, operationFactory)));
+            }
+
+            final SystemTray initializedTray = systemTray;
+            menu.add(new MenuItem(exitMenuItem.getLabel(), event -> {
+                try {
+                    initializedTray.shutdown();
+                } finally {
+                    invokeMenuAction(exitMenuItem, operationFactory);
+                }
+            }));
+
+            LOGGER.info("NexU Dorkbox system tray initialized: implementation={}, menuItems={}, image={}",
+                    systemTray.getClass().getName(),
+                    systrayMenuItems.length + 1,
+                    trayIconURL);
+            return true;
+        } catch (RuntimeException | LinkageError e) {
+            LOGGER.error("Cannot initialize the NexU Dorkbox system tray", e);
+            if (systemTray != null) {
+                try {
+                    systemTray.shutdown();
+                } catch (RuntimeException shutdownError) {
+                    LOGGER.warn("Unable to shut down the failed Dorkbox tray backend", shutdownError);
+                }
+            }
+            return false;
+        }
+    }
+
+    private void invokeMenuAction(SystrayMenuItem item, OperationFactory operationFactory) {
+        try {
+            item.getFutureOperationInvocation().call(operationFactory);
+        } catch (RuntimeException e) {
+            LOGGER.error("System-tray action '{}' failed", item.getLabel(), e);
+        }
+    }
 }
