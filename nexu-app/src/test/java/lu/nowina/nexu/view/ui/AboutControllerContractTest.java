@@ -15,7 +15,8 @@ class AboutControllerContractTest {
     @Test
     void aboutPanelExposesProjectAndEuplLinksInBothLanguages() throws Exception {
         assertEquals("https://github.com/p4535992/nexu", AboutController.PROJECT_URL);
-        assertEquals("https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12",
+        assertEquals(
+                "https://interoperable-europe.ec.europa.eu/sites/default/files/custom-page/attachment/2020-03/EUPL-1.2%20EN.txt",
                 AboutController.LICENSE_URL);
 
         final String fxml = Files.readString(Path.of("src", "main", "resources", "fxml", "about.fxml"));
