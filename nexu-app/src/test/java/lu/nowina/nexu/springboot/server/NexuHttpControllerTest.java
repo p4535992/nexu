@@ -1,6 +1,8 @@
 package lu.nowina.nexu.springboot.server;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -40,6 +42,31 @@ class NexuHttpControllerTest {
 
         assertEquals(200, response.getStatusCode().value());
         assertEquals("{ \"version\": \"1.24-SNAPSHOT\"}", response.getBody());
+    }
+
+    @Test
+    void browserScriptsNormalizeNumericLoopbackToLocalhost() throws Exception {
+        final HttpServletRequest servletRequest = mock(HttpServletRequest.class);
+        when(servletRequest.getScheme()).thenReturn("https");
+        when(servletRequest.getLocalPort()).thenReturn(9895);
+        when(appConfig.getNexuHostname()).thenReturn("127.0.0.1");
+        when(appConfig.getCloseToken()).thenReturn(true);
+
+        final String legacy = controller.nexuJavascript(servletRequest).getBody();
+        final String modern = controller.nexuV2Javascript(servletRequest).getBody();
+
+        assertTrue(legacy.contains("https://localhost:9895/rest/"));
+        assertTrue(modern.contains("const baseUrl = \"https://localhost:9895\""));
+        assertFalse(legacy.contains("https://127.0.0.1:9895"));
+        assertFalse(modern.contains("https://127.0.0.1:9895"));
+    }
+
+    @Test
+    void browserHostnamePreservesCustomNamesAndNormalizesLoopbackAliases() {
+        assertEquals("localhost", NexuHttpController.browserHostname(null));
+        assertEquals("localhost", NexuHttpController.browserHostname("127.0.0.1"));
+        assertEquals("localhost", NexuHttpController.browserHostname("[::1]"));
+        assertEquals("signing-agent.example", NexuHttpController.browserHostname(" signing-agent.example "));
     }
 
     @Test
