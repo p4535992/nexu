@@ -1,15 +1,7 @@
 /**
  * © Nowina Solutions, 2015-2015
  *
- * Concédée sous licence EUPL, version 1.1 ou – dès leur approbation par la Commission européenne - versions ultérieures de l’EUPL (la «Licence»).
- * Vous ne pouvez utiliser la présente œuvre que conformément à la Licence.
- * Vous pouvez obtenir une copie de la Licence à l’adresse suivante:
- *
- * http://ec.europa.eu/idabc/eupl5
- *
- * Sauf obligation légale ou contractuelle écrite, le logiciel distribué sous la Licence est distribué «en l’état»,
- * SANS GARANTIES OU CONDITIONS QUELLES QU’ELLES SOIENT, expresses ou implicites.
- * Consultez la Licence pour les autorisations et les restrictions linguistiques spécifiques relevant de la Licence.
+ * Licensed under the EUPL.
  */
 package lu.nowina.nexu.view.ui;
 
@@ -30,32 +22,39 @@ import lu.nowina.nexu.view.ui.support.AbstractUIOperationController;
 
 public class PasswordInputController extends AbstractUIOperationController<char[]> implements Initializable {
 
-	@FXML
-	private Button ok;
+    @FXML
+    private Button ok;
 
-	@FXML
-	private Button cancel;
+    @FXML
+    private Button cancel;
 
-	@FXML
-	private Label passwordPrompt;
-	
-	@FXML
-	private PasswordField password;
+    @FXML
+    private Label passwordPrompt;
 
-	@Override
-	public void initialize(URL location, ResourceBundle resources) {
-		EventHandler<ActionEvent> handler = event -> signalEnd(password.getText().toCharArray());
-		ok.setOnAction(handler);
-		password.setOnAction(handler);
-		cancel.setOnAction(e -> signalUserCancel());
-	}
+    @FXML
+    private PasswordField password;
 
-	@Override
-	public void init(Object... params) {
-		StageHelper.getInstance().setTitle((String) params[1], "password.title");
-		final String passwordPrompt = (String) params[0];
-		if(StringUtils.isNotEmpty(passwordPrompt)) {
-			this.passwordPrompt.setText(passwordPrompt);
-		}
-	}
+    @Override
+    public void initialize(final URL location, final ResourceBundle resources) {
+        final EventHandler<ActionEvent> handler = event -> signalEnd(password.getText().toCharArray());
+        ok.setOnAction(handler);
+        password.setOnAction(handler);
+        cancel.setOnAction(event -> signalUserCancel());
+    }
+
+    @Override
+    public void init(final Object... params) {
+        final String applicationName = (String) params[1];
+        final String contextualTitle = params.length > 2 ? (String) params[2] : null;
+        if (StringUtils.isNotEmpty(contextualTitle)) {
+            StageHelper.getInstance().setLiteralTitle(applicationName, contextualTitle);
+        } else {
+            StageHelper.getInstance().setTitle(applicationName, "password.title");
+        }
+
+        final String contextualPrompt = (String) params[0];
+        if (StringUtils.isNotEmpty(contextualPrompt)) {
+            passwordPrompt.setText(contextualPrompt);
+        }
+    }
 }
