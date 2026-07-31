@@ -25,9 +25,9 @@ concurrency:
 env:
   BASE_VERSION: 1.25.0
   SOURCE_BRANCH: spring-boot-modernization-2
-  # Runs 1-22 belonged to the 1.24/2.0 lines. The three version-alignment
-  # pushes are runs 23-25, so run 26 publishes the first 1.25 candidate.
-  RC_RUN_OFFSET: 25
+  # Run 26 failed before publication; run 27 is the POM repair push.
+  # Run 28 therefore retries the first public 1.25 release candidate.
+  RC_RUN_OFFSET: 27
 
 jobs:
   linux:
