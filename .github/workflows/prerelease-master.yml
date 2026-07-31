@@ -1,10 +1,10 @@
-# Cross-platform release-candidate build for the local NexU operator application.
+# Cross-platform release-candidate build from the required modernization branch.
 name: Publish NexU pre-release
 
 on:
   push:
     branches:
-      - master
+      - spring-boot-modernization-2
     paths:
       - '.github/workflows/prerelease-master.yml'
       - 'pom.xml'
@@ -19,13 +19,14 @@ permissions:
   contents: write
 
 concurrency:
-  group: nexu-prerelease-master
+  group: nexu-prerelease-spring-boot-modernization-2
   cancel-in-progress: true
 
 env:
   BASE_VERSION: 2.0.0
+  SOURCE_BRANCH: spring-boot-modernization-2
   # Workflow runs 1-18 belonged to the 1.24 line and run 19 produced the
-  # incorrectly numbered v2.0.0-rc.19. Run 20 must therefore become rc.1.
+  # incorrectly numbered v2.0.0-rc.19. Run 20 therefore became rc.1.
   RC_RUN_OFFSET: 19
 
 jobs:
@@ -35,14 +36,14 @@ jobs:
     timeout-minutes: 75
 
     steps:
-      - name: Check out master
+      - name: Check out modernization branch
         uses: actions/checkout@v4
 
-      - name: Set up Java 17
+      - name: Set up Java 21
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: '21'
           cache: maven
 
       - name: Install packaging and smoke-test dependencies
@@ -56,6 +57,18 @@ jobs:
         run: |
           set -o pipefail
           mvn --batch-mode --errors clean verify 2>&1 | tee linux-verify.log
+
+      - name: Verify Spring Boot 4 runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          JAR=nexu-app/target/nexu-app.jar
+          test -f "$JAR"
+          jar tf "$JAR" | grep -q 'BOOT-INF/lib/nexu-core-2.0.0-SNAPSHOT.jar'
+          jar tf "$JAR" | grep -q 'BOOT-INF/lib/spring-boot-4.1.0.jar'
+          jar tf "$JAR" | grep -Eq 'BOOT-INF/lib/spring-core-7\.0\.[0-9]+\.jar'
+          jar tf "$JAR" | grep -Eq 'BOOT-INF/lib/tomcat-embed-core-11\.0\.[0-9]+\.jar'
+          test "$(unzip -p "$JAR" BOOT-INF/classes/version.txt)" = '2.0.0-SNAPSHOT'
 
       - name: Build portable, DEB and RPM packages
         shell: bash
@@ -77,9 +90,14 @@ jobs:
           jpackage \
             --type rpm \
             --app-image "$OUT/NexU" \
+            --app-version "$BASE_VERSION" \
             --dest "$OUT"
 
           test -f "$OUT/NexU/LOGS.txt"
+
+          RPM_PACKAGE="$(find "$OUT" -maxdepth 1 -type f -name '*.rpm' -print -quit)"
+          test -n "$RPM_PACKAGE"
+          test "$(rpm -qp --queryformat '%{VERSION}' "$RPM_PACKAGE")" = "$BASE_VERSION"
 
           mkdir -p release-assets
           cp nexu-app/target/nexu-app.jar \
@@ -130,6 +148,9 @@ jobs:
             exit 1
           fi
 
+          curl --fail --silent http://127.0.0.1:19795/nexu-info \
+            | grep -q '"version":"2.0.0-SNAPSHOT"'
+
           for attempt in $(seq 1 20); do
             if [ -s "$DIAGNOSTIC_DIR/nexu.log" ]; then break; fi
             sleep 0.5
@@ -153,14 +174,14 @@ jobs:
     timeout-minutes: 75
 
     steps:
-      - name: Check out master
+      - name: Check out modernization branch
         uses: actions/checkout@v4
 
-      - name: Set up Java 17
+      - name: Set up Java 21
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: '21'
           cache: maven
 
       - name: Build Windows application
@@ -217,6 +238,7 @@ jobs:
           jpackage `
             --type msi `
             --app-image "$out/NexU" `
+            --app-version $env:BASE_VERSION `
             --dest $out
 
           New-Item -ItemType Directory -Path release-assets -Force | Out-Null
@@ -247,10 +269,10 @@ jobs:
     timeout-minutes: 20
 
     steps:
-      - name: Check out master
+      - name: Check out modernization branch
         uses: actions/checkout@v4
         with:
-          ref: master
+          ref: spring-boot-modernization-2
           fetch-depth: 0
 
       - name: Download release assets
@@ -282,7 +304,13 @@ jobs:
           cat > release-notes.md <<EOF
           ## NexU ${BASE_VERSION} release candidate ${RC_NUMBER}
 
-          Pre-release generated from the `master` branch.
+          Pre-release generated from the \`${SOURCE_BRANCH}\` branch.
+
+          ### Validation
+          - Maven reactor and automated tests
+          - Spring Boot 4.1.0, Spring Framework 7 and Tomcat 11 runtime checks
+          - Linux packaged application smoke test on \`/v1/status\` and \`/nexu-info\`
+          - RPM internal version verification
 
           ### Operator packages
           - Windows portable ZIP
@@ -295,7 +323,7 @@ jobs:
           - SHA-256 checksums
 
           ### Runtime
-          - Java 17 runtime included in native packages
+          - Java 21 runtime included in native packages
           - Spring Boot 4.1.0
           - Spring Framework 7.0.x
           - Tomcat 11.0.x
@@ -332,10 +360,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Check out current master
+      - name: Check out modernization branch
         uses: actions/checkout@v4
         with:
-          ref: master
+          ref: spring-boot-modernization-2
           fetch-depth: 0
 
       - name: Write release result
@@ -354,7 +382,7 @@ jobs:
           # Latest NexU pre-release
 
           - Tag: \`${TAG}\`
-          - Source branch: \`master\`
+          - Source branch: \`${SOURCE_BRANCH}\`
           - Source commit: \`${GITHUB_SHA}\`
           - Workflow run: \`${GITHUB_RUN_ID}\`
           - Linux job: \`${{ needs.linux.result }}\`
@@ -372,5 +400,5 @@ jobs:
           git add .github/release-status/latest.md
           git diff --cached --quiet && exit 0
           git commit -m "Record pre-release workflow ${GITHUB_RUN_ID} result"
-          git pull --rebase origin master
-          git push origin HEAD:master
+          git pull --rebase origin "$SOURCE_BRANCH"
+          git push origin "HEAD:$SOURCE_BRANCH"
