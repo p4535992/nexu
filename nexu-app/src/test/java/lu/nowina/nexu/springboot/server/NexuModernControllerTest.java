@@ -43,13 +43,13 @@ class NexuModernControllerTest {
 
     @Test
     void exposesModernCapabilities() {
-        when(appConfig.getApplicationVersion()).thenReturn("1.24-SNAPSHOT\n");
+        when(appConfig.getApplicationVersion()).thenReturn("1.25.0-SNAPSHOT\n");
 
         final ApiResponse<StatusResponse> result = controller.status();
 
         assertTrue(result.success());
-        assertEquals("1.24-SNAPSHOT", result.response().version());
-        assertEquals("nexu:2.0", result.response().protocol());
+        assertEquals("1.25.0-SNAPSHOT", result.response().version());
+        assertEquals("nexu:1.25", result.response().protocol());
         assertTrue(result.response().capabilities().contains("signDigest"));
     }
 
