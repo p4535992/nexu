@@ -55,13 +55,16 @@ jobs:
           if [ "$status" -ne 0 ]; then tail -n 240 linux-build.log; fi
           exit "$status"
 
-      - name: Verify Linux JavaFX and logging runtime
+      - name: Verify Linux JavaFX, Spring Boot and logging runtime
         shell: bash
         run: |
           JAR=nexu-app/target/nexu-app.jar
           jar tf "$JAR" | grep -q 'BOOT-INF/lib/javafx-graphics-21.0.11-linux.jar'
           jar tf "$JAR" | grep -q 'BOOT-INF/lib/javafx-controls-21.0.11-linux.jar'
-          jar tf "$JAR" | grep -q 'BOOT-INF/lib/nexu-core-'
+          jar tf "$JAR" | grep -q 'BOOT-INF/lib/nexu-core-2.0.0-SNAPSHOT.jar'
+          jar tf "$JAR" | grep -q 'BOOT-INF/lib/spring-boot-4.1.0.jar'
+          jar tf "$JAR" | grep -Eq 'BOOT-INF/lib/spring-core-7\.0\.[0-9]+\.jar'
+          jar tf "$JAR" | grep -Eq 'BOOT-INF/lib/tomcat-embed-core-11\.0\.[0-9]+\.jar'
           jar tf "$JAR" | grep -q '^BOOT-INF/classes/logback.xml$'
           jar tf "$JAR" | grep -q 'BOOT-INF/lib/logback-classic-'
           ! jar tf "$JAR" | grep -q 'BOOT-INF/lib/reload4j-'
@@ -69,13 +72,14 @@ jobs:
           ! jar tf "$JAR" | grep -q 'BOOT-INF/lib/nexu-standalone-'
           ! jar tf "$JAR" | grep -q 'BOOT-INF/lib/javafx-.*-11.0.2'
           ! jar tf "$JAR" | grep -q 'BOOT-INF/lib/javafx-graphics-21.0.11-win.jar'
+          test "$(unzip -p "$JAR" BOOT-INF/classes/version.txt)" = '2.0.0-SNAPSHOT'
 
       - name: Build Linux portable and Debian packages
         run: |
           bash nexu-app/src/jpackage/package-linux.sh \
             nexu-app/target/nexu-app.jar \
             nexu-app/target/jpackage \
-            1.24.0
+            2.0.0
 
       - name: Verify Linux packages
         shell: bash
@@ -187,7 +191,7 @@ jobs:
           mvn --batch-mode --errors -pl nexu-app -am -Dmaven.test.skip=true package > windows-build.log 2>&1
           if errorlevel 1 (type windows-build.log & exit /b 1)
 
-      - name: Verify Windows JavaFX and logging runtime
+      - name: Verify Windows JavaFX, Spring Boot and logging runtime
         shell: pwsh
         run: |
           $entries = & jar tf nexu-app/target/nexu-app.jar
@@ -197,8 +201,17 @@ jobs:
           if (-not ($entries -match 'BOOT-INF/lib/javafx-controls-21.0.11-win.jar')) {
             throw 'Windows JavaFX 21 controls JAR is missing'
           }
-          if (-not ($entries -match 'BOOT-INF/lib/nexu-core-')) {
-            throw 'Consolidated nexu-core JAR is missing'
+          if (-not ($entries -match 'BOOT-INF/lib/nexu-core-2.0.0-SNAPSHOT.jar')) {
+            throw 'NexU 2.0.0-SNAPSHOT core JAR is missing'
+          }
+          if (-not ($entries -match 'BOOT-INF/lib/spring-boot-4.1.0.jar')) {
+            throw 'Spring Boot 4.1.0 runtime is missing'
+          }
+          if (-not ($entries -match 'BOOT-INF/lib/spring-core-7\.0\.\d+\.jar')) {
+            throw 'Spring Framework 7.0 runtime is missing'
+          }
+          if (-not ($entries -match 'BOOT-INF/lib/tomcat-embed-core-11\.0\.\d+\.jar')) {
+            throw 'Tomcat 11 runtime is missing'
           }
           if (-not ($entries -match '^BOOT-INF/classes/logback.xml$')) {
             throw 'Logback rotation configuration is missing'
@@ -242,7 +255,7 @@ jobs:
           ./nexu-app/src/jpackage/package-windows.ps1 `
             -JarPath nexu-app/target/nexu-app.jar `
             -Destination nexu-app/target/jpackage `
-            -AppVersion 1.24.0
+            -AppVersion 2.0.0
 
       - name: Verify Windows packages
         shell: pwsh
