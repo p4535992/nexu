@@ -47,13 +47,13 @@ public class StandaloneUIDisplay implements UIDisplay {
         this.nonBlockingStage = createStage(false, null);
     }
 
-    public StandaloneUIDisplay(AppConfig config) {
+    public StandaloneUIDisplay(final AppConfig config) {
         this();
         this.appConfig = config;
         LOGGER.info("Using cache_time_to_live_ms = {}", config.getCacheTimeToLiveMs());
     }
 
-    private void display(Parent panel, boolean blockingOperation, UIOperation<?> operation) {
+    private void display(final Parent panel, final boolean blockingOperation, final UIOperation<?> operation) {
         LOGGER.info("Display {} in display {} from Thread {}", panel, this, Thread.currentThread().getName());
         Platform.runLater(() -> {
             if (JavaFxWindowManager.focusExistingWindow()) {
@@ -84,7 +84,7 @@ public class StandaloneUIDisplay implements UIDisplay {
         });
     }
 
-    private Stage createStage(final boolean blockingStage, String title) {
+    private Stage createStage(final boolean blockingStage, final String title) {
         final Stage newStage = new Stage();
         JavaFxWindowManager.applyApplicationIcon(newStage);
         newStage.setTitle(title);
@@ -140,7 +140,7 @@ public class StandaloneUIDisplay implements UIDisplay {
         return loader.getRoot();
     }
 
-    private <T> void waitForUser(UIOperation<T> operation) {
+    private <T> void waitForUser(final UIOperation<T> operation) {
         try {
             LOGGER.info("Wait on Thread {}", Thread.currentThread().getName());
             currentBlockingOperation = operation;
@@ -158,18 +158,24 @@ public class StandaloneUIDisplay implements UIDisplay {
         private String passwordPrompt;
         private char[] cachedPassword;
         private StandaloneUIDisplay parent;
+        private int passwordRequestIndex;
 
         FlowPasswordCallback() {
             this.passwordPrompt = null;
+            this.passwordRequestIndex = 0;
         }
 
-        FlowPasswordCallback(StandaloneUIDisplay parent, char[] cachedPassword) {
+        FlowPasswordCallback(final StandaloneUIDisplay parent, final char[] cachedPassword) {
+            this();
             this.parent = parent;
             this.cachedPassword = cachedPassword;
         }
 
         @Override
         public char[] getPassword() {
+            final PasswordPromptMessages.Prompt prompt = PasswordPromptMessages.resolve(
+                    NexuLauncher.getConfig().getCloseToken(), passwordRequestIndex++, passwordPrompt);
+
             if (cachedPassword != null) {
                 LOGGER.info("Returning cached password");
                 final char[] clone = cachedPassword.clone();
@@ -177,11 +183,14 @@ public class StandaloneUIDisplay implements UIDisplay {
                 return clone;
             }
 
-            LOGGER.info("Request password");
+            LOGGER.info("Request password for stage {}", passwordRequestIndex);
             @SuppressWarnings("unchecked")
             final OperationResult<char[]> passwordResult = StandaloneUIDisplay.this.operationFactory.getOperation(
-                    UIOperation.class, "/fxml/password-input.fxml", passwordPrompt,
-                    NexuLauncher.getConfig().getApplicationName()).perform();
+                    UIOperation.class,
+                    "/fxml/password-input.fxml",
+                    prompt.message(),
+                    NexuLauncher.getConfig().getApplicationName(),
+                    prompt.title()).perform();
             if (passwordResult.getStatus().equals(BasicOperationStatus.SUCCESS)) {
                 parent.setCachedPassword(passwordResult.getResult());
                 return passwordResult.getResult();
@@ -202,7 +211,7 @@ public class StandaloneUIDisplay implements UIDisplay {
         }
 
         @Override
-        public void setPasswordPrompt(String passwordPrompt) {
+        public void setPasswordPrompt(final String passwordPrompt) {
             this.passwordPrompt = passwordPrompt;
         }
     }
@@ -214,15 +223,17 @@ public class StandaloneUIDisplay implements UIDisplay {
 
     private final class FlowMessageDisplayCallback implements MessageDisplayCallback {
         @Override
-        public void display(Message message) {
+        public void display(final Message message) {
             if (Message.INPUT_PINPAD.equals(message)) {
                 StandaloneUIDisplay.this.operationFactory.getOperation(
-                        NonBlockingUIOperation.class, "/fxml/message-no-button.fxml",
+                        NonBlockingUIOperation.class,
+                        "/fxml/message-no-button.fxml",
                         "message.display.callback." + message.name().toLowerCase().replace('_', '.'),
                         NexuLauncher.getConfig().getApplicationName()).perform();
             } else {
                 StandaloneUIDisplay.this.operationFactory.getOperation(
-                        NonBlockingUIOperation.class, "/fxml/message.fxml",
+                        NonBlockingUIOperation.class,
+                        "/fxml/message.fxml",
                         "message.display.callback." + message.name().toLowerCase().replace('_', '.'),
                         NexuLauncher.getConfig().getApplicationName()).perform();
             }
@@ -240,7 +251,7 @@ public class StandaloneUIDisplay implements UIDisplay {
     }
 
     @Override
-    public File displayFileChooser(ExtensionFilter... extensionFilters) {
+    public File displayFileChooser(final ExtensionFilter... extensionFilters) {
         final FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle(ResourceBundle.getBundle("bundles/nexu")
                 .getString("fileChooser.title.openResourceFile"));
@@ -249,7 +260,7 @@ public class StandaloneUIDisplay implements UIDisplay {
     }
 
     private javafx.stage.FileChooser.ExtensionFilter[] toJavaFXExtensionFilters(
-            ExtensionFilter... extensionFilters) {
+            final ExtensionFilter... extensionFilters) {
         final javafx.stage.FileChooser.ExtensionFilter[] result =
                 new javafx.stage.FileChooser.ExtensionFilter[extensionFilters.length];
         int index = 0;
@@ -270,7 +281,7 @@ public class StandaloneUIDisplay implements UIDisplay {
     }
 
     @Override
-    public void setCachedPassword(char[] value) {
+    public void setCachedPassword(final char[] value) {
         if (value != null) {
             cacheLastAccessTime = new Date();
         }
