@@ -23,12 +23,11 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  BASE_VERSION: 2.0.0
+  BASE_VERSION: 1.25.0
   SOURCE_BRANCH: spring-boot-modernization-2
-  # Workflow runs 1-18 belonged to the 1.24 line and run 19 produced the
-  # incorrectly numbered v2.0.0-rc.19. Run 20 became rc.1; run 21 failed
-  # before publishing rc.2, so run 22 must retry the public rc.2 tag.
-  RC_RUN_OFFSET: 20
+  # Runs 1-22 belonged to the 1.24/2.0 lines. The three version-alignment
+  # pushes are runs 23-25, so run 26 publishes the first 1.25 candidate.
+  RC_RUN_OFFSET: 25
 
 jobs:
   linux:
@@ -65,11 +64,11 @@ jobs:
           set -euo pipefail
           JAR=nexu-app/target/nexu-app.jar
           test -f "$JAR"
-          jar tf "$JAR" | grep -q 'BOOT-INF/lib/nexu-core-2.0.0-SNAPSHOT.jar'
+          jar tf "$JAR" | grep -q 'BOOT-INF/lib/nexu-core-1.25.0-SNAPSHOT.jar'
           jar tf "$JAR" | grep -q 'BOOT-INF/lib/spring-boot-4.1.0.jar'
           jar tf "$JAR" | grep -Eq 'BOOT-INF/lib/spring-core-7\.0\.[0-9]+\.jar'
           jar tf "$JAR" | grep -Eq 'BOOT-INF/lib/tomcat-embed-core-11\.0\.[0-9]+\.jar'
-          test "$(unzip -p "$JAR" BOOT-INF/classes/version.txt)" = '2.0.0-SNAPSHOT'
+          test "$(unzip -p "$JAR" BOOT-INF/classes/version.txt)" = '1.25.0-SNAPSHOT'
 
       - name: Build portable, DEB and RPM packages
         shell: bash
@@ -150,7 +149,7 @@ jobs:
           fi
 
           curl --fail --silent http://127.0.0.1:19795/nexu-info \
-            | grep -Eq '"version"[[:space:]]*:[[:space:]]*"2\.0\.0-SNAPSHOT"'
+            | grep -Eq '"version"[[:space:]]*:[[:space:]]*"1\.25\.0-SNAPSHOT"'
 
           for attempt in $(seq 1 20); do
             if [ -s "$DIAGNOSTIC_DIR/nexu.log" ]; then break; fi
@@ -306,6 +305,10 @@ jobs:
           ## NexU ${BASE_VERSION} release candidate ${RC_NUMBER}
 
           Pre-release generated from the \`${SOURCE_BRANCH}\` branch.
+
+          This release keeps the legacy 1.x application-version line required by
+          the European Commission DSS demo while retaining Java 21, Spring Boot
+          4.1.0, Spring Framework 7 and Tomcat 11.
 
           ### Validation
           - Maven reactor and automated tests
