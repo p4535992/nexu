@@ -1,11 +1,11 @@
 # Latest NexU pre-release
 
-- Tag: `v1.24.0-rc.18`
+- Tag: `v2.0.0-rc.19`
 - Source branch: `master`
-- Source commit: `d03891c84429c143cb4223db36f7dc91eab010e4`
-- Workflow run: `30619043946`
+- Source commit: `1bce10bd44c13e4b9cac36cdd283ddccfab29de7`
+- Workflow run: `30624867279`
 - Linux job: `success`
 - Windows job: `success`
 - Release job: `success`
-- Release: https://github.com/p4535992/nexu/releases/tag/v1.24.0-rc.18
+- Release: https://github.com/p4535992/nexu/releases/tag/v2.0.0-rc.19
 - Status: `published`
