@@ -39,13 +39,15 @@ public class SystrayMenu {
 
     public SystrayMenu(OperationFactory operationFactory, NexuAPI api, UserPreferences prefs) {
         final ResourceBundle resources = ResourceBundle.getBundle("bundles/nexu");
+        final ResourceBundle browserResources = ResourceBundle.getBundle("bundles/browser-enable");
         final List<SystrayMenuItem> extensionItems = api.getExtensionSystrayMenuItems();
-        final SystrayMenuItem[] items = new SystrayMenuItem[extensionItems.size() + 4];
+        final SystrayMenuItem[] items = new SystrayMenuItem[extensionItems.size() + 5];
         items[0] = createAboutSystrayMenuItem(operationFactory, api, resources);
-        items[1] = createPreferencesSystrayMenuItem(operationFactory, api, prefs, resources);
-        items[2] = createShowLogsSystrayMenuItem(resources);
-        items[3] = createLanguageSystrayMenuItem(prefs, resources);
-        int index = 4;
+        items[1] = createBrowserEnableSystrayMenuItem(api, browserResources);
+        items[2] = createPreferencesSystrayMenuItem(operationFactory, api, prefs, resources);
+        items[3] = createShowLogsSystrayMenuItem(resources);
+        items[4] = createLanguageSystrayMenuItem(prefs, resources);
+        int index = 5;
         for (SystrayMenuItem item : extensionItems) {
             items[index++] = item;
         }
@@ -121,6 +123,12 @@ public class SystrayMenu {
         };
     }
 
+    static String browserEnableEndpoint(final NexuAPI api) {
+        final List<Integer> httpsPorts = api.getAppConfig().getBindingPortsHttps();
+        final int port = httpsPorts == null || httpsPorts.isEmpty() ? 9895 : httpsPorts.get(0);
+        return "https://localhost:" + port + "/nexu-info";
+    }
+
     private SystrayMenuItem createAboutSystrayMenuItem(OperationFactory operationFactory, NexuAPI api,
             ResourceBundle resources) {
         return new SystrayMenuItem() {
@@ -134,6 +142,27 @@ public class SystrayMenu {
                 return factory -> factory.getOperation(NonBlockingUIOperation.class, "/fxml/about.fxml",
                         api.getAppConfig().getApplicationName(), api.getAppConfig().getApplicationVersion(),
                         resources).perform();
+            }
+        };
+    }
+
+    private SystrayMenuItem createBrowserEnableSystrayMenuItem(
+            final NexuAPI api,
+            final ResourceBundle browserResources) {
+        final String endpoint = browserEnableEndpoint(api);
+        return new SystrayMenuItem() {
+            @Override
+            public String getLabel() {
+                return browserResources.getString("browser.enable.menu");
+            }
+
+            @Override
+            public FutureOperationInvocation<Void> getFutureOperationInvocation() {
+                return factory -> factory.getOperation(
+                        NonBlockingUIOperation.class,
+                        "/fxml/browser-enable.fxml",
+                        api.getAppConfig().getApplicationName(),
+                        endpoint).perform();
             }
         };
     }
