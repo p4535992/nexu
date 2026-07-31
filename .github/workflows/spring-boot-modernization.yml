@@ -75,7 +75,7 @@ jobs:
           jar tf "$JAR" | grep -q 'BOOT-INF/lib/javafx-graphics-21.0.11-linux.jar'
           jar tf "$JAR" | grep -q 'BOOT-INF/lib/javafx-controls-21.0.11-linux.jar'
           unzip -p "$JAR" BOOT-INF/classes/version.txt | tee nexu-version.txt
-          grep -qx '2.0.0-SNAPSHOT' nexu-version.txt
+          grep -qx '1.25.0-SNAPSHOT' nexu-version.txt
           ! jar tf "$JAR" | grep -q 'BOOT-INF/lib/nexu-api-'
           ! jar tf "$JAR" | grep -q 'BOOT-INF/lib/nexu-model-'
           ! jar tf "$JAR" | grep -q 'BOOT-INF/lib/nexu-util-'
