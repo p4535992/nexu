@@ -1,5 +1,7 @@
 # NexU
 
+> **This repository is the actively maintained community continuation of NexU after the original Nowina repository became unavailable. It preserves compatibility with existing local-signing integrations while modernizing the application with Java 21, Spring Boot 4.1, Spring Framework 7, Tomcat 11 and DSS 6.4.**
+
 NexU is a local signing agent that allows web applications to request certificates and electronic signatures without exposing signing private keys to the browser or a remote server.
 
 This repository is a community-maintained fork of [`nowina-solutions/nexu`](https://github.com/nowina-solutions/nexu). It modernizes the original integration model with Java 21, Spring Boot 4.1.0, Spring Framework 7, Tomcat 11, DSS 6.4 and JavaFX 21.0.11 while preserving the legacy browser endpoints used by existing signing applications.
