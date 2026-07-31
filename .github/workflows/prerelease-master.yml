@@ -26,8 +26,9 @@ env:
   BASE_VERSION: 2.0.0
   SOURCE_BRANCH: spring-boot-modernization-2
   # Workflow runs 1-18 belonged to the 1.24 line and run 19 produced the
-  # incorrectly numbered v2.0.0-rc.19. Run 20 therefore became rc.1.
-  RC_RUN_OFFSET: 19
+  # incorrectly numbered v2.0.0-rc.19. Run 20 became rc.1; run 21 failed
+  # before publishing rc.2, so run 22 must retry the public rc.2 tag.
+  RC_RUN_OFFSET: 20
 
 jobs:
   linux:
@@ -149,7 +150,7 @@ jobs:
           fi
 
           curl --fail --silent http://127.0.0.1:19795/nexu-info \
-            | grep -q '"version":"2.0.0-SNAPSHOT"'
+            | grep -Eq '"version"[[:space:]]*:[[:space:]]*"2\.0\.0-SNAPSHOT"'
 
           for attempt in $(seq 1 20); do
             if [ -s "$DIAGNOSTIC_DIR/nexu.log" ]; then break; fi
