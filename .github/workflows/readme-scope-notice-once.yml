@@ -6,12 +6,22 @@ on:
       - spring-boot-modernization-2
     paths:
       - .github/workflows/readme-scope-notice-once.yml
+  pull_request:
+    branches:
+      - master
+    types:
+      - opened
+      - synchronize
+      - reopened
+    paths:
+      - .github/workflows/readme-scope-notice-once.yml
 
 permissions:
   contents: write
 
 jobs:
   update-readme:
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
       - name: Check out branch
