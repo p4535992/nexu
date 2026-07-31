@@ -60,5 +60,7 @@ rolling_log_file_number=14
 rolling_log_total_size_cap=200MB
 
 When reporting a problem, include nexu.log and the relevant compressed files
-from the archive directory. Review logs before sharing them. NexU must not log
-PINs, private keys, prepared hashes, key handles or signature values.
+from the archive directory. For browser-integration problems, also include the
+response shown by /nexu-info and any browser-console message. Review logs before
+sharing them. NexU must not log PINs, private keys, prepared hashes, key handles
+or signature values.
