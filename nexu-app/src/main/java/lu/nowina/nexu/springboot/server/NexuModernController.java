@@ -45,7 +45,7 @@ import lu.nowina.nexu.springboot.server.NexuModernDtos.StatusResponse;
 @RequestMapping("/v1")
 final class NexuModernController {
 
-    static final String PROTOCOL_VERSION = "nexu:2.0";
+    static final String PROTOCOL_VERSION = "nexu:1.25";
 
     private final NexuAPI api;
 
