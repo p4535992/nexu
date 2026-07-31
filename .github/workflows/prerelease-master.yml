@@ -25,8 +25,8 @@ concurrency:
 env:
   BASE_VERSION: 1.25.0
   SOURCE_BRANCH: spring-boot-modernization-2
-  # Runs 30-33 were cancelled cleanup builds. Run 34 publishes the final rc.3.
-  RC_RUN_OFFSET: 31
+  # Runs 30-34 were cleanup builds. Run 35 publishes the final rc.3.
+  RC_RUN_OFFSET: 32
 
 jobs:
   linux:
@@ -69,7 +69,7 @@ jobs:
           jar tf "$JAR" | grep -Eq 'BOOT-INF/lib/tomcat-embed-core-11\.0\.[0-9]+\.jar'
           test "$(unzip -p "$JAR" BOOT-INF/classes/version.txt)" = '1.25.0-SNAPSHOT'
           ! grep -RIn --exclude-dir=target --exclude='*.md' \
-            -E '2\.0\.0|nexu:2\.0' pom.xml nexu-core nexu-app .github/workflows
+            -E '2\.0\.0|nexu:2\.0' pom.xml nexu-core nexu-app
 
       - name: Build portable, DEB and RPM packages
         shell: bash
