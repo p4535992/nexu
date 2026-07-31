@@ -1,0 +1,179 @@
+# Promote the validated NexU release-candidate artifacts to the stable release.
+name: Publish NexU release
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - '.github/workflows/release-master.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: nexu-release-master
+  cancel-in-progress: false
+
+env:
+  BASE_VERSION: 1.24.0
+  SOURCE_RC_TAG: v1.24.0-rc.18
+  SOURCE_COMMIT: d03891c84429c143cb4223db36f7dc91eab010e4
+
+jobs:
+  promote:
+    name: Promote validated release candidate
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out master
+        uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
+
+      - name: Verify source and download release-candidate assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG="v${BASE_VERSION}"
+          echo "TAG=$TAG" >> "$GITHUB_ENV"
+
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG already exists; refusing to overwrite it." >&2
+            exit 1
+          fi
+
+          RC_JSON="$(gh release view "$SOURCE_RC_TAG" --json isPrerelease,targetCommitish)"
+          test "$(jq -r '.isPrerelease' <<<"$RC_JSON")" = true
+          test "$(jq -r '.targetCommitish' <<<"$RC_JSON")" = "$SOURCE_COMMIT"
+
+          mkdir -p release-assets
+          gh release download "$SOURCE_RC_TAG" --dir release-assets
+
+          test -n "$(find release-assets -maxdepth 1 -name '*.zip' -print -quit)"
+          test -n "$(find release-assets -maxdepth 1 -name '*.exe' -print -quit)"
+          test -n "$(find release-assets -maxdepth 1 -name '*.msi' -print -quit)"
+          test -n "$(find release-assets -maxdepth 1 -name '*.tar.gz' -print -quit)"
+          test -n "$(find release-assets -maxdepth 1 -name '*.deb' -print -quit)"
+          test -n "$(find release-assets -maxdepth 1 -name '*.rpm' -print -quit)"
+          test "$(find release-assets -maxdepth 1 -name '*.jar' | wc -l)" -ge 2
+
+      - name: Prepare stable asset names and checksums
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd release-assets
+          rm -f SHA256SUMS.txt
+
+          shopt -s nullglob
+          for file in *-rc.18-*; do
+            stable_name="${file/-rc.18/}"
+            test ! -e "$stable_name"
+            mv "$file" "$stable_name"
+          done
+
+          if find . -maxdepth 1 -type f -name '*-rc.*' -print -quit | grep -q .; then
+            echo 'A release-candidate filename remains after promotion.' >&2
+            exit 1
+          fi
+
+          find . -maxdepth 1 -type f ! -name SHA256SUMS.txt -printf '%f\0' \
+            | sort -z \
+            | xargs -0 sha256sum > SHA256SUMS.txt
+
+      - name: Create stable release notes
+        shell: bash
+        run: |
+          cat > release-notes.md <<'EOF'
+          ## NexU 1.24.0
+
+          Stable community release of the modernized NexU local signing agent. These are the exact operator artifacts validated and published as `v1.24.0-rc.18`, promoted without rebuilding.
+
+          ### Highlights
+          - Java 17, Spring Boot 3.5.16, DSS 6.4 and JavaFX 21.0.11
+          - legacy DSS browser-signing compatibility through `/rest/certificates` and `/rest/sign`
+          - HTTPS browser integration through `https://localhost:9895`
+          - per-installation localhost certificate and browser-enablement tray guidance
+          - contextual certificate-access and private-key password prompts
+          - smart cards, Windows certificate store, JKS and PKCS#12 signing sources
+          - English and Italian desktop interface
+          - rotating diagnostic logs and verified shutdown helpers
+
+          ### Operator packages
+          - Windows portable ZIP
+          - Windows EXE installer
+          - Windows MSI installer
+          - Debian/Ubuntu DEB package
+          - RPM package
+          - Linux portable archive
+          - platform-specific executable Spring Boot JARs
+          - SHA-256 checksums regenerated for the stable asset names
+
+          ### Before production use
+          Test the complete signing workflow with the actual smart cards, middleware, keystores, browser and remote signing backend. Independently validate signed documents and certificate chains. These community packages are currently unsigned, so operating systems may display an unknown-publisher warning.
+
+          Vendor-specific smart-card middleware is not bundled. A WAR is intentionally not produced because NexU is a local desktop signing agent with JavaFX and notification-area lifecycle, not a servlet-container application.
+          EOF
+
+      - name: Publish stable release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          gh release create "$TAG" release-assets/* \
+            --target "$SOURCE_COMMIT" \
+            --title "NexU ${BASE_VERSION}" \
+            --notes-file release-notes.md \
+            --latest
+
+  report:
+    name: Record stable release result
+    if: always()
+    needs:
+      - promote
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out current master
+        uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
+
+      - name: Write release result
+        shell: bash
+        run: |
+          TAG="v${BASE_VERSION}"
+          if [ "${{ needs.promote.result }}" = "success" ]; then
+            STATUS=published
+          else
+            STATUS=failed
+          fi
+
+          mkdir -p .github/release-status
+          cat > .github/release-status/stable.md <<EOF
+          # Latest stable NexU release
+
+          - Tag: \`${TAG}\`
+          - Source release candidate: \`${SOURCE_RC_TAG}\`
+          - Source commit: \`${SOURCE_COMMIT}\`
+          - Workflow run: \`${GITHUB_RUN_ID}\`
+          - Promotion job: \`${{ needs.promote.result }}\`
+          - Release: https://github.com/${GITHUB_REPOSITORY}/releases/tag/${TAG}
+          - Status: \`${STATUS}\`
+          EOF
+
+      - name: Commit release result
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add .github/release-status/stable.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Record stable release workflow ${GITHUB_RUN_ID} result"
+          git push origin HEAD:master
