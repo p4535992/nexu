@@ -1,0 +1,76 @@
+name: Apply README scope notice once
+
+on:
+  push:
+    branches:
+      - spring-boot-modernization-2
+    paths:
+      - .github/workflows/readme-scope-notice-once.yml
+
+permissions:
+  contents: write
+
+jobs:
+  update-readme:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out branch
+        uses: actions/checkout@v4
+        with:
+          ref: spring-boot-modernization-2
+          fetch-depth: 0
+
+      - name: Insert project scope and safety notice
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path('README.md')
+          text = path.read_text(encoding='utf-8')
+          heading = '## Project scope, technology transition and safety notice'
+          marker = '## Test NexU with the European Commission DSS demo'
+          if heading in text:
+              raise SystemExit(0)
+          if marker not in text:
+              raise SystemExit(f'Marker not found: {marker}')
+
+          section = '''## Project scope, technology transition and safety notice
+
+Digital identity and electronic-signature ecosystems are evolving. In the European Union, the European Digital Identity Framework and the European Digital Identity Wallet are expanding mobile-wallet and remote-signing alternatives that can reduce dependence on physical smart cards in many future services. These developments do not make smart cards obsolete in every country, organisation or regulated workflow, and migration timelines vary.
+
+Official references:
+
+- [European Digital Identity Wallet — European Commission](https://digital-strategy.ec.europa.eu/en/factpages/european-digital-identity-wallet)
+- [Regulation (EU) 2024/1183 establishing the European Digital Identity Framework — EUR-Lex](https://eur-lex.europa.eu/eli/reg/2024/1183/oj)
+
+NexU remains available for organisations and users that still need browser-mediated local signing with smart cards, the Windows certificate store, JKS files or PKCS#12 keystores, including compatibility with existing integrations that cannot yet move to wallet-based or remote-signing solutions.
+
+This is a free and open-source, community-maintained project distributed under EUPL-1.2. It is not a commercial support service, a qualified trust service, a security certification or a guarantee that every card, driver, browser, operating system, keystore or remote signing application will behave correctly. Despite testing and review, defects, security issues, integration mistakes or environment-specific incompatibilities may remain.
+
+Before using NexU for production, legal, financial, regulated or otherwise sensitive signatures:
+
+1. review the source code, configuration and bundled dependencies appropriate to your risk level;
+2. test the complete workflow in a non-production environment with the actual smart cards, middleware, keystores, browsers and signing backend that will be used;
+3. independently validate the resulting signed documents and certificate chains;
+4. apply least-privilege permissions, protect local keystores and backups, and monitor diagnostic logs and project updates;
+5. obtain an independent security, compliance and legal assessment when the deployment requires one.
+
+The software is provided **as is**, without warranties, to the extent permitted by the EUPL-1.2 and applicable law. Users are responsible for evaluating whether it is suitable for their environment and accept the risks of deployment. The maintainers and contributors cannot guarantee that all defects have been identified and are not responsible for losses or damage caused by untested, incorrectly configured or unsuitable use, to the extent permitted by applicable law. The [`LICENSE`](LICENSE) text controls if this notice and the licence differ. This notice is not legal or security advice.
+
+'''
+
+          path.write_text(text.replace(marker, section + marker, 1), encoding='utf-8')
+          PY
+
+      - name: Commit README update
+        shell: bash
+        run: |
+          if git diff --quiet -- README.md; then
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add README.md
+          git commit -m 'Clarify project scope and production safety'
+          git push origin HEAD:spring-boot-modernization-2
