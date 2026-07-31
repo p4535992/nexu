@@ -23,7 +23,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  BASE_VERSION: 1.24.0
+  BASE_VERSION: 2.0.0
 
 jobs:
   linux:
@@ -288,7 +288,9 @@ jobs:
 
           ### Runtime
           - Java 17 runtime included in native packages
-          - Spring Boot 3.5.16
+          - Spring Boot 4.1.0
+          - Spring Framework 7.0.x
+          - Tomcat 11.0.x
           - DSS 6.4
           - JavaFX 21.0.11
 
