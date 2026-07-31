@@ -4,16 +4,16 @@
     <parent>
         <groupId>lu.nowina.apps</groupId>
         <artifactId>nexu</artifactId>
-        <version>2.0.0-SNAPSHOT</version>
+        <version>1.25.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>nexu-app</artifactId>
     <name>NexU operator application</name>
     <description>Executable Spring Boot and JavaFX smart-card agent for Windows and Linux operators.</description>
     <properties>
-        <java.version>17</java.version>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
+        <java.version>21</java.version>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
         <spring-boot.version>4.1.0</spring-boot.version>
         <javafx.version>21.0.11</javafx.version>
         <bouncycastle.version>1.84</bouncycastle.version>
@@ -122,8 +122,8 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>${maven.compiler.version}</version>
                 <configuration>
-                    <source>17</source>
-                    <target>17</target>
+                    <source>21</source>
+                    <target>21</target>
                     <compilerArgs>
                         <arg>--add-modules</arg>
                         <arg>jdk.crypto.cryptoki</arg>

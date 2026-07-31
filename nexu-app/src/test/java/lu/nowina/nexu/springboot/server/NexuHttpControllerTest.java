@@ -41,12 +41,12 @@ class NexuHttpControllerTest {
 
     @Test
     void exposesLegacyNexuInfoShape() {
-        when(appConfig.getApplicationVersion()).thenReturn("1.24-SNAPSHOT\n");
+        when(appConfig.getApplicationVersion()).thenReturn("1.25.0-SNAPSHOT\n");
 
         final ResponseEntity<String> response = controller.nexuInfo();
 
         assertEquals(200, response.getStatusCode().value());
-        assertEquals("{ \"version\": \"1.24-SNAPSHOT\"}", response.getBody());
+        assertEquals("{ \"version\": \"1.25.0-SNAPSHOT\"}", response.getBody());
     }
 
     @Test
@@ -62,6 +62,7 @@ class NexuHttpControllerTest {
 
         assertTrue(legacy.contains("https://localhost:9895/rest/"));
         assertTrue(modern.contains("const baseUrl = \"https://localhost:9895\""));
+        assertTrue(modern.contains("protocolVersion: \"nexu:1.25\""));
         assertFalse(legacy.contains("https://127.0.0.1:9895"));
         assertFalse(modern.contains("https://127.0.0.1:9895"));
     }

@@ -1,5 +1,5 @@
 /*
- * NexU browser client v2.
+ * NexU modern browser client.
  *
  * The modern API follows the Web eID-style certificate -> prepare hash -> sign
  * flow. Legacy callback functions remain available and continue to use the
@@ -131,7 +131,7 @@
     }
 
     global.NexU = Object.freeze({
-        protocolVersion: "nexu:2.0",
+        protocolVersion: "nexu:1.25",
         status: status,
         getSigningCertificate: getSigningCertificate,
         sign: sign,
