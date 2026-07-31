@@ -100,6 +100,55 @@ cache_time_to_live_ms=60000
 
 Restart NexU after changing the configuration. The password is cached only in process memory for the configured period and is not written to disk. Use the shortest duration that reliably covers digest preparation. Smart-card middleware may still enforce separate PIN prompts.
 
+## Windows notification-area menu
+
+On Windows, NexU uses the JDK AWT notification-area backend by default:
+
+```properties
+systray_backend=awt
+```
+
+The Dorkbox backend remains available for diagnostics:
+
+```properties
+systray_backend=dorkbox
+```
+
+The menu contains **About**, **Enable NexU in browser**, **Preferences**, **Show logs**, **Select language**, **Manage keystores** and **Exit**. Only one independent JavaFX window can be open at a time; selecting another action restores and focuses the existing window.
+
+### About
+
+Displays the NexU application and JVM versions and provides links to this GitHub repository and the official EUPL-1.2 licence text.
+
+### Enable NexU in browser
+
+Explains the localhost certificate-trust step, displays the exact configured `https://localhost:<port>/nexu-info` endpoint and provides a button to open it in the default browser. It never installs certificates silently or disables browser security checks.
+
+### Preferences
+
+Opens the user-editable NexU preferences, including system or custom proxy configuration and optional proxy authentication. Settings that affect the running application may require a NexU restart.
+
+### Show logs
+
+Displays the complete path of the current diagnostic log and opens it with the operating-system association. If Windows has no application associated with `.log` files, NexU falls back to Notepad.
+
+### Select language
+
+Lets the user choose the English or Italian desktop interface. The selection is saved locally and takes effect after restarting NexU.
+
+### Manage keystores
+
+Manages local signing sources and checks connected smart-card equipment. The panel provides:
+
+- **Add smart card** — checks the PC/SC service, connected readers and inserted cards, and reports when no reader or card is found;
+- **Add local keystore** — registers a JKS, P12 or PFX file without storing its password;
+- **Open keystore file** — asks the operating system to open the selected file with its associated application;
+- **Remove** — removes the NexU registration without deleting or modifying the original keystore file.
+
+### Exit
+
+Closes the NexU desktop application and stops its local browser endpoints. Use this action before replacing application files or changing configuration that requires a restart.
+
 ## Highlights
 
 - Java 17 and a two-module Maven reactor.
@@ -122,16 +171,11 @@ NexU supports:
 
 A file keystore must contain a private-key entry and certificate chain. NexU stores only a registered keystore's type and path, never its password.
 
-### Register or manage a local keystore
+### Register a local keystore during signing
 
 During signing, choose **New keystore**, select JKS or PKCS#12, choose the file, enter its password, select a certificate and choose **Remember** when requested.
 
-The tray-menu **Manage keystores** panel provides:
-
-- **Add smart card** — checks PC/SC service, readers and inserted cards;
-- **Add local keystore** — registers a JKS, P12 or PFX file;
-- **Open keystore file** — opens the selected file with the operating-system association;
-- **Remove** — removes the registration without deleting the original file.
+Moving or renaming a registered file invalidates its saved path. Remove the old registration and add the file again through **Manage keystores**.
 
 Keep keystore files in a user-protected directory and maintain a secure backup.
 
@@ -150,8 +194,6 @@ binding_ports=9795
 binding_ports_https=9895
 nexu_hostname=localhost
 ```
-
-The tray menu contains **About**, **Enable NexU in browser**, **Preferences**, **Show logs**, **Select language**, **Manage keystores** and **Exit**. The browser-enablement panel opens the exact configured localhost HTTPS endpoint but never installs certificates silently or disables browser security checks.
 
 ## Automatic localhost HTTPS
 
@@ -238,8 +280,6 @@ Rotation defaults:
 - maximum file size: 10 MB;
 - retained periods: 14;
 - total archive cap: 200 MB.
-
-**Show logs** displays the current path and opens it with the operating-system association, falling back to Notepad on Windows when `.log` has no association.
 
 ## Security principles
 
