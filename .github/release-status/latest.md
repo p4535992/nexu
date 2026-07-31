@@ -1,11 +1,11 @@
 # Latest NexU pre-release
 
-- Tag: `v2.0.0-rc.5`
+- Tag: `v1.25.0-rc.1`
 - Source branch: `spring-boot-modernization-2`
-- Source commit: `39aa383532de1e7a37c77cf31b0fbe0c221f6107`
-- Workflow run: `30630877905`
+- Source commit: `20063284d77ca13a90ebe8132a3f95e95d45e758`
+- Workflow run: `30630967555`
 - Linux job: `failure`
 - Windows job: `failure`
 - Release job: `skipped`
-- Release: https://github.com/p4535992/nexu/releases/tag/v2.0.0-rc.5
+- Release: https://github.com/p4535992/nexu/releases/tag/v1.25.0-rc.1
 - Status: `failed`
