@@ -33,6 +33,12 @@ Use the European Commission DSS WebApp Demo to test the complete browser-signing
 
 <https://ec.europa.eu/digital-building-blocks/DSS/webapp-demo/sign-a-document>
 
+### Recommended alternative when local signing sources are not required
+
+As discussed in [DSS Demonstrations issue #67](https://github.com/esig/dss-demonstrations/issues/67), the DSS maintainers recommend using the [DSS Standalone application](https://ec.europa.eu/digital-building-blocks/DSS/webapp-demo/signature-standalone) for document-signing workflows that do not require NexU's local signing integration.
+
+DSS Standalone is therefore the recommended choice when you do not need smart cards, the Windows certificate store, PKCS#11 middleware, or locally registered JKS, P12 or PFX keystores. NexU remains intended for workflows that require one of those local signing sources.
+
 ### Prepare NexU and the browser
 
 1. Start NexU and wait for its notification-area icon.
