@@ -2,9 +2,9 @@
 
 NexU is a local signing agent that allows web applications to request certificates and electronic signatures without exposing signing private keys to the browser or a remote server.
 
-This repository is a community-maintained fork of [`nowina-solutions/nexu`](https://github.com/nowina-solutions/nexu). It modernizes the original integration model with Java 17, Spring Boot 4.1.0, Spring Framework 7, DSS 6.4 and JavaFX 21.0.11 while preserving the legacy browser endpoints used by existing signing applications.
+This repository is a community-maintained fork of [`nowina-solutions/nexu`](https://github.com/nowina-solutions/nexu). It modernizes the original integration model with Java 21, Spring Boot 4.1.0, Spring Framework 7, DSS 6.4 and JavaFX 21.0.11 while preserving the legacy browser endpoints used by existing signing applications.
 
-The current development line is **`2.0.0-SNAPSHOT`**. The latest stable release remains **`v1.24.0`** until the 2.x line completes release-candidate validation.
+The current development line is **`1.25.0-SNAPSHOT`**. It intentionally remains on the NexU 1.x application-version line because the European Commission DSS demo currently accepts `/nexu-info` versions beginning with `1.`. The modern `/v1` API and `nexu:2.0` protocol remain available independently of the application release number.
 
 ## Project scope, technology transition and safety notice
 
@@ -34,6 +34,8 @@ The software is provided **as is**, without warranties, under EUPL-1.2 and appli
 Use the European Commission DSS WebApp Demo to test the complete browser-signing workflow:
 
 <https://ec.europa.eu/digital-building-blocks/DSS/webapp-demo/sign-a-document>
+
+The demo currently checks that the value returned by `/nexu-info` starts with `1.`. NexU 1.25 therefore keeps a 1.x application version while retaining the modern Java 21 and Spring Boot 4 runtime.
 
 ### Prepare NexU and the browser
 
@@ -153,7 +155,7 @@ Closes the NexU desktop application and stops its local browser endpoints. Use t
 
 ## Highlights
 
-- Java 17 and a two-module Maven reactor.
+- Java 21 and a two-module Maven reactor.
 - Spring Boot 4.1 and Spring Framework 7 loopback server with legacy `/rest` and modern `/v1` APIs.
 - Embedded Tomcat 11 with the Jakarta Servlet 6.1 baseline.
 - HTTP on `9795` and HTTPS on `9895` by default.
@@ -227,7 +229,7 @@ Windows:
 ./nexu-app/src/jpackage/package-windows.ps1 `
   -JarPath nexu-app/target/nexu-app.jar `
   -Destination nexu-app/target/jpackage `
-  -AppVersion 2.0.0
+  -AppVersion 1.25.0
 ```
 
 Linux:
@@ -236,7 +238,7 @@ Linux:
 bash nexu-app/src/jpackage/package-linux.sh \
   nexu-app/target/nexu-app.jar \
   nexu-app/target/jpackage \
-  2.0.0
+  1.25.0
 ```
 
 Packages include a private runtime and verified `nexu-force-stop.bat` or `nexu-force-stop.sh` helper. The helpers verify `/nexu-info` before terminating a listener.
