@@ -25,9 +25,8 @@ concurrency:
 env:
   BASE_VERSION: 1.25.0
   SOURCE_BRANCH: spring-boot-modernization-2
-  # Run 26 failed before publication; run 27 is the POM repair push.
-  # Run 28 therefore retries the first public 1.25 release candidate.
-  RC_RUN_OFFSET: 27
+  # Runs 30-33 were cancelled cleanup builds. Run 34 publishes the final rc.3.
+  RC_RUN_OFFSET: 31
 
 jobs:
   linux:
@@ -58,7 +57,7 @@ jobs:
           set -o pipefail
           mvn --batch-mode --errors clean verify 2>&1 | tee linux-verify.log
 
-      - name: Verify Spring Boot 4 runtime
+      - name: Verify NexU 1.25 and Spring Boot 4 runtime
         shell: bash
         run: |
           set -euo pipefail
@@ -69,6 +68,8 @@ jobs:
           jar tf "$JAR" | grep -Eq 'BOOT-INF/lib/spring-core-7\.0\.[0-9]+\.jar'
           jar tf "$JAR" | grep -Eq 'BOOT-INF/lib/tomcat-embed-core-11\.0\.[0-9]+\.jar'
           test "$(unzip -p "$JAR" BOOT-INF/classes/version.txt)" = '1.25.0-SNAPSHOT'
+          ! grep -RIn --exclude-dir=target --exclude='*.md' \
+            -E '2\.0\.0|nexu:2\.0' pom.xml nexu-core nexu-app .github/workflows
 
       - name: Build portable, DEB and RPM packages
         shell: bash
@@ -132,7 +133,7 @@ jobs:
           READY=false
           for attempt in $(seq 1 60); do
             if curl --fail --silent http://127.0.0.1:19795/v1/status \
-                | grep -q '"protocol":"nexu:2.0"'; then
+                | grep -q '"protocol":"nexu:1.25"'; then
               READY=true
               break
             fi
@@ -306,12 +307,9 @@ jobs:
 
           Pre-release generated from the \`${SOURCE_BRANCH}\` branch.
 
-          This release keeps the legacy 1.x application-version line required by
-          the European Commission DSS demo while retaining Java 21, Spring Boot
-          4.1.0, Spring Framework 7 and Tomcat 11.
-
           ### Validation
-          - Maven reactor and automated tests
+          - Java 21 Maven reactor and automated tests
+          - NexU 1.25 application and protocol checks
           - Spring Boot 4.1.0, Spring Framework 7 and Tomcat 11 runtime checks
           - Linux packaged application smoke test on \`/v1/status\` and \`/nexu-info\`
           - RPM internal version verification
