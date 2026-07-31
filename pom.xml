@@ -6,7 +6,7 @@
 
     <groupId>lu.nowina.apps</groupId>
     <artifactId>nexu</artifactId>
-    <version>2.0.0-SNAPSHOT</version>
+    <version>1.25.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>NexU</name>
@@ -158,7 +158,7 @@
             <dependency>
                 <groupId>javax.ws.rs</groupId>
                 <artifactId>javax.ws.rs-api</artifactId>
-                <version>${javax-ws-rs.version}</version>
+                <version>${javax.ws-rs.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.santuario</groupId>
