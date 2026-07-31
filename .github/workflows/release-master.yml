@@ -245,6 +245,8 @@ jobs:
           merge-multiple: true
 
       - name: Create checksums and release notes
+        env:
+          GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
