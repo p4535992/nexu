@@ -24,6 +24,9 @@ concurrency:
 
 env:
   BASE_VERSION: 2.0.0
+  # Workflow runs 1-18 belonged to the 1.24 line and run 19 produced the
+  # incorrectly numbered v2.0.0-rc.19. Run 20 must therefore become rc.1.
+  RC_RUN_OFFSET: 19
 
 jobs:
   linux:
@@ -58,7 +61,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          RELEASE_VERSION="${BASE_VERSION}-rc.${GITHUB_RUN_NUMBER}"
+          RC_NUMBER="$((GITHUB_RUN_NUMBER - RC_RUN_OFFSET))"
+          if [ "$RC_NUMBER" -lt 1 ]; then
+            echo "Invalid release-candidate number: $RC_NUMBER" >&2
+            exit 1
+          fi
+          RELEASE_VERSION="${BASE_VERSION}-rc.${RC_NUMBER}"
           OUT="nexu-app/target/jpackage"
 
           bash nexu-app/src/jpackage/package-linux.sh \
@@ -123,9 +131,7 @@ jobs:
           fi
 
           for attempt in $(seq 1 20); do
-            if [ -s "$DIAGNOSTIC_DIR/nexu.log" ]; then
-              break
-            fi
+            if [ -s "$DIAGNOSTIC_DIR/nexu.log" ]; then break; fi
             sleep 0.5
           done
 
@@ -194,7 +200,9 @@ jobs:
       - name: Build portable ZIP, EXE and MSI
         shell: pwsh
         run: |
-          $releaseVersion = "$env:BASE_VERSION-rc.$env:GITHUB_RUN_NUMBER"
+          $rcNumber = [int]$env:GITHUB_RUN_NUMBER - [int]$env:RC_RUN_OFFSET
+          if ($rcNumber -lt 1) { throw "Invalid release-candidate number: $rcNumber" }
+          $releaseVersion = "$env:BASE_VERSION-rc.$rcNumber"
           $out = 'nexu-app/target/jpackage'
 
           ./nexu-app/src/jpackage/package-windows.ps1 `
@@ -256,8 +264,14 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          TAG="v${BASE_VERSION}-rc.${GITHUB_RUN_NUMBER}"
+          RC_NUMBER="$((GITHUB_RUN_NUMBER - RC_RUN_OFFSET))"
+          if [ "$RC_NUMBER" -lt 1 ]; then
+            echo "Invalid release-candidate number: $RC_NUMBER" >&2
+            exit 1
+          fi
+          TAG="v${BASE_VERSION}-rc.${RC_NUMBER}"
           echo "TAG=$TAG" >> "$GITHUB_ENV"
+          echo "RC_NUMBER=$RC_NUMBER" >> "$GITHUB_ENV"
 
           cd release-assets
           find . -maxdepth 1 -type f ! -name SHA256SUMS.txt -printf '%f\0' \
@@ -266,7 +280,7 @@ jobs:
           cd ..
 
           cat > release-notes.md <<EOF
-          ## NexU ${BASE_VERSION} release candidate ${GITHUB_RUN_NUMBER}
+          ## NexU ${BASE_VERSION} release candidate ${RC_NUMBER}
 
           Pre-release generated from the `master` branch.
 
@@ -280,24 +294,17 @@ jobs:
           - platform-specific executable Spring Boot JARs
           - SHA-256 checksums
 
-          ### Diagnostics
-          - rotating DEBUG log file through Spring Boot Logback
-          - daily and size-based compressed archives
-          - `LOGS.txt` included in portable packages
-          - portable Linux smoke test verifies that `nexu.log` is created
-
           ### Runtime
           - Java 17 runtime included in native packages
           - Spring Boot 4.1.0
           - Spring Framework 7.0.x
           - Tomcat 11.0.x
           - DSS 6.4
+          - Bouncy Castle 1.84
           - JavaFX 21.0.11
 
           ### Important
-          These packages are currently unsigned release-candidate artifacts. Windows SmartScreen and Linux package tools may display an unknown-publisher warning. Vendor-specific smart-card middleware is not bundled.
-
-          A WAR is intentionally not produced because NexU is a local desktop smart-card agent with JavaFX and system-tray lifecycle, not a servlet-container application.
+          These packages are unsigned release-candidate artifacts. Windows SmartScreen and Linux package tools may display an unknown-publisher warning. Vendor-specific smart-card middleware is not bundled.
           EOF
 
       - name: Publish pre-release
@@ -305,9 +312,13 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG already exists" >&2
+            exit 1
+          fi
           gh release create "$TAG" release-assets/* \
             --target "$GITHUB_SHA" \
-            --title "NexU ${BASE_VERSION} RC ${GITHUB_RUN_NUMBER}" \
+            --title "NexU ${BASE_VERSION} RC ${RC_NUMBER}" \
             --notes-file release-notes.md \
             --prerelease
 
@@ -330,7 +341,8 @@ jobs:
       - name: Write release result
         shell: bash
         run: |
-          TAG="v${BASE_VERSION}-rc.${GITHUB_RUN_NUMBER}"
+          RC_NUMBER="$((GITHUB_RUN_NUMBER - RC_RUN_OFFSET))"
+          TAG="v${BASE_VERSION}-rc.${RC_NUMBER}"
           if [ "${{ needs.release.result }}" = "success" ]; then
             STATUS=published
           else
@@ -360,4 +372,5 @@ jobs:
           git add .github/release-status/latest.md
           git diff --cached --quiet && exit 0
           git commit -m "Record pre-release workflow ${GITHUB_RUN_ID} result"
+          git pull --rebase origin master
           git push origin HEAD:master
